@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 def check_X_y(X,y):
 
@@ -297,10 +297,10 @@ def show_optuna(study):
 
     # Generate contour plot (shows parameter interactions)
     if ('learning_rate' in study.best_params 
-        and 'num_features' in study.best_params):
-        optuna.visualization.matplotlib.plot_contour(study, params=["learning_rate", "num_features"])
-        plt.title("learning_rate vs. num_features")
-        plt.savefig('optuna_learning_rate_vs_num_features.png', 
+        and 'n_estimators' in study.best_params):
+        optuna.visualization.matplotlib.plot_contour(study, params=["learning_rate", "n_estimators"])
+        plt.title("learning_rate vs. n_estimators")
+        plt.savefig('optuna_learning_rate_vs_n_estimators.png', 
                     dpi=300, bbox_inches='tight') 
         plt.show()
     elif ('learning_rate' in study.best_params 
