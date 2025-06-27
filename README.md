@@ -1,4 +1,4 @@
-# Tools for Machine Learning Regression in Python
+# Python tools for Machine Learning Regression
 
 The PyMLR module includes the following main Python functions to facilitate the use of sklearn, XGBoost, CatBoost, LightGBM, statsmodels, and optuna solvers for linear and logistic regression: 
  
