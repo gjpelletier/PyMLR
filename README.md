@@ -1,6 +1,6 @@
 # Python tools for Machine Learning Regression
 
-The PyMLR module includes the following main Python functions to facilitate the use of sklearn, XGBoost, CatBoost, LightGBM, statsmodels, and optuna solvers for linear and logistic regression: 
+The PyMLR module includes the following main Python functions to facilitate the use of sklearn, XGBoost, CatBoost, LightGBM, statsmodels, shap, and optuna solvers for linear and logistic regression: 
  
  - **logistic_auto** - LogisticRegression with automatic cross-validated optimization of the hyperparameters
  - **logistic** - LogisticRegression with user-specified hyperparameters
@@ -156,7 +156,7 @@ The **ridge** function in PyMLR includes an algorithm (RidgeVIF) to find the mod
 
 ## Installation for Python or Jupyter Notebook
 
-The PyMLR module require that you have already installed numpy, pandas, scikit-learn, tabulate, matplotlib, seaborn, statsmodels, xgboost, lightgbm, mlxtend, and optuna packages. In addition, the auto-optimization functions, because they use optuna, require that you have already installed and enabled ipywidgets in your Python environment if you are working in a Jupyter notebook. 
+The PyMLR module require that you have already installed numpy, pandas, scikit-learn, tabulate, matplotlib, seaborn, statsmodels, xgboost, lightgbm, mlxtend, shap, and optuna packages. In addition, the auto-optimization functions, because they use optuna, require that you have already installed and enabled ipywidgets in your Python environment if you are working in a Jupyter notebook. 
 
 If you have not already installed PyMLR, enter the following with pip or !pip in your notebook or terminal:<br>
 ```
