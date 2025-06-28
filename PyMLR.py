@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 
 def check_X_y(X,y):
 
@@ -9150,6 +9150,227 @@ def logistic_auto(X, y, **kwargs):
 
     return fitted_model, model_outputs
 
+def linear_model_agnostic(model, X_test, y_test,
+    preprocess_result=None,
+    selected_features=None,
+    output_dir="model_agnostic_plots"):
+    '''
+    Plots of model-agnostic analysis of a trained 
+    Machine Learning linear regression model
+
+    Plots of the following model agnostics are provided:
+    
+    - Goodness of fit metrics
+    - Residual vs. Predicted Plot 
+        (compares predictions vs residuals)
+    - Prediction Error Plot 
+        (compares predictions vs. actual values)
+    - Permutation Importance 
+        (model performance drop when a feature is shuffled)
+    - Partial Dependence Plots (PDP) 
+        (shows average effect of a feature on predictions)
+    - ICE (Individual Conditional Expectation) 
+        (how predictions change for one feature across samples)
+    - SHAP Summary Plot (Beeswarm) 
+        (feature importance and direction across all samples)
+    - SHAP Bar Plot 
+        (ranks features by mean absolute SHAP value)
+    - SHAP Waterfall Plot (of first observation only)
+
+    Args:
+    model= fitted sklearn/XGB/etc linear regression model object
+    X_test = dataframe of the independent variables to test 
+    y_test = series of the dependent variable to test (one column of data)
+    preprocess_results = results of preprocess_train
+    selected_features = optimized selected features
+    output_dir = directory to store output plots
+
+    Returns: agnostic plots in output_dir 
+    and dict of the following:
+        metrics: goodness of fit metrics
+        shap_values: results of shap explainer(X_test)
+        shap_importance: dataframe of 
+            shap importance in order of
+            np.abs(shap_values.values).mean(axis=0)
+        shap_ordered_features: list of features 
+            sorted in order or shap importance
+        permutation_importance: dataframe of 
+            permutation_importance result
+        permutation_ordered_features: list of features 
+            sorted in order or permutation importance
+    '''
+
+    from PyMLR import check_X_y, preprocess_test, test_linear_model
+    import shap
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import seaborn as sns
+    from sklearn.inspection import PartialDependenceDisplay, permutation_importance
+    # from alepython import ale_plot
+    import numpy as np
+    import os
+    import time
+    
+    print('Performing 4-step model agnostic analysis, please wait...')
+    start_time = time.time()
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # copy X_test and y_test to avoid altering the original
+    X_test = X_test.copy()
+    y_test = y_test.copy()
+
+    # check X and y and put into dataframe if needed
+    X_test, y_test = check_X_y(X_test, y_test)
+    
+    if preprocess_result != None:
+        X_test_proc = preprocess_test(X_test, preprocess_result)
+        continuous_cols = preprocess_result['continuous_cols']
+    else:
+        X_test_proc = X_test.copy()
+        continuous_cols = None
+    
+    if selected_features != None:
+        X_test_proc = X_test_proc[selected_features]
+        if continuous_cols != None:
+            selected_features_continuous = list(
+                set(selected_features) & set(continuous_cols))
+        else:
+            selected_features_continuous = None
+    else:
+        if continuous_cols != None:
+            selected_features_continuous = list(
+                set(X_test_proc.columns) & set(continuous_cols))
+
+    # -------- Step 1: Residual Plot --------
+    print('')
+    print('Step 1: Model skill and residuals plot, please wait...')
+    result = test_linear_model(model, X_test, y_test, 
+        preprocess_result= preprocess_result,
+        selected_features= selected_features)
+    result['fig'].savefig(f"{output_dir}/residual_plot.png", dpi=300)
+    # result['residual_plot'] = result.pop('fig') # change name of key
+    output = {}
+    output['metrics'] = result['metrics'] # change name of key
+    # output['residual_plot'] = result['fig'] # change name of key
+    plt.close()
+            
+    # -------- Step 2: SHAP Explainer (auto-detect) --------
+    print('Step 2: SHAP Beeswarm, Bar importance, and Waterfall, please wait...')
+    try:
+        model_name = model.__class__.__name__.lower()
+        if "linear" in model_name:
+            explainer = shap.LinearExplainer(model, X_test_proc)
+        else:
+            explainer = shap.Explainer(model, X_test_proc)
+    
+        shap_values = explainer(X_test_proc)
+        output['shap_values'] = shap_values
+    
+        # Beeswarm
+        shap.plots.beeswarm(shap_values, show=False)
+        plt.savefig(f"{output_dir}/shap_beeswarm.png", dpi=300, bbox_inches='tight')
+        plt.close()
+    
+        # Bar plot for global feature importance
+        shap.plots.bar(shap_values, show=False)
+        plt.savefig(f"{output_dir}/shap_bar_importance.png", dpi=300, bbox_inches='tight')
+        plt.close()
+            
+        # Waterfall for first instance
+        shap.plots.waterfall(shap_values[0], show=False)
+        plt.savefig(f"{output_dir}/shap_waterfall_sample0.png", dpi=300, bbox_inches='tight')
+        plt.close()
+    
+        # Compute mean absolute SHAP values
+        mean_abs_shap = np.abs(shap_values.values).mean(axis=0)
+        
+        # Create a DataFrame for sorting
+        importance_df = pd.DataFrame({
+            'feature': shap_values.feature_names,
+            'mean_abs_shap': mean_abs_shap
+        }).sort_values(by='mean_abs_shap', ascending=False)
+        
+        # Extract ordered list of features
+        shap_ordered_features = importance_df['feature'].tolist()
+        output['shap_importance'] = importance_df
+        output['shap_ordered_features'] = shap_ordered_features
+
+    except Exception as e:
+        print("SHAP skipped due to:", e)
+        shap_ordered_features = None
+    
+    # -------- Step 3: Permutation Importance --------
+    print('Step 3: Permutation Importance, please wait...')
+    try:
+        result = permutation_importance(
+            model, X_test_proc, y_test, n_repeats=10, random_state=42
+        )
+        imp_series = pd.Series(result.importances_mean, index=X_test_proc.columns)
+        imp_series.sort_values().plot.barh(title="Permutation Importance")
+        plt.tight_layout()
+        # output['permutation_importance_plot'] = result['hfig'] # change name of key        
+        plt.savefig(f"{output_dir}/permutation_importance.png", dpi=300)
+        plt.close()
+        # Create a sorted DataFrame
+        importance_df = pd.DataFrame({
+            'feature': X_test_proc.columns,
+            'importance_mean': result.importances_mean,
+            'importance_std': result.importances_std
+        }).sort_values(by='importance_mean', ascending=False)        
+        # Extract ordered list of features
+        permutation_ordered_features = importance_df['feature'].tolist()        
+        # save to result
+        output['permutation_importance'] = importance_df
+        output['permutation_ordered_features'] = permutation_ordered_features
+    except Exception as e:
+        print("Permutation Importance skipped due to:", e)
+        permutation_ordered_features = None
+    
+    # -------- Step 4: PDP + ICE --------
+    print('Step 4: PDP + ICE plots of each continuous feature, please wait...')
+    try:
+        # features_for_pdp = optimum_selected_features[:2]  # choose top 2
+        # if selected_features_continuous != None:
+        #     features_for_pdp = selected_features_continuous
+        if shap_ordered_features != None:
+            for feat in shap_ordered_features:
+                if continuous_cols != None and feat in continuous_cols:
+                    print('feature: ',feat)
+                    PartialDependenceDisplay.from_estimator(
+                        model, 
+                        X_test_proc, 
+                        [feat], 
+                        kind='both', 
+                        line_kw={"color": "black", "linewidth": 3},        # PDP line
+                        ice_lines_kw={"color": "skyblue", "alpha": 0.3}  # ICE lines
+                    )
+                    plt.tight_layout()
+                    plt.savefig(f"{output_dir}/pdp_ice_{feat}.png", dpi=300)
+                    plt.close()
+    
+    except Exception as e:
+        print("PDP skipped due to:", e)
+   
+    '''
+    # -------- Step 5: ALE --------
+    print('Step 5: ALE plots of top 2 features, please wait...')
+    try:
+        if ordered_features != None:
+            features_for_ale = ordered_features[:2]  # choose top 2
+            for feat in features_for_ale:
+                ale_plot(model, X_test_proc, feat)
+                plt.savefig(f"{output_dir}/ale_{feat}.png", dpi=300)
+                plt.close()    
+    except Exception as e:
+        print("ALE skipped due to:", e)
+    '''
+
+    print(f"Interpretability plots saved to: {output_dir}")
+    print('Done')
+    fit_time = time.time() - start_time
+    print(f"Time elapsed: {fit_time:.2f} sec")
+
+    return output
 
 
 

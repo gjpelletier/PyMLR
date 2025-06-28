@@ -11,6 +11,7 @@ setup(
     install_requires=[
         'numpy','pandas','statsmodels','seaborn',
         'scikit-learn','tabulate','matplotlib',
-        'xgboost','lightgbm','mlxtend','optuna'],
+        'xgboost','lightgbm','mlxtend','optuna',
+        'shap'],
 )
 
