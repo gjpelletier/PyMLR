@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.5"
+__version__ = "1.2.6"
 
 def check_X_y(X,y):
 
@@ -9091,7 +9091,8 @@ def logistic_auto(X, y, **kwargs):
 def model_agnostic(model, X_test, y_test,
     preprocess_result=None,
     selected_features=None,
-    output_dir="agnostic_plots"):
+    output_dir="agnostic_plots",
+    show=True):
     '''
     Model-agnostic analysis of a trained 
     Machine Learning linear regression model
@@ -9122,6 +9123,7 @@ def model_agnostic(model, X_test, y_test,
     preprocess_results = results of preprocess_train
     selected_features = optimized selected features
     output_dir = directory to store output plots
+    show = True (default) or False to display the plots
 
     Returns: agnostic plots in output_dir 
     and dict of the following:
@@ -9205,17 +9207,17 @@ def model_agnostic(model, X_test, y_test,
         output['shap_values'] = shap_values
     
         # Beeswarm
-        shap.plots.beeswarm(shap_values, show=False)
+        shap.plots.beeswarm(shap_values, show=show)
         plt.savefig(f"{output_dir}/shap_beeswarm.png", dpi=300, bbox_inches='tight')
         plt.close()
     
         # Bar plot for global feature importance
-        shap.plots.bar(shap_values, show=False)
+        shap.plots.bar(shap_values, show=show)
         plt.savefig(f"{output_dir}/shap_bar_importance.png", dpi=300, bbox_inches='tight')
         plt.close()
             
         # Waterfall for first instance
-        shap.plots.waterfall(shap_values[0], show=False)
+        shap.plots.waterfall(shap_values[0], show=show)
         plt.savefig(f"{output_dir}/shap_waterfall_sample0.png", dpi=300, bbox_inches='tight')
         plt.close()
     
@@ -9248,6 +9250,8 @@ def model_agnostic(model, X_test, y_test,
         plt.tight_layout()
         # output['permutation_importance_plot'] = result['hfig'] # change name of key        
         plt.savefig(f"{output_dir}/permutation_importance.png", dpi=300)
+        if show:
+            plt.show()
         plt.close()
         # Create a sorted DataFrame
         importance_df = pd.DataFrame({
@@ -9284,6 +9288,8 @@ def model_agnostic(model, X_test, y_test,
                     )
                     plt.tight_layout()
                     plt.savefig(f"{output_dir}/pdp_ice_{feat}.png", dpi=300)
+                    if show:
+                        plt.show()
                     plt.close()
     
     except Exception as e:
