@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.3"
+__version__ = "1.2.4"
 
 def check_X_y(X,y):
 
@@ -9150,7 +9150,7 @@ def logistic_auto(X, y, **kwargs):
 
     return fitted_model, model_outputs
 
-def linear_model_agnostic(model, X_test, y_test,
+def model_agnostic(model, X_test, y_test,
     preprocess_result=None,
     selected_features=None,
     output_dir="model_agnostic_plots"):
@@ -9160,7 +9160,7 @@ def linear_model_agnostic(model, X_test, y_test,
 
     Plots of the following model agnostics are provided:
     
-    - Goodness of fit metrics
+    - Model skill metrics
     - Residual vs. Predicted Plot 
         (compares predictions vs residuals)
     - Prediction Error Plot 
