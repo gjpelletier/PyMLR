@@ -42,6 +42,7 @@ The functions in PyMLR allow the user to write one line of high-level python cod
 - automatic standardization of X and output of the scaler (optional)
 - optimization of feature selection (logistic, xgb)
 - optimization of logistic regression for binomial or multinomial response variables
+- perform model-agnostic analysis
 
 ### Lasso
 
