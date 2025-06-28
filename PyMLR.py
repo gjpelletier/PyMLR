@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.4"
+__version__ = "1.2.5"
 
 def check_X_y(X,y):
 
@@ -354,7 +354,7 @@ def show_optuna(study):
 
     return
 
-def test_linear_model(
+def test_model(
         model, X, y, preprocess_result=None, selected_features=None):
 
     """
@@ -376,7 +376,7 @@ def test_linear_model(
         fig= figure for the residuals plot
     """
  
-    from PyMLR import check_X_y, preprocess_test, extract_linear_metrics
+    from PyMLR import check_X_y, preprocess_test, fitness_metrics
     import pandas as pd
     import numpy as np
     from sklearn.metrics import PredictionErrorDisplay
@@ -402,7 +402,7 @@ def test_linear_model(
     y_pred = model.predict(X[selected_features])    
 
     # Goodness of fit statistics
-    metrics = extract_linear_metrics(
+    metrics = fitness_metrics(
         model, 
         X[selected_features], y)
     stats = pd.DataFrame([metrics]).T
@@ -443,70 +443,6 @@ def test_linear_model(
     result['fig'] = fig
     
     return result
-
-def plot_linear_results_test(
-        model, X, y, preprocess_result=None, selected_features=None):
-
-    """
-    Plots Actual vs Predicted and Residuals vs Predicted 
-    for fitted sklearn linear regression models 
-
-    Args:
-    model= fitted sklearn linear regression model object
-    X = dataframe of the candidate independent variables 
-    y = series of the dependent variable (one column of data)
-    preprocess_results = results of preprocess_train
-    selected_features = optimized selected features
-    Returns:
-        fig= figure for the plot
-    """
- 
-    from PyMLR import check_X_y, preprocess_test
-    import pandas as pd
-    import numpy as np
-    from sklearn.metrics import PredictionErrorDisplay
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.decomposition import PCA
-    import matplotlib.pyplot as plt
-    import warnings
-    import sys
-
-    # copy X and y to avoid altering originals
-    X = X.copy()
-    y = y.copy()
-
-    # check X and y and put into dataframe if needed
-    X, y = check_X_y(X, y)
-    
-    if selected_features==None:
-        selected_features = X.columns
-
-    if preprocess_result!=None:
-        X = preprocess_test(X, preprocess_result)
-        
-    y_pred = model.predict(X[selected_features])    
-    
-    fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-    PredictionErrorDisplay.from_predictions(
-        y,
-        y_pred,
-        kind="actual_vs_predicted",
-        ax=axs[0]
-    )
-    axs[0].set_title("Actual vs. Predicted")
-    PredictionErrorDisplay.from_predictions(
-        y,
-        y_pred,
-        kind="residual_vs_predicted",
-        ax=axs[1]
-    )
-    axs[1].set_title("Residuals vs. Predicted")
-    rmse = np.sqrt(np.mean((y-y_pred)**2))
-    fig.suptitle(
-        f"Predictions compared with actual values and residuals (RMSE={rmse:.3f})")
-    plt.tight_layout()
-
-    return fig
     
 def plot_predictions_from_test(
     model, X, y, 
@@ -514,6 +450,8 @@ def plot_predictions_from_test(
     pca_transform=False, pca=None, n_components=None):
 
     """
+    DEPRACATED
+    
     Plots Actual vs Predicted and Residuals vs Predicted 
     for fitted sklearn linear regression models 
 
@@ -609,7 +547,7 @@ def plot_predictions_from_test(
 
     return fig
      
-def extract_linear_metrics(model, X, y):
+def fitness_metrics(model, X, y):
     '''
     Extracts multiple evaluation metrics 
     from a trained scikit-learn linear regression model
@@ -693,7 +631,7 @@ def pseudo_r2(model, X, y):
     
     return 1 - ll_full / ll_null
 
-def extract_logistic_metrics(model, X, y):
+def fitness_metrics_logistic(model, X, y):
     """
     Extracts multiple evaluation metrics 
     from a trained LogisticRegression model
@@ -5339,7 +5277,7 @@ def xgb(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import check_X_y, preprocess_train, preprocess_test, extract_linear_metrics
+    from PyMLR import check_X_y, preprocess_train, preprocess_test, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -5519,7 +5457,7 @@ def xgb(X, y, **kwargs):
         model_outputs['popt_table'] = popt_table
     
     # Goodness of fit statistics
-    metrics = extract_linear_metrics(
+    metrics = fitness_metrics(
         fitted_model, 
         X, y)
     stats = pd.DataFrame([metrics]).T
@@ -5784,7 +5722,7 @@ def xgb_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test, extract_linear_metrics
+    from PyMLR import preprocess_train, preprocess_test, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -5984,7 +5922,7 @@ def xgb_auto(X, y, **kwargs):
         model_outputs['popt_table'] = popt_table
     
     # Goodness of fit statistics
-    metrics = extract_linear_metrics(
+    metrics = fitness_metrics(
         fitted_model, 
         X[model_outputs['selected_features']], y)
     stats = pd.DataFrame([metrics]).T
@@ -8469,7 +8407,7 @@ def plot_roc_auc(model, X, y):
 
     return hfig
 
-def test_logistic_model(
+def test_model_logistic(
         model, X, y, preprocess_result=None, selected_features=None):
     '''
     plot the confusion matrix and ROC curve and fitness metrics
@@ -8483,7 +8421,7 @@ def test_logistic_model(
     import numpy as np
     import pandas as pd
     from PyMLR import (preprocess_test, plot_confusion_matrix, 
-        plot_roc_auc, extract_logistic_metrics, check_X_y)
+        plot_roc_auc, fitness_metrics_logistic, check_X_y)
 
     # copy X and y to avoid altering originals
     X = X.copy()
@@ -8500,7 +8438,7 @@ def test_logistic_model(
         X = preprocess_test(X, preprocess_result)
 
     # Goodness of fit statistics
-    metrics = extract_logistic_metrics(
+    metrics = fitness_metrics_logistic(
         model, 
         X[selected_features], y)
     stats = pd.DataFrame([metrics]).T
@@ -8613,7 +8551,7 @@ def logistic(X, y, **kwargs):
     """
 
     from PyMLR import preprocess_train, preprocess_test 
-    from PyMLR import extract_logistic_metrics, pseudo_r2
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
     from PyMLR import plot_confusion_matrix, plot_roc_auc
     from PyMLR import detect_gpu 
     from PyMLR import check_X_y
@@ -8756,7 +8694,7 @@ def logistic(X, y, **kwargs):
         hfig.savefig("LogisticRegression_ROC_curve.png", dpi=300)
         
     # Goodness of fit statistics
-    metrics = extract_logistic_metrics(
+    metrics = fitness_metrics_logistic(
         fitted_model, 
         X[model_outputs['selected_features']], y)
     stats = pd.DataFrame([metrics]).T
@@ -8945,7 +8883,7 @@ def logistic_auto(X, y, **kwargs):
     """
 
     from PyMLR import preprocess_train 
-    from PyMLR import extract_logistic_metrics, pseudo_r2
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
     from PyMLR import plot_confusion_matrix, plot_roc_auc
     from PyMLR import detect_gpu 
     import time
@@ -9115,7 +9053,7 @@ def logistic_auto(X, y, **kwargs):
         hfig.savefig("LogisticRegression_ROC_curve.png", dpi=300)
         
     # Goodness of fit statistics
-    metrics = extract_logistic_metrics(
+    metrics = fitness_metrics_logistic(
         fitted_model, 
         X[model_outputs['selected_features']], y)
     stats = pd.DataFrame([metrics]).T
@@ -9153,9 +9091,9 @@ def logistic_auto(X, y, **kwargs):
 def model_agnostic(model, X_test, y_test,
     preprocess_result=None,
     selected_features=None,
-    output_dir="model_agnostic_plots"):
+    output_dir="agnostic_plots"):
     '''
-    Plots of model-agnostic analysis of a trained 
+    Model-agnostic analysis of a trained 
     Machine Learning linear regression model
 
     Plots of the following model agnostics are provided:
@@ -9200,7 +9138,7 @@ def model_agnostic(model, X_test, y_test,
             sorted in order or permutation importance
     '''
 
-    from PyMLR import check_X_y, preprocess_test, test_linear_model
+    from PyMLR import check_X_y, preprocess_test, test_model
     import shap
     import matplotlib.pyplot as plt
     import pandas as pd
@@ -9244,7 +9182,7 @@ def model_agnostic(model, X_test, y_test,
     # -------- Step 1: Residual Plot --------
     print('')
     print('Step 1: Model skill and residuals plot, please wait...')
-    result = test_linear_model(model, X_test, y_test, 
+    result = test_model(model, X_test, y_test, 
         preprocess_result= preprocess_result,
         selected_features= selected_features)
     result['fig'].savefig(f"{output_dir}/residual_plot.png", dpi=300)
