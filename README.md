@@ -22,6 +22,7 @@ The PyMLR module includes the following main Python functions to facilitate the 
  - **lgbm** - LGBMRegressor with user-specified hyperparameters
  - **stacking** - StackingRegressor
  - **stepwise** - Stepwise multiple linear regression to minimize MSE, AIC, or BIC
+ - **model_agnostic** - Perform model-agnostic analysis (e.g. SHAP Beeswarm and Bar plots, PDB-ICE plots, Permutation Importance plots)
  
 The functions in PyMLR allow the user to write one line of high-level python code to provide the following:
 
