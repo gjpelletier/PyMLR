@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.6"
+__version__ = "1.2.7"
 
 def check_X_y(X,y):
 
@@ -9127,7 +9127,7 @@ def model_agnostic(model, X_test, y_test,
 
     Returns: agnostic plots in output_dir 
     and dict of the following:
-        metrics: goodness of fit metrics
+        metrics: model skill metrics
         shap_values: results of shap explainer(X_test)
         shap_importance: dataframe of 
             shap importance in order of
@@ -9183,15 +9183,49 @@ def model_agnostic(model, X_test, y_test,
 
     # -------- Step 1: Residual Plot --------
     print('')
-    print('Step 1: Model skill and residuals plot, please wait...')
-    result = test_model(model, X_test, y_test, 
-        preprocess_result= preprocess_result,
-        selected_features= selected_features)
-    result['fig'].savefig(f"{output_dir}/residual_plot.png", dpi=300)
-    # result['residual_plot'] = result.pop('fig') # change name of key
+    print('Step 1: Model skill metrics and residuals plot, please wait...')
+
+    # Model skill metrics
+    from PyMLR import fitness_metrics
+    from sklearn.metrics import PredictionErrorDisplay
+    metrics = fitness_metrics(
+        model, 
+        X_test_proc[selected_features], y_test)
+    stats = pd.DataFrame([metrics]).T
+    stats.index.name = 'Statistic'
+    stats.columns = ['Regressor']
+
     output = {}
-    output['metrics'] = result['metrics'] # change name of key
-    # output['residual_plot'] = result['fig'] # change name of key
+    output['metrics'] = metrics
+    y_pred = model.predict(X_test_proc[selected_features])
+    output['y_pred'] = y_pred
+
+    fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+    PredictionErrorDisplay.from_predictions(
+        y_test,
+        y_pred,
+        kind="actual_vs_predicted",
+        ax=axs[0]
+    )
+    axs[0].set_title("Actual vs. Predicted")
+    PredictionErrorDisplay.from_predictions(
+        y_test,
+        y_pred,
+        kind="residual_vs_predicted",
+        ax=axs[1]
+    )
+    axs[1].set_title("Residuals vs. Predicted")
+    rmse = np.sqrt(np.mean((y_test - y_pred)**2))
+    fig.suptitle(
+        f"Predictions compared with actual values and residuals (RMSE={rmse:.3f})")
+    plt.tight_layout()
+    if show:
+        print('')
+        print("Model skill metrics:")
+        print('')
+        print(stats.to_markdown(index=True))
+        print('')
+        plt.show()
     plt.close()
             
     # -------- Step 2: SHAP Explainer (auto-detect) --------
@@ -9277,7 +9311,7 @@ def model_agnostic(model, X_test, y_test,
         if shap_ordered_features != None:
             for feat in shap_ordered_features:
                 if continuous_cols != None and feat in continuous_cols:
-                    print('feature: ',feat)
+                    print('processing feature: ',feat)
                     PartialDependenceDisplay.from_estimator(
                         model, 
                         X_test_proc, 
@@ -9313,6 +9347,7 @@ def model_agnostic(model, X_test, y_test,
     print('Done')
     fit_time = time.time() - start_time
     print(f"Time elapsed: {fit_time:.2f} sec")
+    print('')
 
     return output
 
