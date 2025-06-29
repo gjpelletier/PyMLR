@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.10"
+__version__ = "1.2.11"
 
 def check_X_y(X,y):
 
@@ -99,6 +99,60 @@ def check_X_y(X,y):
 
     return X, y
 
+def check_X(X):
+
+    '''
+    Check the X input used in regression 
+    '''
+    
+    import pandas as pd
+    import numpy as np
+    import sys
+
+    # start with copies of X and y to avoid changing the original
+    X = X.copy()
+
+    if isinstance(X, pd.DataFrame):
+        ctrl = X.isna().sum().sum()==0
+        if not ctrl:
+            print('Check X: it needs to have no nan values!','\n')
+            sys.exit()
+        ctrl = not np.isinf(X.select_dtypes(include=[float])).any().any()
+        if not ctrl:
+            print('Check X: it needs to have no inf values!','\n')
+            sys.exit()
+        ctrl = X.columns.is_unique
+        if not ctrl:
+            print('Check X: X needs to have unique column names for every column!','\n')
+            sys.exit()
+    
+    if isinstance(X, np.ndarray):
+        ctrl = np.isnan(X).sum().sum()==0
+        if not ctrl:
+            print('Check X: it needs to have no nan values!','\n')
+            sys.exit()
+        ctrl = not np.any([np.isinf(val) if isinstance(val, (int, float)) else False for val in X])
+        if not ctrl:
+            print('Check X: it needs to have no inf values!','\n')
+            sys.exit()
+    
+    ctrl = np.isreal(X).all()
+    if not ctrl:
+        print('Check X: it needs be all real numbers!','\n')
+        sys.exit()
+    ctrl = X.ndim==2
+    if not ctrl:
+        print('Check X: it needs be 2-D!','\n')
+        sys.exit()
+
+    # convert X to pandas dataframe if not already
+    # if isinstance(X, np.ndarray):
+    if not isinstance(X, pd.DataFrame):
+        X = pd.DataFrame(X)
+        X.columns = ['X' + str(i) for i in X.columns]       
+
+    return X
+
 def preprocess_train(df, threshold=10, scale='standard'):
     """
     Detects categorical (numeric and non-numeric) columns, applies one-hot encoding,
@@ -106,12 +160,15 @@ def preprocess_train(df, threshold=10, scale='standard'):
     All categorical features are cast to float.
 
     Args:
-        df (pd.DataFrame): Training data
-        threshold (int): Max unique values for numeric columns to be considered categorical
+        df (pd.DataFrame): Training data 
+            (if df is not a dataframe it will be converted to a dataframe)
+        threshold (int): Max unique values for numeric columns 
+            to be considered categorical
         scale (str): 'minmax' or 'standard' for scaler selection
 
     Returns:
         dict: {
+            'df': original data, converted to dataframe if needed
             'df_processed': Preprocessed DataFrame,
             'encoder': Fitted OneHotEncoder or None,
             'scaler': Fitted Scaler or None,
@@ -123,9 +180,13 @@ def preprocess_train(df, threshold=10, scale='standard'):
     """
     import pandas as pd
     from sklearn.preprocessing import OneHotEncoder, MinMaxScaler, StandardScaler
+    from PyMLR import check_X
 
     # Start with a copy to avoid changing the original df
     df = df.copy()
+
+    # check df and convert to dataframe if not already
+    df = check_X(df)
     
     bool_cols = df.select_dtypes(include='bool').columns.tolist()
     df[bool_cols] = df[bool_cols].astype(int)
@@ -167,6 +228,7 @@ def preprocess_train(df, threshold=10, scale='standard'):
     df_processed = df_processed.astype(float)
 
     return {
+        'df': df,
         'df_processed': df_processed,
         'encoder': encoder,
         'scaler': scaler,
