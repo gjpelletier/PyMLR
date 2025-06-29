@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.12"
+__version__ = "1.2.13"
 
 def check_X_y(X,y):
 
@@ -853,9 +853,8 @@ def stepwise(X, y, **kwargs):
         allow_dummies= True or False (default)                
 
     RETURNS
-        model_object, model_output 
+        model_object, model_outputs 
             model_object is the final fitted model returned by statsmodels.api OLS
-            model_output is a dictionary of the following outputs:    
             model_outputs is a dictionary of the following outputs:
                 - 'preprocess': True for OneHotEncoder and StandardScaler
                 - 'preprocess_result': output or echo of the following:
@@ -1416,16 +1415,16 @@ def stepwise(X, y, **kwargs):
     popt.set_index('Feature',inplace=True)
     
     model_object = model
-    model_output = {}
+    # model_output = {}
     scaler = StandardScaler().fit(X)
-    model_output['scaler'] = scaler
-    model_output['standardize'] = data['standardize']
-    model_output['selected_features'] = selected_features
-    model_output['step_features'] = step_features
-    model_output['y_pred'] = model.predict(sm.add_constant(X[selected_features]))
-    # model_output['residuals'] = model_output['y_pred'] - y
-    model_output['residuals'] = y - model_output['y_pred']
-    model_output['popt'] = popt
+    model_outputs['scaler'] = scaler
+    model_outputs['standardize'] = data['standardize']
+    model_outputs['selected_features'] = selected_features
+    model_outputs['step_features'] = step_features
+    model_outputs['y_pred'] = model.predict(sm.add_constant(X[selected_features]))
+    # model_outputs['residuals'] = model_outputs['y_pred'] - y
+    model_outputs['residuals'] = y - model_outputs['y_pred']
+    model_outputs['popt'] = popt
 
     # # Get the covariance matrix of parameters including intercept
     # # results = sm.OLS(y, sm.add_constant(X[selected_features])).fit()
@@ -1437,8 +1436,8 @@ def stepwise(X, y, **kwargs):
     pcov = pd.DataFrame(np.cov(X_, rowvar=False), index=X_.columns)
     pcov.columns = X_.columns
     
-    model_output['pcov'] = pcov
-    model_output['vif'] = vif
+    model_outputs['pcov'] = pcov
+    model_outputs['vif'] = vif
 
     # Summary statitistics
     list_name = ['r-squared','adjusted r-squared',
@@ -1449,7 +1448,7 @@ def stepwise(X, y, **kwargs):
     list_stats = [model.rsquared, model.rsquared_adj,
         len(y), model.df_resid, model.df_model, 
         model.fvalue, model.f_pvalue, 
-        np.sqrt(np.mean(model_output['residuals']**2)),  
+        np.sqrt(np.mean(model_outputs['residuals']**2)),  
         model.llf,model.aic,model.bic]
     stats = pd.DataFrame(
         {
@@ -1458,14 +1457,14 @@ def stepwise(X, y, **kwargs):
         }
         )
     stats.set_index('Statistic',inplace=True)
-    model_output['stats'] = stats
-    model_output['summary'] = model.summary()
+    model_outputs['stats'] = stats
+    model_outputs['summary'] = model.summary()
     
     # plot residuals
     if data['verbose'] == 'on':
         '''
-        y_pred = model_output['y_pred']
-        res = model_output['residuals']
+        y_pred = model_outputs['y_pred']
+        res = model_outputs['residuals']
         rmse = np.sqrt(np.mean(res**2))
         plt.figure()
         plt.scatter(y_pred, res)
@@ -1478,19 +1477,19 @@ def stepwise(X, y, **kwargs):
         fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
         PredictionErrorDisplay.from_predictions(
             y,
-            y_pred=model_output['y_pred'],
+            y_pred=model_outputs['y_pred'],
             kind="actual_vs_predicted",
             ax=axs[0]
         )
         axs[0].set_title("Actual vs. Predicted")
         PredictionErrorDisplay.from_predictions(
             y,
-            y_pred=model_output['y_pred'],
+            y_pred=model_outputs['y_pred'],
             kind="residual_vs_predicted",
             ax=axs[1]
         )
         axs[1].set_title("Residuals vs. Predicted")
-        rmse = np.sqrt(np.mean(model_output['residuals']**2))
+        rmse = np.sqrt(np.mean(model_outputs['residuals']**2))
         fig.suptitle(
             f"Predictions compared with actual values and residuals (RMSE={rmse:.3f})")
         plt.tight_layout()
@@ -1508,7 +1507,7 @@ def stepwise(X, y, **kwargs):
     # Restore warnings to normal
     warnings.filterwarnings("default")
     
-    return model_object, model_output
+    return model_object, model_outputs
 
 def stats_given_model(X,y,model):
 
