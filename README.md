@@ -22,7 +22,7 @@ The PyMLR module includes the following main Python functions to facilitate the 
  - **lgbm** - LGBMRegressor with user-specified hyperparameters
  - **stacking** - StackingRegressor
  - **stepwise** - Stepwise multiple linear regression to minimize MSE, AIC, or BIC
- - **[model_agnostic]([https://github.com/gjpelletier/PyOAE/blob/main/Example_restore_OA_with_OAE.ipynb](https://github.com/gjpelletier/PyMLR/blob/main/Examples/Example_Model_Agnostic.ipynb))** - Perform model-agnostic analysis (e.g. Shapley Additive Explantions (SHAP), Beeswarm and Bar plots, PDB-ICE plots, Permutation Importance plots)
+ - **model_agnostic** - Perform model-agnostic analysis (e.g. Shapley Additive Explantions (SHAP), Beeswarm and Bar plots, PDB-ICE plots, Permutation Importance plots)
  - **show_optuna** - Display the results of the hyperparameter optimization using optuna
  
 The functions in PyMLR allow the user to write one line of high-level python code to provide the following:
