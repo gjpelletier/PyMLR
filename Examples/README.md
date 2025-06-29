@@ -1,3 +1,3 @@
 ## Examples 
 
-### Jupyter Notebooks using PyMLR for Machine Learning Regression
+This folder contains Jupyter Notebooks showing how to use PyMLR functions for Machine Learning Regression
