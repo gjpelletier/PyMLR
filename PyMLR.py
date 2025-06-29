@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.7"
+__version__ = "1.2.9"
 
 def check_X_y(X,y):
 
@@ -394,7 +394,7 @@ def test_model(
     X, y = check_X_y(X, y)
     
     if selected_features==None:
-        selected_features = X.columns
+        selected_features = X.columns.to_list()
 
     if preprocess_result!=None:
         X = preprocess_test(X, preprocess_result)
@@ -776,9 +776,14 @@ def stepwise(X, y, **kwargs):
                 3) Keep removing predictors as long as it reduces AIC
             'all': find the best model of all possibe subsets of predictors
                 Note: 'all' requires no more than 20 columns in X
-        standardize= True or False (default) where
-            True: standardize X using sklearn.preprocessing StandardScaler
-            False: do not standardize X (default)
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         drop_insig= 'on' (default) or 'off'
             'on': drop predictors with p-values below threshold p-value (default) 
             'off': keep all predictors regardless of p-value
@@ -790,8 +795,13 @@ def stepwise(X, y, **kwargs):
             model_object is the final fitted model returned by statsmodels.api OLS
             model_output is a dictionary of the following outputs:    
             model_outputs is a dictionary of the following outputs:
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'selected_features' are the final selected features
                 - 'step_features' are the features and fitness score at each step
                     (if 'direction'=='forward' or 'direction'=='backward'), 
@@ -828,6 +838,7 @@ def stepwise(X, y, **kwargs):
     """
 
     from PyMLR import detect_dummy_variables
+    from PyMLR import preprocess_train, preprocess_test
     import statsmodels.api as sm
     from itertools import combinations
     import pandas as pd
@@ -845,7 +856,18 @@ def stepwise(X, y, **kwargs):
         'criterion': 'AIC',
         'verbose': 'on',
         'direction': 'forward',
-        'standardize': False,
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'allow_dummies': False,
         'drop_insig': 'on',
         'p_threshold': 0.05
@@ -873,8 +895,43 @@ def stepwise(X, y, **kwargs):
         print('Check X: X appears to have dummy variables. Use allow_dummies=True, or use Lasso, Ridge, or ElasticNet','\n')
         sys.exit()
 
-    from PyMLR import check_X_y
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
     X, y = check_X_y(X,y)
+
+    # Set start time for calculating run time
+    start_time = time.time()
+
+    # check if X contains dummy variables
+    X_has_dummies = detect_dummy_variables(X)
+
+    # Initialize output dictionaries
+    model_objects = {}
+    model_outputs = {}
+
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
+
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
+    else:
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
 
     if data['direction'] == 'all':
         ctrl = X.shape[1]<=20
@@ -903,19 +960,7 @@ def stepwise(X, y, **kwargs):
     start_time = time.time()
     # model_outputs = {}
     step_features = {}
-    
-    # Option to use standardized X
-    if data['standardize']:
-        scaler = StandardScaler().fit(X)
-        X_scaled = scaler.transform(X)
-        # Convert scaled arrays into pandas dataframes with same column names as X
-        X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-        # Copy index from unscaled to scaled dataframes
-        X_scaled.index = X.index
-        # Replace X with the standardized X for regression
-        # X = X.copy()
-        X = X_scaled.copy()
-        
+            
     if data['direction'] == 'forward':
 
         # Forward selection to minimize AIC or BIC
@@ -1636,9 +1681,14 @@ def lasso(X, y, **kwargs):
     **kwargs (optional keyword arguments):
         nfolds= number of folds to use for cross-validation (CV)
             with k-fold LassoCV or LassoLarsCV (default nfolds=20)
-        standardize= True (default) or False where
-            True: standardize X using sklearn.preprocessing StandardScaler
-            False: do not standardize X
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         alpha_min= minimum value of range of alphas to evaluate (default=1e-3)
         alpha_max= maximum value of range of alphas to evaluate (default=1e3)
         n_alpha= number of log-spaced alphas to evaluate (default=100)
@@ -1666,8 +1716,13 @@ def lasso(X, y, **kwargs):
                 - LassoLarsAIC: LassoLarsIC using AIC
                 - LassoLarsBIC: LasspLarsIC using BIC
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'alpha_vs_coef': model coefficients for each X variable
                     as a function of alpha using Lasso
                 - 'alpha_vs_AIC_BIC': AIC and BIC as a function of alpha 
@@ -1697,6 +1752,7 @@ def lasso(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_model, detect_dummy_variables
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -1715,7 +1771,18 @@ def lasso(X, y, **kwargs):
     # Define default values of input data arguments
     defaults = {
         'nfolds': 20,
-        'standardize': True,
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'alpha_min': 1.0e-3,
         'alpha_max': 1.0e3,
         'n_alpha': 100,
@@ -1725,8 +1792,43 @@ def lasso(X, y, **kwargs):
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
 
-    from PyMLR import check_X_y
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
     X, y = check_X_y(X,y)
+
+    # Set start time for calculating run time
+    start_time = time.time()
+
+    # check if X contains dummy variables
+    X_has_dummies = detect_dummy_variables(X)
+
+    # Initialize output dictionaries
+    model_objects = {}
+    model_outputs = {}
+
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
+
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
+    else:
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
 
     ctrl = data['alpha_min'] > 0 
     if not ctrl:
@@ -1746,35 +1848,6 @@ def lasso(X, y, **kwargs):
     print('Fitting Lasso regression models, please wait ...')
     if data['verbose'] == 'on' or data['verbose'] == 1:
         print('')
-
-    # Set start time for calculating run time
-    start_time = time.time()
-
-    # check if X contains dummy variables
-    X_has_dummies = detect_dummy_variables(X)
-
-    # Initialize output dictionaries
-    model_objects = {}
-    model_outputs = {}
-    # model_outputs['y'] = y  # echo input y
-    # model_outputs['X'] = X  # echo input X
-
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
-
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
-    else:
-        X = X.copy()
 
     # Calculate the role of alpha vs coefficient values
     alpha_min = np.log10(data['alpha_min'])
@@ -2372,9 +2445,14 @@ def ridge(X, y, **kwargs):
 
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
-        standardize= True (default) or False where
-            True: standardize X using sklearn.preprocessing StandardScaler
-            False: do not standardize X
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         alpha_min= minimum value of range of alphas to evaluate (default=1e-3)
         alpha_max= maximum value of range of alphas to evaluate (default=1e3)
         n_alpha= number of log-spaced alphas to evaluate (default=100)
@@ -2391,8 +2469,13 @@ def ridge(X, y, **kwargs):
                 - RidgeCV: sklearn RidgeCV 
                 - RidgeVIF: sklearn Ridge using target VIF to find best alpha
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'alpha_vs_coef': model coefficients for each X variable
                     as a function of alpha using Ridge
                 - 'alpha_vs_penalty': penalty factors
@@ -2423,6 +2506,7 @@ def ridge(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_model, vif_ridge, detect_dummy_variables
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -2439,7 +2523,18 @@ def ridge(X, y, **kwargs):
    
     # Define default values of input data arguments
     defaults = {
-        'standardize': True,
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'alpha_min': 1.0e-3,
         'alpha_max': 1.0e3,
         'n_alpha': 100,
@@ -2456,8 +2551,43 @@ def ridge(X, y, **kwargs):
     #     print('Check X: Ridge can not handle dummies. Try using lasso if X has dummies.','\n')
     #     sys.exit()
 
-    from PyMLR import check_X_y
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
     X, y = check_X_y(X,y)
+
+    # Set start time for calculating run time
+    start_time = time.time()
+
+    # check if X contains dummy variables
+    X_has_dummies = detect_dummy_variables(X)
+
+    # Initialize output dictionaries
+    model_objects = {}
+    model_outputs = {}
+
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
+
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
+    else:
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
 
     ctrl = data['alpha_min'] > 0 
     if not ctrl:
@@ -2477,30 +2607,6 @@ def ridge(X, y, **kwargs):
     print('Fitting Ridge regression models, please wait ...')
     if data['verbose'] == 'on' or data['verbose'] == 1:
         print('')
-
-    # Set start time for calculating run time
-    start_time = time.time()
-
-    # Initialize output dictionaries
-    model_objects = {}
-    model_outputs = {}
-
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
-
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
-    else:
-        X = X.copy()
 
     # Calculate the role of alpha vs coefficient values
     alpha_min = np.log10(data['alpha_min'])
@@ -2891,9 +2997,14 @@ def elastic(X, y, **kwargs):
     **kwargs (optional keyword arguments):
         nfolds= number of folds to use for cross-validation (CV)
             (default nfolds=20)
-        standardize= True (default) or False where
-            True: standardize X using sklearn.preprocessing StandardScaler
-            False: do not standardize X
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         alpha_min= minimum value of range of alphas to evaluate (default=1e-3)
         alpha_max= maximum value of range of alphas to evaluate (default=1e3)
         n_alpha= number of log-spaced alphas to evaluate (default=100)
@@ -2924,8 +3035,13 @@ def elastic(X, y, **kwargs):
         model_objects, model_outputs
             model_objects is the fitted model object
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'alpha_vs_coef': model coefficients for each X variable
                     as a function of alpha using ElasticNet
                 - 'y_pred': Predicted y values
@@ -2951,6 +3067,7 @@ def elastic(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_model, detect_dummy_variables
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -2967,7 +3084,18 @@ def elastic(X, y, **kwargs):
     # Define default values of input data arguments
     defaults = {
         'nfolds': 20,
-        'standardize': True,
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'alpha_min': 1.0e-3,
         'alpha_max': 1.0e3,
         'n_alpha': 100,
@@ -2978,8 +3106,43 @@ def elastic(X, y, **kwargs):
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
 
-    from PyMLR import check_X_y
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
     X, y = check_X_y(X,y)
+
+    # Set start time for calculating run time
+    start_time = time.time()
+
+    # check if X contains dummy variables
+    X_has_dummies = detect_dummy_variables(X)
+
+    # Initialize output dictionaries
+    model_objects = {}
+    model_outputs = {}
+
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
+
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
+    else:
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
 
     ctrl = data['alpha_min'] > 0 
     if not ctrl:
@@ -3003,35 +3166,6 @@ def elastic(X, y, **kwargs):
     print('Fitting Elastic Net regression model, please wait ...')
     if data['verbose'] == 'on' or data['verbose'] == 1:
         print('')
-
-    # Set start time for calculating run time
-    start_time = time.time()
-
-    # check if X contains dummy variables
-    X_has_dummies = detect_dummy_variables(X)
-
-    # Initialize output dictionaries
-    model_objects = {}
-    model_outputs = {}
-    # model_outputs['y'] = y  # echo input y
-    # model_outputs['X'] = X  # echo input X
-
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
-
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
-    else:
-        X = X.copy()
 
     # ElasticNetCV k-fold cross validation
     model_cv = ElasticNetCV(l1_ratio=data['l1_ratio'], cv=data['nfolds'], 
@@ -3281,9 +3415,14 @@ def stacking(X, y, **kwargs):
 
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
-        standardize= True (default) or False where
-            True: standardize X using sklearn.preprocessing StandardScaler
-            False: do not standardize X (only used if X is already standardized)
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         random_state= (default random_state=42)        - initial random seed
 
         meta= 'linear' (default), 'lasso', or 'elastic' 
@@ -3316,8 +3455,13 @@ def stacking(X, y, **kwargs):
         model_objects, model_outputs
             model_objects is the fitted model object
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'y_pred': Predicted y values
                 - 'residuals': Residuals (y-y_pred) for each of the four methods
                 - 'strength': Intercept and coefficients of the 
@@ -3337,6 +3481,7 @@ def stacking(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -3362,7 +3507,18 @@ def stacking(X, y, **kwargs):
     # Define default values of input data arguments
     defaults = {
         'random_state': 42,
-        'standardize': True,
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'meta': 'ridge',
         'lasso': 'on',
         'ridge': 'on',
@@ -3384,8 +3540,43 @@ def stacking(X, y, **kwargs):
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
 
-    from PyMLR import check_X_y
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
     X, y = check_X_y(X,y)
+
+    # Set start time for calculating run time
+    start_time = time.time()
+
+    # check if X contains dummy variables
+    X_has_dummies = detect_dummy_variables(X)
+
+    # Initialize output dictionaries
+    model_objects = {}
+    model_outputs = {}
+
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
+
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
+    else:
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
 
     ctrl = data['alpha_min'] > 0 
     if not ctrl:
@@ -3409,33 +3600,6 @@ def stacking(X, y, **kwargs):
     print('Fitting StackingRegressor models, please wait ...')
     if data['verbose'] == 'on':
         print('')
-
-    # Set start time for calculating run time
-    start_time = time.time()
-
-    # check if X contains dummy variables
-    X_has_dummies = detect_dummy_variables(X)
-
-    # Initialize output dictionaries
-    model_objects = {}
-    model_outputs = {}
-
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
-
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
-    else:
-        X = X.copy()
     
     # Calculate alphas for RidgeCV
     alpha_min = np.log10(data['alpha_min'])
@@ -3648,9 +3812,14 @@ def svr(X, y, **kwargs):
 
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
-        standardize= True (default) or False where
-            True: standardize X using sklearn.preprocessing StandardScaler
-            False: do not standardize X (only used if X is already standardized)
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         verbose= 'on' (default) or 'off' 
         kernel= 'rbf'      # ‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’} 
                            # or callable, default=’rbf’
@@ -3672,8 +3841,13 @@ def svr(X, y, **kwargs):
         model_objects, model_outputs
             model_objects is the fitted model object
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'y_pred': Predicted y values
                 - 'residuals': Residuals (y-y_pred) for each of the four methods
                 - 'stats': Regression statistics for each model
@@ -3691,6 +3865,7 @@ def svr(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -3715,7 +3890,18 @@ def svr(X, y, **kwargs):
 
     # Define default values of input data arguments
     defaults = {
-        'standardize': True,
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
         'kernel': 'rbf',
         'degree': 3,
@@ -3732,8 +3918,43 @@ def svr(X, y, **kwargs):
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
 
-    from PyMLR import check_X_y
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
     X, y = check_X_y(X,y)
+
+    # Set start time for calculating run time
+    start_time = time.time()
+
+    # check if X contains dummy variables
+    X_has_dummies = detect_dummy_variables(X)
+
+    # Initialize output dictionaries
+    model_objects = {}
+    model_outputs = {}
+
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
+
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
+    else:
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
 
     ctrl = data['gamma']=='scale' or data['gamma']=='auto' or data['gamma']>0   
     if not ctrl:
@@ -3749,33 +3970,6 @@ def svr(X, y, **kwargs):
     print('Fitting SVR model, please wait ...')
     if data['verbose'] == 'on':
         print('')
-
-    # Set start time for calculating run time
-    start_time = time.time()
-
-    # check if X contains dummy variables
-    X_has_dummies = detect_dummy_variables(X)
-
-    # Initialize output dictionaries
-    model_objects = {}
-    model_outputs = {}
-
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
-
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
-    else:
-        X = X.copy()
     
     model = SVR(
         gamma= data['gamma'],
@@ -3978,9 +4172,14 @@ def svr_auto(X, y, **kwargs):
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
         verbose= 'on' (default) or 'off'
-        standardize= True (default) or False where
-            True: standardize X using sklearn.preprocessing StandardScaler
-            False: do not standardize X (only used if X is already standardized)
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         random_state= 42,                 # Random seed for reproducibility.
         n_trials= 50,                     # number of optuna trials
         n_splits= 5,                      # number of splits for KFold CV
@@ -4015,8 +4214,13 @@ def svr_auto(X, y, **kwargs):
         fitted_model, model_outputs
             model_objects is the fitted model object
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'optuna_study': optimzed optuna study object
                 - 'best_params': best model hyper-parameters found by optuna
                 - 'y_pred': Predicted y values
@@ -4036,6 +4240,7 @@ def svr_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -4061,7 +4266,18 @@ def svr_auto(X, y, **kwargs):
         'n_trials': 50,                     # number of optuna trials
         'n_splits': 5,          # number of splits for KFold CV
         'gpu': True,                        # Autodetect to use gpu if present
-        'standardize': True,
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
 
         # params for model that are optimized by optuna
@@ -4094,6 +4310,10 @@ def svr_auto(X, y, **kwargs):
     else:
         data['device'] = 'cpu'
 
+    # copy X and y to avoid altering the originals
+    X = X.copy()
+    y = y.copy()
+    
     from PyMLR import check_X_y
     X, y = check_X_y(X,y)
 
@@ -4113,22 +4333,16 @@ def svr_auto(X, y, **kwargs):
     model_objects = {}
     model_outputs = {}
 
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
 
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
-    else:
-        X = X.copy()
+    data['feature_names'] = X.columns
 
     # extra params in addition to those being optimized by optuna
     extra_params = {
@@ -4268,9 +4482,14 @@ def sgd(X, y, **kwargs):
 
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
-        standardize= True (default) or False where
-            True: standardize X using sklearn.preprocessing StandardScaler
-            False: do not standardize X (only used if X is already standardized)
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         random_state= (default random_state=42)        - initial random seed
         verbose= 'on' (default) or 'off'
 
@@ -4280,8 +4499,13 @@ def sgd(X, y, **kwargs):
         model_objects, model_outputs
             model_objects is the fitted model object
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'y_pred': Predicted y values
                 - 'residuals': Residuals (y-y_pred) for each of the four methods
                 - 'stats': Regression statistics for each model
@@ -4299,6 +4523,7 @@ def sgd(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -4324,21 +4549,30 @@ def sgd(X, y, **kwargs):
     # Define default values of input data arguments
     defaults = {
         'random_state': 42,
-        'standardize': True,
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on'
         }
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
 
-    from PyMLR import check_X_y
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
     X, y = check_X_y(X,y)
-
-    # Suppress warnings
-    warnings.filterwarnings('ignore')
-    print('Fitting SGDRegressor model, please wait ...')
-    if data['verbose'] == 'on':
-        print('')
 
     # Set start time for calculating run time
     start_time = time.time()
@@ -4350,22 +4584,32 @@ def sgd(X, y, **kwargs):
     model_objects = {}
     model_outputs = {}
 
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
 
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
     else:
-        X = X.copy()
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
+
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
+    print('Fitting SGDRegressor model, please wait ...')
+    if data['verbose'] == 'on':
+        print('')
     
     model = SGDRegressor(
         random_state=data['random_state']).fit(X,y)
@@ -4505,9 +4749,14 @@ def gbr(X, y, **kwargs):
 
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
-        standardize= True (default) or False where
-            True: standardize X using sklearn.preprocessing StandardScaler
-            False: do not standardize X (only used if X is already standardized)
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         random_state= (default random_state=42)        - initial random seed
         loss='squared_error',          # Loss function to optimize. 
                                        # Default is 'squared_error' (mean squared error).
@@ -4551,8 +4800,13 @@ def gbr(X, y, **kwargs):
         model_objects, model_outputs
             model_objects is the fitted model object 
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'y_pred': Predicted y values
                 - 'residuals': Residuals (y-y_pred) for each of the four methods
                 - 'stats': Regression statistics for each model
@@ -4570,6 +4824,7 @@ def gbr(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -4588,7 +4843,18 @@ def gbr(X, y, **kwargs):
 
     # Define default values of input data arguments
     defaults = {
-        'standardize': True,
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
 
         # [min, max] range of params optimized by optuna
@@ -4620,14 +4886,12 @@ def gbr(X, y, **kwargs):
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
 
-    from PyMLR import check_X_y
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
     X, y = check_X_y(X,y)
-
-    # Suppress warnings
-    warnings.filterwarnings('ignore')
-    print('Fitting GradientBoostingRegressor model, please wait ...')
-    if data['verbose'] == 'on':
-        print('')
 
     # Set start time for calculating run time
     start_time = time.time()
@@ -4639,22 +4903,32 @@ def gbr(X, y, **kwargs):
     model_objects = {}
     model_outputs = {}
 
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
 
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
     else:
-        X = X.copy()
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
+
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
+    print('Fitting GradientBoostingRegressor model, please wait ...')
+    if data['verbose'] == 'on':
+        print('')
 
     fitted_model = GradientBoostingRegressor(
         random_state=data['random_state'],
@@ -4881,7 +5155,14 @@ def gbr_auto(X, y, **kwargs):
     **kwargs (optional keyword arguments):
         random_state= 42,    # initial random seed
         n_trials= 50,         # number of optuna trials
-        standardize= True,    # standardize X
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         verbose= 'on',        # 'on' to display summary stats and residual plots
         n_splits= 5,          # number of splits for KFold CV
         gpu= True,            # Autodetect to use gpu if present
@@ -4921,8 +5202,13 @@ def gbr_auto(X, y, **kwargs):
         fitted_model, model_outputs
             model_objects is the fitted model object
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'optuna_study': optimzed optuna study object
                 - 'best_params': best model hyper-parameters found by optuna
                 - 'y_pred': Predicted y values
@@ -4942,6 +5228,7 @@ def gbr_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -4964,7 +5251,18 @@ def gbr_auto(X, y, **kwargs):
     defaults = {
         'random_state':  42,    # initial random seed
         'n_trials': 50,         # number of optuna trials
-        'standardize': True,    # standardize X
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',        # 'on' to display summary stats and residual plots
         'n_splits': 5,          # number of splits for KFold CV
         'gpu': True,            # Autodetect to use gpu if present
@@ -5019,12 +5317,12 @@ def gbr_auto(X, y, **kwargs):
     else:
         data['device'] = 'cpu'
 
+    # copy X and y to avoid altering the originals
+    X = X.copy()
+    y = y.copy()
+    
     from PyMLR import check_X_y
     X, y = check_X_y(X,y)
-
-    ctrl = data['n_jobs']==1
-    if not ctrl:
-        print('Warning: for reproducible results use n_jobs=1')
 
     # Suppress warnings
     warnings.filterwarnings('ignore')
@@ -5042,22 +5340,16 @@ def gbr_auto(X, y, **kwargs):
     model_objects = {}
     model_outputs = {}
 
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
 
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
-    else:
-        X = X.copy()
+    data['feature_names'] = X.columns
 
     extra_params = {
         'random_state': data['random_state'],         
@@ -5276,8 +5568,10 @@ def xgb(X, y, **kwargs):
 
     """
 
-    from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import check_X_y, preprocess_train, preprocess_test, fitness_metrics
+    from PyMLR import stats_given_y_pred
+    from PyMLR import detect_dummy_variables, detect_gpu
+    from PyMLR import check_X_y, fitness_metrics
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -5308,8 +5602,18 @@ def xgb(X, y, **kwargs):
         'threshold': 10,              # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
-        'standardize': True,
         'verbose': 'on',
         'gpu': True,                  # Autodetect if the computer has a gpu, if no gpu is detected then cpu will be used
 
@@ -5388,7 +5692,7 @@ def xgb(X, y, **kwargs):
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
-        data['selected_features'] = X.columns
+        data['selected_features'] = X.columns.to_list()
     else:
         X = X[data['selected_features']]
 
@@ -5835,7 +6139,6 @@ def xgb_auto(X, y, **kwargs):
             X = data['preprocess_result']['df_processed']
 
     data['feature_names'] = X.columns
-    # print('after preprocess_train: ',X.shape, y.shape,X.columns)
     
     extra_params = {
         'random_state': data['random_state'],         
@@ -5999,9 +6302,14 @@ def lgbm(X, y, **kwargs):
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
         verbose= 'on' (default) or 'off'
-        standardize= True (default) or False where
-            True: standardize X using sklearn.preprocessing StandardScaler
-            False: do not standardize X (only used if X is already standardized)
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         boosting_type='gbdt',  # Gradient Boosting Decision Tree (default boosting method)
         num_leaves=31,         # Maximum number of leaves in one tree
         max_depth=-1,          # No limit on tree depth (-1 means no limit)
@@ -6029,8 +6337,13 @@ def lgbm(X, y, **kwargs):
         fitted_model, model_outputs
             model_objects is the fitted model object
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'y_pred': Predicted y values
                 - 'residuals': Residuals (y-y_pred) for each of the four methods
                 - 'stats': Regression statistics for each model
@@ -6048,6 +6361,7 @@ def lgbm(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -6068,7 +6382,18 @@ def lgbm(X, y, **kwargs):
     # Define default values of input data arguments
     defaults = {
         'random_state': 42,       # Random seed for reproducibility
-        'standardize': True,
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
         'verbosity': -1,  # -1 to turn off lgbm warnings
         'boosting_type': 'gbdt',  # Gradient Boosting Decision Tree (default boosting method)
@@ -6094,14 +6419,12 @@ def lgbm(X, y, **kwargs):
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
 
-    from PyMLR import check_X_y
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
     X, y = check_X_y(X,y)
-
-    # Suppress warnings
-    warnings.filterwarnings('ignore')
-    print('Fitting LGBMRegressor model, please wait ...')
-    if data['verbose'] == 'on':
-        print('')
 
     # Set start time for calculating run time
     start_time = time.time()
@@ -6113,22 +6436,32 @@ def lgbm(X, y, **kwargs):
     model_objects = {}
     model_outputs = {}
 
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
 
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
     else:
-        X = X.copy()
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
+
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
+    print('Fitting LGBMRegressor model, please wait ...')
+    if data['verbose'] == 'on':
+        print('')
 
     fitted_model = LGBMRegressor(
         random_state= data['random_state'],     
@@ -6276,7 +6609,14 @@ def catboost(X, y, **kwargs):
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
         random_state= 42,    # initial random seed
-        standardize= True,    # standardize X
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         verbose= 'on',        # 'on' to display summary stats and residual plots
         gpu= False,           # Autodetect to use gpu if present
         thread_count= -1,     # number of CPU cores to use (-1 for all cores)
@@ -6304,8 +6644,13 @@ def catboost(X, y, **kwargs):
         model_objects, model_outputs
             model_objects is the fitted model object 
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'y_pred': Predicted y values
                 - 'residuals': Residuals (y-y_pred) for each of the four methods
                 - 'stats': Regression statistics for each model
@@ -6323,6 +6668,7 @@ def catboost(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -6342,7 +6688,18 @@ def catboost(X, y, **kwargs):
     # Define default values of input data arguments
     defaults = {
         'random_state': 42,     # Random seed for reproducibility.
-        'standardize': True,    # standardize X
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',        # 'on' to display stats and residual plots
         'gpu': False,           # Autodetect to use gpu if present
         'devices': '0',         # Which GPU to use (0 to use first GPU)
@@ -6374,14 +6731,12 @@ def catboost(X, y, **kwargs):
     else:
         data['device'] = 'CPU'
     
-    from PyMLR import check_X_y
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
     X, y = check_X_y(X,y)
-
-    # Suppress warnings
-    warnings.filterwarnings('ignore')
-    print('Fitting CatBoostRegressor model, please wait ...')
-    if data['verbose'] == 'on':
-        print('')
 
     # Set start time for calculating run time
     start_time = time.time()
@@ -6393,22 +6748,32 @@ def catboost(X, y, **kwargs):
     model_objects = {}
     model_outputs = {}
 
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
 
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
     else:
-        X = X.copy()
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
+
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
+    print('Fitting CatBoostRegressor model, please wait ...')
+    if data['verbose'] == 'on':
+        print('')
 
     params = {        
         # [min, max] range of params optimized by optuna
@@ -6626,7 +6991,14 @@ def catboost_auto(X, y, **kwargs):
     **kwargs (optional keyword arguments):
         random_state= 42,    # initial random seed
         n_trials= 50,         # number of optuna trials
-        standardize= True,    # standardize X
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         verbose= 'on',        # 'on' to display summary stats and residual plots
         n_splits= 5,          # number of splits for KFold CV
         gpu= False,           # Autodetect to use gpu if present
@@ -6655,8 +7027,13 @@ def catboost_auto(X, y, **kwargs):
         fitted_model, model_outputs
             model_objects is the fitted model object
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'optuna_study': optimzed optuna study object
                 - 'best_params': best model hyper-parameters found by optuna
                 - 'y_pred': Predicted y values
@@ -6676,6 +7053,7 @@ def catboost_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -6699,7 +7077,18 @@ def catboost_auto(X, y, **kwargs):
     defaults = {
         'random_state': 42,     # Random seed for reproducibility.
         'n_trials': 50,         # number of optuna trials
-        'standardize': True,    # standardize X
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',        # 'on' to display stats and residual plots
         'gpu': False,           # Autodetect to use gpu if present
         'n_splits': 5,          # number of splits for KFold CV
@@ -6731,6 +7120,10 @@ def catboost_auto(X, y, **kwargs):
     else:
         data['device'] = 'CPU'
 
+    # copy X and y to avoid altering the originals
+    X = X.copy()
+    y = y.copy()
+    
     from PyMLR import check_X_y
     X, y = check_X_y(X,y)
 
@@ -6750,22 +7143,16 @@ def catboost_auto(X, y, **kwargs):
     model_objects = {}
     model_outputs = {}
 
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
 
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
-    else:
-        X = X.copy()
+    data['feature_names'] = X.columns
 
     extra_params = {
         'random_seed': data['random_state'],         
@@ -6906,7 +7293,14 @@ def forest(X, y, **kwargs):
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
         n_trials= 50,                     # number of optuna trials
-        standardize= True,
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         verbose= 'on',                    # 'on' to display all 
         gpu= True,                        # Autodetect to use gpu if present
         n_splits= 5,                      # number of splits for KFold CV
@@ -6949,8 +7343,13 @@ def forest(X, y, **kwargs):
         fitted_model, model_outputs
             model_objects is the fitted model object
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'y_pred': Predicted y values
                 - 'residuals': Residuals (y-y_pred) for each of the four methods
                 - 'stats': Regression statistics for each model
@@ -6968,6 +7367,7 @@ def forest(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -6987,7 +7387,18 @@ def forest(X, y, **kwargs):
     # Define default values of input data arguments
     defaults = {
         'n_trials': 50,                     # number of optuna trials
-        'standardize': True,
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
         'gpu': True,                        # Autodetect to use gpu if present
         'n_splits': 5,                      # number of splits for KFold CV
@@ -7037,14 +7448,12 @@ def forest(X, y, **kwargs):
     else:
         data['device'] = 'cpu'
 
-    from PyMLR import check_X_y
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
     X, y = check_X_y(X,y)
-
-    # Suppress warnings
-    warnings.filterwarnings('ignore')
-    print('Fitting XGBRegressor model, please wait ...')
-    if data['verbose'] == 'on':
-        print('')
 
     # Set start time for calculating run time
     start_time = time.time()
@@ -7056,22 +7465,32 @@ def forest(X, y, **kwargs):
     model_objects = {}
     model_outputs = {}
 
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
 
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
     else:
-        X = X.copy()
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
+
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
+    print('Fitting XGBRegressor model, please wait ...')
+    if data['verbose'] == 'on':
+        print('')
 
     params = {
         'n_estimators': data['n_estimators'],               
@@ -7267,7 +7686,14 @@ def forest_auto(X, y, **kwargs):
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
         n_trials= 50,                     # number of optuna trials
-        standardize= True,
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         verbose= 'on',                    # 'on' to display all 
         gpu= True,                        # Autodetect to use gpu if present
         n_splits= 5,                      # number of splits for KFold CV
@@ -7310,8 +7736,13 @@ def forest_auto(X, y, **kwargs):
         fitted_model, model_outputs
             model_objects is the fitted model object
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': True scaler was used for X, False scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'optuna_study': optimzed optuna study object
                 - 'best_params': best model hyper-parameters found by optuna
                 - 'y_pred': Predicted y values
@@ -7331,6 +7762,7 @@ def forest_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -7350,7 +7782,18 @@ def forest_auto(X, y, **kwargs):
     # Define default values of input data arguments
     defaults = {
         'n_trials': 50,                     # number of optuna trials
-        'standardize': True,
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
         'gpu': True,                        # Autodetect to use gpu if present
         'n_splits': 5,                      # number of splits for KFold CV
@@ -7401,6 +7844,10 @@ def forest_auto(X, y, **kwargs):
     else:
         data['device'] = 'cpu'
 
+    # copy X and y to avoid altering the originals
+    X = X.copy()
+    y = y.copy()
+    
     from PyMLR import check_X_y
     X, y = check_X_y(X,y)
 
@@ -7420,22 +7867,16 @@ def forest_auto(X, y, **kwargs):
     model_objects = {}
     model_outputs = {}
 
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
 
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
-    else:
-        X = X.copy()
+    data['feature_names'] = X.columns
 
     extra_params = {
         'verbose': 0,                 
@@ -7579,7 +8020,14 @@ def knn(X, y, **kwargs):
         # general params that are user-specified
         random_state= 42,                 # random seed for reproducibility
         n_trials= 50,                     # number of optuna trials
-        standardize= True,                # standardize X
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         verbose= 'on',
         gpu= True,                        # Autodetect to use gpu if present
 
@@ -7606,8 +8054,13 @@ def knn(X, y, **kwargs):
         fitted_model, model_outputs
             model_objects is the fitted model object
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': 'on' scaler was used for X, 'off' scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'y_pred': Predicted y values
                 - 'residuals': Residuals (y-y_pred) for each of the four methods
                 - 'stats': Regression statistics for each model
@@ -7625,6 +8078,7 @@ def knn(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -7648,7 +8102,18 @@ def knn(X, y, **kwargs):
         # general params that are user-specified
         'random_state': 42,                 # random seed for reproducibility
         'n_trials': 50,                     # number of optuna trials
-        'standardize': True,                # standardize X
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
         'gpu': True,                        # Autodetect to use gpu if present
         # 'n_splits': 5,                      # number of splits for KFold CV
@@ -7688,14 +8153,12 @@ def knn(X, y, **kwargs):
     else:
         data['device'] = 'cpu'
 
-    from PyMLR import check_X_y
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
     X, y = check_X_y(X,y)
-
-    # Suppress warnings
-    warnings.filterwarnings('ignore')
-    print('Fitting KNeighborsRegressor model, please wait ...')
-    if data['verbose'] == 'on':
-        print('')
 
     # Set start time for calculating run time
     start_time = time.time()
@@ -7707,22 +8170,32 @@ def knn(X, y, **kwargs):
     model_objects = {}
     model_outputs = {}
 
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    # model_outputs['X_scaled'] = X_scaled                 # standardized X
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # 'on': X_scaled was used to fit, 'off': X was used
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
 
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
     else:
-        X = X.copy()
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
+
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
+    print('Fitting KNeighborsRegressor model, please wait ...')
+    if data['verbose'] == 'on':
+        print('')
 
     if data['pca_transform'] and data['pca'] == None:
         # fit new PCA transformer
@@ -7992,7 +8465,14 @@ def knn_auto(X, y, **kwargs):
         # general params that are user-specified
         random_state= 42,                 # random seed for reproducibility
         n_trials= 50,                     # number of optuna trials
-        standardize= True,                # standardize X
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
         verbose= 'on',
         gpu= True,                        # Autodetect to use gpu if present
         n_splits= 5,                      # number of splits for KFold CV
@@ -8023,8 +8503,13 @@ def knn_auto(X, y, **kwargs):
         fitted_model, model_outputs
             model_objects is the fitted model object
             model_outputs is a dictionary of the following outputs: 
-                - 'scaler': sklearn.preprocessing StandardScaler for X
-                - 'standardize': 'on' scaler was used for X, 'off' scaler not used
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
                 - 'optuna_study': optimzed optuna study object
                 - 'best_trial': best trial from the optuna study
                 - 'feature_selection' = best_trial option to select features (True, False)
@@ -8050,6 +8535,7 @@ def knn_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test
     import time
     import pandas as pd
     import numpy as np
@@ -8073,7 +8559,18 @@ def knn_auto(X, y, **kwargs):
         # general params that are user-specified
         'random_state': 42,                 # random seed for reproducibility
         'n_trials': 50,                     # number of optuna trials
-        'standardize': True,                # standardize X
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
         'gpu': True,                        # Autodetect to use gpu if present
         'n_splits': 5,                      # number of splits for KFold CV
@@ -8103,12 +8600,6 @@ def knn_auto(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
-
-    # store the names of the features
-    if isinstance(X, pd.DataFrame):
-        data['feature_names'] = X.columns
-    else:
-        data['feature_names'] = [f"X_{i}" for i in range(X.shape[1])]
      
     # Auto-detect if GPU is present and use GPU if present
     if data['gpu']:
@@ -8120,6 +8611,10 @@ def knn_auto(X, y, **kwargs):
     else:
         data['device'] = 'cpu'
 
+    # copy X and y to avoid altering the originals
+    X = X.copy()
+    y = y.copy()
+    
     from PyMLR import check_X_y
     X, y = check_X_y(X,y)
 
@@ -8139,21 +8634,16 @@ def knn_auto(X, y, **kwargs):
     model_objects = {}
     model_outputs = {}
 
-    # Standardized X (X_scaled)
-    scaler = StandardScaler().fit(X)
-    X_scaled = scaler.transform(X)
-    # Convert scaled arrays into pandas dataframes with same column names as X
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
-    # Copy index from unscaled to scaled dataframes
-    X_scaled.index = X.index
-    model_outputs['scaler'] = scaler                     
-    model_outputs['standardize'] = data['standardize']   
-    
-    # Specify X to be used for fitting the models 
-    if data['standardize']:
-        X = X_scaled.copy()
-    else:
-        X = X.copy()
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
+
+    data['feature_names'] = X.columns
 
     extra_params = {
         # extra_params that are optional user-specified
@@ -8431,7 +8921,7 @@ def test_model_logistic(
     X, y = check_X_y(X, y)
     
     if selected_features==None:
-        selected_features = X.columns
+        selected_features = X.columns.to_list()
 
     if preprocess_result!=None:
         X = X.copy()    # copy X to avoid changing the original
@@ -8553,7 +9043,7 @@ def logistic(X, y, **kwargs):
     from PyMLR import preprocess_train, preprocess_test 
     from PyMLR import fitness_metrics_logistic, pseudo_r2
     from PyMLR import plot_confusion_matrix, plot_roc_auc
-    from PyMLR import detect_gpu 
+    from PyMLR import detect_dummy_variables, detect_gpu
     from PyMLR import check_X_y
     import time
     import pandas as pd
@@ -8650,7 +9140,7 @@ def logistic(X, y, **kwargs):
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
-        data['selected_features'] = X.columns
+        data['selected_features'] = X.columns.to_list()
     else:
         X = X[data['selected_features']]
 
@@ -8882,10 +9372,10 @@ def logistic_auto(X, y, **kwargs):
 
     """
 
-    from PyMLR import preprocess_train 
+    from PyMLR import preprocess_train, preprocess_test
     from PyMLR import fitness_metrics_logistic, pseudo_r2
     from PyMLR import plot_confusion_matrix, plot_roc_auc
-    from PyMLR import detect_gpu 
+    from PyMLR import detect_dummy_variables, detect_gpu
     import time
     import pandas as pd
     import numpy as np
@@ -8910,14 +9400,18 @@ def logistic_auto(X, y, **kwargs):
 
         # general params that are user-specified
         'n_trials': 50,             # Number of optuna trials
-        'preprocess': True,         # Apply OneHotEncoder and StandardScaler
-        'preprocess_result': None,  # dict of  the following result from 
-                                    # preprocess_train if available:         
-                                    # - encoder          (OneHotEncoder) 
-                                    # - scaler           (StandardScaler)
-                                    # - categorical_cols (categorical columns)
-                                    # - non_numeric_cats (non-numeric cats)
-                                    # - continuous_cols  (continuous columns)
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
         'gpu': True,                # Autodetect to use gpu if present
         'n_splits': 5,              # number of splits for KFold CV
@@ -8954,9 +9448,7 @@ def logistic_auto(X, y, **kwargs):
         data['device'] = 'cpu'
 
     from PyMLR import check_X_y
-    # print('before preprocess_train: ',X.shape, y.shape)
     X, y = check_X_y(X,y)
-    # print('after check_X_y: ',X.shape, y.shape,X.columns)
 
     # Suppress warnings
     warnings.filterwarnings('ignore')
