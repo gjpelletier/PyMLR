@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.13"
+__version__ = "1.2.14"
 
 def check_X_y(X,y):
 
@@ -1416,9 +1416,9 @@ def stepwise(X, y, **kwargs):
     
     model_object = model
     # model_output = {}
-    scaler = StandardScaler().fit(X)
-    model_outputs['scaler'] = scaler
-    model_outputs['standardize'] = data['standardize']
+    # scaler = StandardScaler().fit(X)
+    # model_outputs['scaler'] = scaler
+    # model_outputs['standardize'] = data['standardize']
     model_outputs['selected_features'] = selected_features
     model_outputs['step_features'] = step_features
     model_outputs['y_pred'] = model.predict(sm.add_constant(X[selected_features]))
@@ -3751,8 +3751,8 @@ def stacking(X, y, **kwargs):
     stats = stats_given_y_pred(X,y,y_pred)
     
     # model objects and outputs returned by stacking
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
+    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
     model_outputs['y_pred'] = stats['y_pred']
     model_outputs['residuals'] = stats['residuals']
     model_objects = stacking_regressor
@@ -4076,8 +4076,8 @@ def svr(X, y, **kwargs):
     stats = stats_given_y_pred(X,y,y_pred)
     
     # model objects and outputs returned by stacking
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
+    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
     model_outputs['y_pred'] = stats['y_pred']
     model_outputs['residuals'] = stats['residuals']
     model_objects = model
@@ -4463,8 +4463,8 @@ def svr_auto(X, y, **kwargs):
     stats = stats_given_y_pred(X,y,y_pred)
     
     # model objects and outputs returned by stacking
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
+    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
     model_outputs['y_pred'] = stats['y_pred']
     model_outputs['residuals'] = stats['residuals']
     
@@ -4705,8 +4705,8 @@ def sgd(X, y, **kwargs):
     stats = stats_given_y_pred(X,y,y_pred)
     
     # model objects and outputs returned by stacking
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
+    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
     model_outputs['y_pred'] = stats['y_pred']
     model_outputs['residuals'] = stats['residuals']
     model_objects = model
@@ -5044,8 +5044,8 @@ def gbr(X, y, **kwargs):
     stats = stats_given_y_pred(X,y,y_pred)
     
     # model objects and outputs returned by stacking
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
+    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
     model_outputs['y_pred'] = stats['y_pred']
     model_outputs['residuals'] = stats['residuals']
     # model_objects = model
@@ -5476,8 +5476,8 @@ def gbr_auto(X, y, **kwargs):
     stats = stats_given_y_pred(X,y,y_pred)
     
     # model objects and outputs returned by stacking
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
+    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
     model_outputs['y_pred'] = stats['y_pred']
     model_outputs['residuals'] = stats['residuals']
     # model_objects = model
@@ -6576,8 +6576,8 @@ def lgbm(X, y, **kwargs):
     stats = stats_given_y_pred(X,y,y_pred)
     
     # model objects and outputs returned by stacking
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
+    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
     model_outputs['y_pred'] = stats['y_pred']
     model_outputs['residuals'] = stats['residuals']
     # model_objects = model
@@ -6893,8 +6893,8 @@ def catboost(X, y, **kwargs):
     stats = stats_given_y_pred(X,y,y_pred)
     
     # model objects and outputs returned by stacking
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
+    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
     model_outputs['y_pred'] = stats['y_pred']
     model_outputs['residuals'] = stats['residuals']
     # model_objects = model
@@ -7269,8 +7269,8 @@ def catboost_auto(X, y, **kwargs):
     stats = stats_given_y_pred(X,y,y_pred)
     
     # model objects and outputs returned by stacking
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
+    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
     model_outputs['y_pred'] = stats['y_pred']
     model_outputs['residuals'] = stats['residuals']
     # model_objects = model
@@ -7606,8 +7606,8 @@ def forest(X, y, **kwargs):
     stats = stats_given_y_pred(X,y,y_pred)
     
     # model objects and outputs returned by stacking
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
+    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
     model_outputs['y_pred'] = stats['y_pred']
     model_outputs['residuals'] = stats['residuals']
     # model_objects = model
@@ -7993,8 +7993,8 @@ def forest_auto(X, y, **kwargs):
     stats = stats_given_y_pred(X,y,y_pred)
     
     # model objects and outputs returned by stacking
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
+    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
+    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
     model_outputs['y_pred'] = stats['y_pred']
     model_outputs['residuals'] = stats['residuals']
     # model_objects = model
@@ -8327,8 +8327,8 @@ def knn(X, y, **kwargs):
     stats = stats_given_y_pred(X,y,y_pred)
     
     # model objects and outputs returned by stacking
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # 'on': X_scaled was used to fit, 'off': X was used
+    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
+    # model_outputs['standardize'] = data['standardize']   # 'on': X_scaled was used to fit, 'off': X was used
     model_outputs['y_pred'] = stats['y_pred']
     model_outputs['residuals'] = stats['residuals']
     # model_objects = model
@@ -8800,8 +8800,8 @@ def knn_auto(X, y, **kwargs):
     stats = stats_given_y_pred(X,y,y_pred)
     
     # model objects and outputs returned by stacking
-    model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    model_outputs['standardize'] = data['standardize']   # 'on': X_scaled was used to fit, 'off': X was used
+    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
+    # model_outputs['standardize'] = data['standardize']   # 'on': X_scaled was used to fit, 'off': X was used
     model_outputs['y_pred'] = stats['y_pred']
     model_outputs['residuals'] = stats['residuals']
     # model_objects = model
