@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.11"
+__version__ = "1.2.12"
 
 def check_X_y(X,y):
 
@@ -455,12 +455,12 @@ def test_model(
     # check X and y and put into dataframe if needed
     X, y = check_X_y(X, y)
     
-    if selected_features==None:
-        selected_features = X.columns.to_list()
-
     if preprocess_result!=None:
         X = preprocess_test(X, preprocess_result)
         
+    if selected_features==None:
+        selected_features = X.columns.to_list()
+
     y_pred = model.predict(X[selected_features])    
 
     # Goodness of fit statistics
@@ -8977,12 +8977,12 @@ def test_model_logistic(
     # check X and y and put into dataframe if needed
     X, y = check_X_y(X, y)
     
-    if selected_features==None:
-        selected_features = X.columns.to_list()
-
     if preprocess_result!=None:
         X = X.copy()    # copy X to avoid changing the original
         X = preprocess_test(X, preprocess_result)
+
+    if selected_features==None:
+        selected_features = X.columns.to_list()
 
     # Goodness of fit statistics
     metrics = fitness_metrics_logistic(
