@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.9"
+__version__ = "1.2.10"
 
 def check_X_y(X,y):
 
@@ -837,7 +837,7 @@ def stepwise(X, y, **kwargs):
 
     """
 
-    from PyMLR import detect_dummy_variables
+    from PyMLR import detect_dummy_variables, check_X_y
     from PyMLR import preprocess_train, preprocess_test
     import statsmodels.api as sm
     from itertools import combinations
@@ -1752,7 +1752,7 @@ def lasso(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_model, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -1823,6 +1823,7 @@ def lasso(X, y, **kwargs):
         data['selected_features'] = X.columns.to_list()
     else:
         X = X[data['selected_features']]
+
 
     # save preprocess outputs
     model_outputs['preprocess'] = data['preprocess']   
@@ -2506,7 +2507,7 @@ def ridge(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_model, vif_ridge, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -3067,7 +3068,7 @@ def elastic(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_model, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -3481,7 +3482,7 @@ def stacking(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -3865,7 +3866,7 @@ def svr(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -4240,7 +4241,7 @@ def svr_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -4314,7 +4315,6 @@ def svr_auto(X, y, **kwargs):
     X = X.copy()
     y = y.copy()
     
-    from PyMLR import check_X_y
     X, y = check_X_y(X,y)
 
     # Suppress warnings
@@ -4523,7 +4523,7 @@ def sgd(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -4824,7 +4824,7 @@ def gbr(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -5228,7 +5228,7 @@ def gbr_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -5321,7 +5321,6 @@ def gbr_auto(X, y, **kwargs):
     X = X.copy()
     y = y.copy()
     
-    from PyMLR import check_X_y
     X, y = check_X_y(X,y)
 
     # Suppress warnings
@@ -6026,7 +6025,7 @@ def xgb_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test, fitness_metrics
+    from PyMLR import preprocess_train, preprocess_test, fitness_metrics, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -6110,7 +6109,6 @@ def xgb_auto(X, y, **kwargs):
     X = X.copy()
     y = y.copy()
     
-    from PyMLR import check_X_y
     X, y = check_X_y(X,y)
 
     # Suppress warnings
@@ -6361,7 +6359,7 @@ def lgbm(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -6668,7 +6666,7 @@ def catboost(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -7053,7 +7051,7 @@ def catboost_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -7124,7 +7122,6 @@ def catboost_auto(X, y, **kwargs):
     X = X.copy()
     y = y.copy()
     
-    from PyMLR import check_X_y
     X, y = check_X_y(X,y)
 
     # Suppress warnings
@@ -7367,7 +7364,7 @@ def forest(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -7762,7 +7759,7 @@ def forest_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -7848,7 +7845,6 @@ def forest_auto(X, y, **kwargs):
     X = X.copy()
     y = y.copy()
     
-    from PyMLR import check_X_y
     X, y = check_X_y(X,y)
 
     # Suppress warnings
@@ -8078,7 +8074,7 @@ def knn(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -8535,7 +8531,7 @@ def knn_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import preprocess_train, preprocess_test, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -8615,7 +8611,6 @@ def knn_auto(X, y, **kwargs):
     X = X.copy()
     y = y.copy()
     
-    from PyMLR import check_X_y
     X, y = check_X_y(X,y)
 
     # Suppress warnings
@@ -9375,7 +9370,7 @@ def logistic_auto(X, y, **kwargs):
     from PyMLR import preprocess_train, preprocess_test
     from PyMLR import fitness_metrics_logistic, pseudo_r2
     from PyMLR import plot_confusion_matrix, plot_roc_auc
-    from PyMLR import detect_dummy_variables, detect_gpu
+    from PyMLR import detect_dummy_variables, detect_gpu, check_X_y
     import time
     import pandas as pd
     import numpy as np
@@ -9447,7 +9442,6 @@ def logistic_auto(X, y, **kwargs):
     else:
         data['device'] = 'cpu'
 
-    from PyMLR import check_X_y
     X, y = check_X_y(X,y)
 
     # Suppress warnings
