@@ -1,3 +1,3 @@
 ## Examples 
 
-#### Jupyter Notebooks using PyMLR for Machine Learning Regression
+### Jupyter Notebooks using PyMLR for Machine Learning Regression
