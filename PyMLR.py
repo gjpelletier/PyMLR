@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.14"
+__version__ = "1.2.15"
 
 def check_X_y(X,y):
 
@@ -244,7 +244,8 @@ def preprocess_test(df_test, preprocess_results):
     Handles missing columns and unknown categories safely.
 
     Args:
-        df_test (pd.DataFrame): Input test DataFrame
+        df_test (pd.DataFrame): Input test DataFrame 
+            if df_test is not a dataframe it will be converted to dataframe
         preprocess_results (dict): Output dictionary from preprocess_train
 
     Returns:
@@ -252,14 +253,23 @@ def preprocess_test(df_test, preprocess_results):
     """
     import pandas as pd
     import numpy as np
+    import sys
+    from PyMLR import check_X
 
-
-    encoder = preprocess_results['encoder']
-    scaler = preprocess_results['scaler']
-    categorical_cols = preprocess_results['categorical_cols']
-    continuous_cols = preprocess_results['continuous_cols']
-
+    if preprocess_results != None:
+        encoder = preprocess_results['encoder']
+        scaler = preprocess_results['scaler']
+        categorical_cols = preprocess_results['categorical_cols']
+        continuous_cols = preprocess_results['continuous_cols']
+    else:
+        print('Exited preprocess_test because preprocess_results=None','\n')
+        sys.exit()
+    
+    # copy df_test to prevent altering the original
     df_test = df_test.copy()
+
+    # check that df_test is a dataframe and convert to dataframe if needed
+    df_test = check_X(df_test)
 
     for col in categorical_cols:
         if df_test.get(col, pd.Series(dtype=object)).dtype == bool:
