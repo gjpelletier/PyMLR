@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.15"
+__version__ = "1.2.16"
 
 def check_X_y(X,y):
 
@@ -908,7 +908,7 @@ def stepwise(X, y, **kwargs):
 
     """
 
-    from PyMLR import detect_dummy_variables, check_X_y
+    from PyMLR import detect_dummy_variables, check_X_y, fitness_metrics
     from PyMLR import preprocess_train, preprocess_test
     import statsmodels.api as sm
     from itertools import combinations
@@ -1823,7 +1823,7 @@ def lasso(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_model, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -2578,7 +2578,7 @@ def ridge(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_model, vif_ridge, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -3139,7 +3139,7 @@ def elastic(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_model, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -3553,7 +3553,7 @@ def stacking(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -3937,7 +3937,7 @@ def svr(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -4312,7 +4312,7 @@ def svr_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -4594,7 +4594,7 @@ def sgd(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -4895,7 +4895,7 @@ def gbr(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -5299,7 +5299,7 @@ def gbr_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -6126,14 +6126,15 @@ def xgb_auto(X, y, **kwargs):
                                             # - categorical_cols (categorical columns)
                                             # - non_numeric_cats (non-numeric cats)
                                             # - continuous_cols  (continuous columns)
-        'verbose': 'on',
-        'gpu': True,                        # Autodetect to use gpu if present
-        'n_splits': 5,                      # number of splits for KFold CV
-        'pruning': False,                   # prune poor optuna trials
-        'feature_selection': True,          # optuna feature selection
         'threshold': 10,                    # threshold for number of 
                                             # unique values for 
                                             # categorical numeric features
+        'verbose': 'on',
+        'gpu': True,                        # Autodetect to use gpu if present
+        'n_splits': 5,                      # number of splits for KFold CV
+
+        'pruning': False,                   # prune poor optuna trials
+        'feature_selection': True,          # optuna feature selection
 
         # params that are optimized by optuna
         'learning_rate': [1e-4, 1.0],       # Step size shrinkage (also called eta).
@@ -6253,6 +6254,7 @@ def xgb_auto(X, y, **kwargs):
     model_outputs['pruning'] = data['pruning']
     model_outputs['optuna_study'] = study
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
+    model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
     model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
     model_outputs['best_trial'] = study.best_trial
@@ -6430,7 +6432,7 @@ def lgbm(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -6667,7 +6669,7 @@ def catboost(X, y, **kwargs):
     by
     Greg Pelletier
     gjpelletier@gmail.com
-    08-Jun-2025
+    30-Jun-2025
 
     REQUIRED INPUTS (X and y should have same number of rows and 
     only contain real numbers)
@@ -6686,6 +6688,7 @@ def catboost(X, y, **kwargs):
                                     # - categorical_cols (categorical cols)
                                     # - non_numeric_cats (non-num cat cols)
                                     # - continuous_cols  (continuous cols)
+        selected_features= None,    # pre-optimized selected features
         verbose= 'on',        # 'on' to display summary stats and residual plots
         gpu= False,           # Autodetect to use gpu if present
         thread_count= -1,     # number of CPU cores to use (-1 for all cores)
@@ -6737,7 +6740,7 @@ def catboost(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -6782,6 +6785,8 @@ def catboost(X, y, **kwargs):
         'random_strength': 1.0,        # Adds noise for diversity
         'bagging_temperature': 1.0,    # Controls randomness in sampling
         'min_data_in_leaf': 1,         # Minimum samples per leaf         
+        'grow_policy': 'SymmetricTree',    # all leaves from the last tree level 
+                                           # are split with the same condition
         'border_count': 128,           # Number of bins for feature discretization
         'max_bin': 255,                # Number of bins for feature quantization
         'use_border_count': True       # True: border_count, False: max_bin
@@ -6967,41 +6972,36 @@ def catboost(X, y, **kwargs):
 
 def catboost_objective(trial, X, y, **kwargs):
     '''
-    Objective function used by optuna 
-    to find the optimum hyper-parameters for CatBoostRegressor
+    Optuna objective for optimizing CatBoostRegressor with optional feature selection.
+    Supports selector choice, logs importances, and ensures reproducibility.
     '''
     import numpy as np
-    import xgboost as xgb
-    from sklearn.model_selection import cross_val_score, KFold
+    import pandas as pd
+    from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
+    from sklearn.pipeline import Pipeline
+    from sklearn.model_selection import cross_val_score, RepeatedKFold
     from PyMLR import detect_gpu
     from catboost import CatBoostRegressor
     
-    # Set global random seed
-    np.random.seed(kwargs['random_state'])
-    
-    # [min, max] range of params optimized by optuna
+    seed = kwargs.get("random_state", 42)
+    rng = np.random.default_rng(seed)
+
+    # Define hyperparameter space
     params = {
         "learning_rate": trial.suggest_float("learning_rate",
-            kwargs['learning_rate'][0], 
-            kwargs['learning_rate'][1], log=True),
+            *kwargs['learning_rate'], log=True),
         "depth": trial.suggest_int("depth",
-            kwargs['depth'][0], 
-            kwargs['depth'][1]),
+            *kwargs['depth']),
         "iterations": trial.suggest_int("iterations",
-            kwargs['iterations'][0], 
-            kwargs['iterations'][1]),
+            *kwargs['iterations']),
         "l2_leaf_reg": trial.suggest_float("l2_leaf_reg",
-            kwargs['l2_leaf_reg'][0], 
-            kwargs['l2_leaf_reg'][1], log=True),
+            *kwargs['l2_leaf_reg'], log=True),
         "random_strength": trial.suggest_float("random_strength",
-            kwargs['random_strength'][0], 
-            kwargs['random_strength'][1]),
+            *kwargs['random_strength']),
         "bagging_temperature": trial.suggest_float("bagging_temperature",
-            kwargs['bagging_temperature'][0], 
-            kwargs['bagging_temperature'][1]),
+            *kwargs['bagging_temperature']),
         "min_data_in_leaf": trial.suggest_int("min_data_in_leaf",
-            kwargs['min_data_in_leaf'][0], 
-            kwargs['min_data_in_leaf'][1]),
+            *kwargs['min_data_in_leaf']),
     }
 
     grow_policy = trial.suggest_categorical("grow_policy", ["Depthwise", "SymmetricTree"])
@@ -7009,16 +7009,14 @@ def catboost_objective(trial, X, y, **kwargs):
     
     params["grow_policy"] = grow_policy
     params["boosting_type"] = boosting_type
-    
+
     use_border_count = trial.suggest_categorical("use_border_count", [True, False])
     if use_border_count:
         params["border_count"] = trial.suggest_int("border_count",
-            kwargs['border_count'][0], 
-            kwargs['border_count'][1])
+            *kwargs['border_count'])
     else:
         params["max_bin"] = trial.suggest_int("max_bin",
-            kwargs['max_bin'][0], 
-            kwargs['max_bin'][1])
+            *kwargs['max_bin'])
     
     extra_params = {
         'random_seed': kwargs['random_state'],         
@@ -7030,15 +7028,60 @@ def catboost_objective(trial, X, y, **kwargs):
     else:
         extra_params['thread_count'] = kwargs['thread_count']
     
-    cv = KFold(n_splits=kwargs['n_splits'], 
-        shuffle=True, 
-        random_state=kwargs['random_state'])
+    # Feature selection
+    if kwargs.get("feature_selection", True):
+        num_features = trial.suggest_int("num_features", max(5, X.shape[1] // 10), X.shape[1])
+        selector_type = trial.suggest_categorical("selector_type", ["mutual_info", "f_regression"])
 
-    # Train model with CV
-    model = CatBoostRegressor(**params, **extra_params, verbose=False)
-    score = cross_val_score(model, X, y, cv=cv, scoring="neg_root_mean_squared_error")    
-    return np.mean(score)
-    
+        if selector_type == "mutual_info":
+            score_func = lambda X_, y_: mutual_info_regression(X_, y_, random_state=seed)
+        else:
+            score_func = f_regression
+
+        selector = SelectKBest(score_func=score_func, k=num_features)
+
+        pipeline = Pipeline([
+            ("feature_selector", selector),
+            ("regressor", CatBoostRegressor(**params, **extra_params, verbose=False))
+        ])
+    else:
+        pipeline = Pipeline([
+            ("regressor", CatBoostRegressor(**params, **extra_params, verbose=False))
+        ])
+        num_features = None
+
+    # Cross-validated scoring with RepeatedKFold
+    cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
+    scores = cross_val_score(
+        pipeline, X, y,
+        cv=cv,
+        scoring="neg_root_mean_squared_error"
+    )
+    score_mean = np.mean(scores)
+
+    # Fit on full data to extract feature info
+    pipeline.fit(X, y)
+
+    if kwargs.get("feature_selection", True):
+        selector_step = pipeline.named_steps["feature_selector"]
+        selected_indices = selector_step.get_support(indices=True)
+        selected_features = np.array(kwargs["feature_names"])[selected_indices].tolist()
+    else:
+        selected_features = kwargs["feature_names"]
+
+    # Log feature importances and metadata
+    model_step = pipeline.named_steps["regressor"]
+    importances = getattr(model_step, "feature_importances_", None)
+    if importances is not None:
+        trial.set_user_attr("feature_importances", importances.tolist())
+
+    trial.set_user_attr("model", pipeline)
+    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("selected_features", selected_features)
+    trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
+
+    return score_mean
+ 
 def catboost_auto(X, y, **kwargs):
 
     """
@@ -7048,7 +7091,7 @@ def catboost_auto(X, y, **kwargs):
     by
     Greg Pelletier
     gjpelletier@gmail.com
-    04-June-2025
+    29-June-2025
 
     REQUIRED INPUTS (X and y should have same number of rows and 
     only contain real numbers)
@@ -7068,6 +7111,10 @@ def catboost_auto(X, y, **kwargs):
                                     # - categorical_cols (categorical cols)
                                     # - non_numeric_cats (non-num cat cols)
                                     # - continuous_cols  (continuous cols)
+        threshold= 10,              # threshold for number of 
+                                    # unique values for 
+                                    # categorical numeric features
+        feature_selection= True,    # optuna feature selection
         verbose= 'on',        # 'on' to display summary stats and residual plots
         n_splits= 5,          # number of splits for KFold CV
         gpu= False,           # Autodetect to use gpu if present
@@ -7122,7 +7169,7 @@ def catboost_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -7137,8 +7184,6 @@ def catboost_auto(X, y, **kwargs):
     import warnings
     import sys
     import statsmodels.api as sm
-    import xgboost as xgb
-    from xgboost import XGBRegressor
     import optuna
     from catboost import CatBoostRegressor
 
@@ -7157,13 +7202,15 @@ def catboost_auto(X, y, **kwargs):
         'threshold': 10,              # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
-        'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',        # 'on' to display stats and residual plots
         'gpu': False,           # Autodetect to use gpu if present
-        'n_splits': 5,          # number of splits for KFold CV
         'devices': '0',         # Which GPU to use (0 to use first GPU)
+        'n_splits': 5,          # number of splits for KFold CV
         'thread_count': -1,     # number of CPUs to use (-1 for all cores)
 
+        'pruning': False,             # prune poor optuna trials
+        'feature_selection': True,    # optuna feature selection
+        
         # [min, max] range of params optimized by optuna
         'learning_rate': [0.01, 0.3],         # Balances step size in gradient updates.
         'depth': [4, 10],                     # Controls tree depth
@@ -7224,7 +7271,8 @@ def catboost_auto(X, y, **kwargs):
 
     extra_params = {
         'random_seed': data['random_state'],         
-        'task_type': data['device'],                   
+        'task_type': data['device'], 
+        'verbose': False
     }
 
     if data['device'] == 'GPU':
@@ -7235,23 +7283,48 @@ def catboost_auto(X, y, **kwargs):
     print('Running optuna to find best parameters, could take a few minutes, please wait...')
     optuna.logging.set_verbosity(optuna.logging.ERROR)
 
-    # study = optuna.create_study(direction="maximize")
-    study = optuna.create_study(
-        direction="maximize", sampler=optuna.samplers.TPESampler(seed=data['random_state']))
+    # optional pruning
+    if data['pruning']:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True),
+            pruner=optuna.pruners.MedianPruner())
+    else:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True))
+    
+    X_opt = X.copy()    # copy X to prevent altering the original
 
     from PyMLR import catboost_objective
-    study.optimize(lambda trial: catboost_objective(trial, X, y, **data), n_trials=data['n_trials'])
+    study.optimize(lambda trial: catboost_objective(trial, X_opt, y, **data), n_trials=data['n_trials'])
+
+    # save outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['X_processed'] = X.copy()
+    model_outputs['pruning'] = data['pruning']
+    model_outputs['optuna_study'] = study
+    model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
+    model_outputs['feature_selection'] = data['feature_selection']
+    model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['best_trial'] = study.best_trial
+
     best_params = study.best_params
     model_outputs['best_params'] = best_params
-    model_outputs['optuna_study'] = study
+    model_outputs['extra_params'] = extra_params
 
     print('Fitting CatBoostRegressor model with best parameters, please wait ...')
     del best_params['use_border_count']
-    fitted_model = CatBoostRegressor(**best_params, **extra_params, verbose=False).fit(X,y)
+    del best_params['num_features']
+    del best_params['selector_type']
+    fitted_model = CatBoostRegressor(**best_params, **extra_params).fit(
+        X[model_outputs['selected_features']],y)
        
     # check to see of the model has intercept and coefficients
     if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-            and fitted_model.coef_.size==len(X.columns)):
+            and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
         intercept = fitted_model.intercept_
         coefficients = fitted_model.coef_
         # dataframe of model parameters, intercept and coefficients, including zero coefs
@@ -7262,7 +7335,7 @@ def catboost_auto(X, y, **kwargs):
                 popt[0][i] = 'Intercept'
                 popt[1][i] = model.intercept_
             else:
-                popt[0][i] = X.columns[i-1]
+                popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
                 popt[1][i] = model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
@@ -7273,62 +7346,53 @@ def catboost_auto(X, y, **kwargs):
             })
         popt_table.set_index('Feature',inplace=True)
         model_outputs['popt_table'] = popt_table
-    
-    # Calculate regression statistics
-    y_pred = fitted_model.predict(X)
-    stats = stats_given_y_pred(X,y,y_pred)
-    
-    # model objects and outputs returned by stacking
-    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
-    model_outputs['y_pred'] = stats['y_pred']
-    model_outputs['residuals'] = stats['residuals']
-    # model_objects = model
-    
+
+    # Goodness of fit statistics
+    metrics = fitness_metrics(
+        fitted_model, 
+        X[model_outputs['selected_features']], y)
+    stats = pd.DataFrame([metrics]).T
+    stats.index.name = 'Statistic'
+    stats.columns = ['CatBoostRegressor']
+    model_outputs['metrics'] = metrics
+    model_outputs['stats'] = stats
+    model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
+
+    if data['verbose'] == 'on':
+        print('')
+        print("CatBoostRegressor goodness of fit to training data in model_outputs['stats']:")
+        print('')
+        print(model_outputs['stats'].to_markdown(index=True))
+        print('')
+
+    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+        print("Parameters of fitted model in model_outputs['popt']:")
+        print('')
+        print(model_outputs['popt_table'].to_markdown(index=True))
+        print('')
+
     # residual plot for training error
     if data['verbose'] == 'on':
         fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
         PredictionErrorDisplay.from_predictions(
             y,
-            y_pred=stats['y_pred'],
+            y_pred=model_outputs['y_pred'],
             kind="actual_vs_predicted",
             ax=axs[0]
         )
         axs[0].set_title("Actual vs. Predicted")
         PredictionErrorDisplay.from_predictions(
             y,
-            y_pred=stats['y_pred'],
+            y_pred=model_outputs['y_pred'],
             kind="residual_vs_predicted",
             ax=axs[1]
         )
         axs[1].set_title("Residuals vs. Predicted")
         fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={stats['RMSE']:.3f})")
+            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
         plt.tight_layout()
         # plt.show()
         plt.savefig("CatBoostRegressor_predictions.png", dpi=300)
-    
-    # Make the model_outputs dataframes
-    list1_name = ['r-squared', 'RMSE', 'n_samples']        
-    list1_val = [stats["rsquared"], stats["RMSE"], stats["n_samples"]]
-    
-    stats = pd.DataFrame(
-        {
-            "Statistic": list1_name,
-            "CatBoostRegressor": list1_val
-        }
-        )
-    stats.set_index('Statistic',inplace=True)
-    model_outputs['stats'] = stats
-    print("CatBoostRegressor statistics of fitted model in model_outputs['stats']:")
-    print('')
-    print(model_outputs['stats'].to_markdown(index=True))
-    print('')
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
-        print("Parameters of fitted model in model_outputs['popt']:")
-        print('')
-        print(model_outputs['popt_table'].to_markdown(index=True))
-        print('')
 
     # Print the run time
     fit_time = time.time() - start_time
@@ -7340,7 +7404,7 @@ def catboost_auto(X, y, **kwargs):
     warnings.filterwarnings("default")
 
     return fitted_model, model_outputs
-  
+ 
 def forest(X, y, **kwargs):
 
     """
@@ -7435,7 +7499,7 @@ def forest(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -7830,7 +7894,7 @@ def forest_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -8145,7 +8209,7 @@ def knn(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
@@ -8602,7 +8666,7 @@ def knn_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test, check_X_y
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
     import time
     import pandas as pd
     import numpy as np
