@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.16"
+__version__ = "1.2.17"
 
 def check_X_y(X,y):
 
@@ -1765,8 +1765,6 @@ def lasso(X, y, **kwargs):
         n_alpha= number of log-spaced alphas to evaluate (default=100)
         verbose= 'on' (default), 'off', or 1=show stats and residuals plot
 
-    Standardization is generally recommended for Lasso regression.
-
     It is generally recommended to use a largest possible number of folds 
     for LassoCV and LassoLarsCV to ensure more accurate model selection. 
     The only disadvantage of a large number of folds is the increase 
@@ -2531,8 +2529,6 @@ def ridge(X, y, **kwargs):
         vif_target= VIF target for use with RidgeVIF (default=1.0)
         verbose= 'on' (default), 'off', or 1=show stats and residuals plot
 
-    Standardization is generally recommended for Ridge regression.
-
     RETURNS
         model_objects, model_outputs
             model_objects are the fitted model objects from 
@@ -3091,8 +3087,6 @@ def elastic(X, y, **kwargs):
             default is l1_ratio= np.linspace(0.01,1,100)        
         verbose= 'on' (default), 'off', or 1=show stats and residuals plot
 
-    Standardization is generally recommended for ElasticNet regression.
-
     It is generally recommended to use a largest possible number of folds 
     to ensure more accurate model selection. 
     The only disadvantage of a large number of folds is the increase 
@@ -3521,8 +3515,6 @@ def stacking(X, y, **kwargs):
 
         verbose= 'on' (default) or 'off'
 
-    Standardization is generally recommended
-
     RETURNS
         model_objects, model_outputs
             model_objects is the fitted model object
@@ -3907,8 +3899,6 @@ def svr(X, y, **kwargs):
         cache_size= 200    # Specify the size of the kernel cache (in MB)
         max_iter= -1       # Hard limit on iterations within solver, or -1 for no limit.
 
-    Standardization is generally recommended
-
     RETURNS
         model_objects, model_outputs
             model_objects is the fitted model object
@@ -4280,8 +4270,6 @@ def svr_auto(X, y, **kwargs):
         max_iter= -1              # Hard limit on iterations within solver, 
                                   # or -1 for no limit
 
-    Standardization is generally recommended
-
     RETURNS
         fitted_model, model_outputs
             model_objects is the fitted model object
@@ -4563,8 +4551,6 @@ def sgd(X, y, **kwargs):
                                     # - continuous_cols  (continuous cols)
         random_state= (default random_state=42)        - initial random seed
         verbose= 'on' (default) or 'off'
-
-    Standardization is generally recommended
 
     RETURNS
         model_objects, model_outputs
@@ -4864,8 +4850,6 @@ def gbr(X, y, **kwargs):
         tol=1e-4,                      # Tolerance for early stopping. Default is 1e-4.
         ccp_alpha=0.0                  # Complexity parameter for Minimal Cost-Complexity Pruning. 
                                        # Default is 0.0.
-
-    Standardization is generally recommended
 
     RETURNS
         model_objects, model_outputs
@@ -5267,8 +5251,6 @@ def gbr_auto(X, y, **kwargs):
         tol= 1e-4,                      # Tolerance for early stopping
         ccp_alpha= 0.0                  # Parameter for Min Cost-Complexity Pruning
 
-    Standardization is generally recommended
-
     RETURNS
         fitted_model, model_outputs
             model_objects is the fitted model object
@@ -5604,8 +5586,6 @@ def xgb(X, y, **kwargs):
         importance_type= "gain",    # Feature importance type ('weight', 'gain', 'cover', 'total_gain', 'total_cover').
         predictor= "auto",          # Type of predictor ('cpu_predictor', 'gpu_predictor').
         enable_categorical= False   # Whether to enable categorical data support.    
-
-    Standardization is generally recommended
 
     RETURNS
         fitted_model, model_outputs
@@ -6058,8 +6038,6 @@ def xgb_auto(X, y, **kwargs):
         predictor= "auto",          # Type of predictor ('cpu_predictor', 'gpu_predictor').
         enable_categorical= False   # Whether to enable categorical data support.    
 
-    Standardization is generally recommended
-
     RETURNS
         fitted_model, model_outputs
             model_objects is the fitted model object
@@ -6208,7 +6186,8 @@ def xgb_auto(X, y, **kwargs):
                 X, threshold=data['threshold'])
             X = data['preprocess_result']['df_processed']
 
-    data['feature_names'] = X.columns
+    # data['feature_names'] = X.columns
+    data['feature_names'] = X.columns.to_list()
     
     extra_params = {
         'random_state': data['random_state'],         
@@ -6401,8 +6380,6 @@ def lgbm(X, y, **kwargs):
         n_jobs=-1,             # Number of parallel threads (-1 uses all available cores)
         verbosity=-1,          # -1 to turn off lightgbm warnings
         importance_type='split' # Type of feature importance ('split' or 'gain')
-
-    Standardization is generally recommended
 
     RETURNS
         fitted_model, model_outputs
@@ -6709,8 +6686,6 @@ def catboost(X, y, **kwargs):
                                             # (best for categorical features)
                                             # False = use max_bin 
                                             # (best for continuous features)
-
-    Standardization is generally recommended
 
     RETURNS
         model_objects, model_outputs
@@ -7137,8 +7112,6 @@ def catboost_auto(X, y, **kwargs):
                                             # False = use max_bin 
                                             # (best for continuous features)
 
-    Standardization is generally recommended
-
     RETURNS
         fitted_model, model_outputs
             model_objects is the fitted model object
@@ -7468,8 +7441,6 @@ def forest(X, y, **kwargs):
                                           # to train each base estimator
         monotonic_cst= None               # monotonicity constraint 
                                           # to enforce on each feature
-
-    Standardization is generally recommended
 
     RETURNS
         fitted_model, model_outputs
@@ -7862,8 +7833,6 @@ def forest_auto(X, y, **kwargs):
         monotonic_cst= None               # monotonicity constraint 
                                           # to enforce on each feature
 
-    Standardization is generally recommended
-
     RETURNS
         fitted_model, model_outputs
             model_objects is the fitted model object
@@ -8178,8 +8147,6 @@ def knn(X, y, **kwargs):
         # model extra_params that are optional user-specified
         n_jobs= -1,                       # number of jobs to run in parallel    
         metric_params= None               # for user-specified metrics
-
-    Standardization is generally recommended
 
     RETURNS
         fitted_model, model_outputs
@@ -8627,8 +8594,6 @@ def knn_auto(X, y, **kwargs):
         # model extra_params that are optional user-specified
         n_jobs= -1,                       # number of jobs to run in parallel    
         metric_params= None               # for user-specified metrics
-
-    Standardization is generally recommended
 
     RETURNS
         fitted_model, model_outputs
