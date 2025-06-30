@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.19"
+__version__ = "1.2.20"
 
 def check_X_y(X,y):
 
@@ -4135,8 +4135,10 @@ def svr_objective(trial, X, y, **kwargs):
     to find the optimum hyper-parameters for SVR
     '''
     import numpy as np
-    # import xgboost as xgb
-    from sklearn.model_selection import cross_val_score, KFold
+    import pandas as pd
+    from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
+    from sklearn.pipeline import Pipeline
+    from sklearn.model_selection import cross_val_score, RepeatedKFold
     from PyMLR import detect_gpu
     from sklearn.svm import SVR
 
@@ -4147,14 +4149,14 @@ def svr_objective(trial, X, y, **kwargs):
     else:
         device = 'cpu'
 
-    # Set global random seed
-    np.random.seed(kwargs['random_state'])
+    seed = kwargs.get("random_state", 42)
+    rng = np.random.default_rng(seed)
     
     params = {
         "C": trial.suggest_float("C",
-            kwargs['C'][0], kwargs['C'][1], log=True),
+            *kwargs['C'], log=True),
         "epsilon": trial.suggest_float("epsilon",
-            kwargs['epsilon'][0], kwargs['epsilon'][1]),
+            *kwargs['epsilon'], log=True),
     }
     
     if kwargs["gamma"] == "scale" or kwargs["gamma"] == "auto":
@@ -4172,14 +4174,59 @@ def svr_objective(trial, X, y, **kwargs):
         'max_iter': kwargs['max_iter']      
     }
 
-    cv = KFold(n_splits=kwargs['n_splits'], 
-        shuffle=True, 
-        random_state=kwargs['random_state'])
+    # Feature selection
+    if kwargs.get("feature_selection", True):
+        num_features = trial.suggest_int("num_features", max(5, X.shape[1] // 10), X.shape[1])
+        selector_type = trial.suggest_categorical("selector_type", ["mutual_info", "f_regression"])
 
-    # Train model with CV
-    model = SVR(**params, **extra_params)
-    score = cross_val_score(model, X, y, cv=cv, scoring="neg_root_mean_squared_error")    
-    return np.mean(score)
+        if selector_type == "mutual_info":
+            score_func = lambda X_, y_: mutual_info_regression(X_, y_, random_state=seed)
+        else:
+            score_func = f_regression
+
+        selector = SelectKBest(score_func=score_func, k=num_features)
+
+        pipeline = Pipeline([
+            ("feature_selector", selector),
+            ("regressor", SVR(**params, **extra_params))
+        ])
+    else:
+        pipeline = Pipeline([
+            ("regressor", SVR(**params, **extra_params))
+        ])
+        num_features = None
+
+    # Cross-validated scoring with RepeatedKFold
+    cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
+    scores = cross_val_score(
+        pipeline, X, y,
+        cv=cv,
+        scoring="neg_root_mean_squared_error"
+    )
+    score_mean = np.mean(scores)
+
+    # Fit on full data to extract feature info
+    pipeline.fit(X, y)
+
+    if kwargs.get("feature_selection", True):
+        selector_step = pipeline.named_steps["feature_selector"]
+        selected_indices = selector_step.get_support(indices=True)
+        selected_features = np.array(kwargs["feature_names"])[selected_indices].tolist()
+    else:
+        selected_features = kwargs["feature_names"]
+
+    # Log feature importances and metadata
+    model_step = pipeline.named_steps["regressor"]
+    importances = getattr(model_step, "feature_importances_", None)
+    if importances is not None:
+        trial.set_user_attr("feature_importances", importances.tolist())
+
+    trial.set_user_attr("model", pipeline)
+    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("selected_features", selected_features)
+    trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
+
+    return score_mean
 
 def svr_auto(X, y, **kwargs):
 
@@ -4215,12 +4262,15 @@ def svr_auto(X, y, **kwargs):
         gpu= True,                        # Autodetect to use gpu if present
         verbose= 'on' (default) or 'off'
 
+        pruning= False,                   # prune poor optuna trials
+        feature_selection= True,          # optuna feature selection
+
         # [min, max] ranges of params for model to be optimized by optuna:
         C= [0.1, 1000],           # C Regularization parameter. 
                                   # The strength of the regularization is 
                                   # inversely proportional to C. 
                                   # Must be strictly positive. The penalty is a squared l2.
-        epsilon= [0.01, 1.0],     # Epsilon in the epsilon-SVR model. Must be non-negative
+        epsilon= [1e-4, 1.0],     # Epsilon in the epsilon-SVR model. Must be non-negative
         # gamma= [0.0001, 1.0],   # range of gamma values if not using 'scale' or 'auto'
         gamma= 'scale',           # {'scale', 'auto'}, default='scale'
 
@@ -4307,9 +4357,12 @@ def svr_auto(X, y, **kwargs):
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
 
+        'pruning': False,                   # prune poor optuna trials
+        'feature_selection': True,          # optuna feature selection
+        
         # params for model that are optimized by optuna
         'C': [0.1, 1000],           # range of C Regularization parameter. The strength of the regularization is inversely proportional to C. Must be strictly positive. The penalty is a squared l2.
-        'epsilon': [0.01, 1.0],     # range of epsilon Epsilon in the epsilon-SVR model. Must be non-negative
+        'epsilon': [1e-4, 1.0],     # range of epsilon Epsilon in the epsilon-SVR model. Must be non-negative
         # 'gamma': [0.0001, 1.0],   # range of gamma values if not using 'scale' or 'auto'
         'gamma': 'scale',           # {'scale', 'auto'}, default='scale'
 
@@ -4383,20 +4436,45 @@ def svr_auto(X, y, **kwargs):
 
     print('Running optuna to find best parameters, could take a few minutes, please wait...')
     optuna.logging.set_verbosity(optuna.logging.ERROR)
-
-    # study = optuna.create_study(direction="maximize")
-    study = optuna.create_study(
-        direction="maximize", sampler=optuna.samplers.TPESampler(seed=data['random_state']))
+    
+    # optional pruning
+    if data['pruning']:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True),
+            pruner=optuna.pruners.MedianPruner())
+    else:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True))
+    
+    X_opt = X.copy()    # copy X to prevent altering the original
 
     from PyMLR import svr_objective
-    study.optimize(lambda trial: svr_objective(trial, X, y, **data), n_trials=data['n_trials'])
+    study.optimize(lambda trial: svr_objective(trial, X_opt, y, **data), n_trials=data['n_trials'])
+
+    # save outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['X_processed'] = X.copy()
+    model_outputs['pruning'] = data['pruning']
+    model_outputs['optuna_study'] = study
+    model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
+    model_outputs['feature_selection'] = data['feature_selection']
+    model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['best_trial'] = study.best_trial
+        
     best_params = study.best_params
     model_outputs['best_params'] = best_params
-    model_outputs['optuna_study'] = study
+    model_outputs['extra_params'] = extra_params
 
     print('Fitting SVR model with best parameters, please wait ...')
-    fitted_model = SVR(**best_params, **extra_params,
-        ).fit(X,y)
+    del best_params['num_features']
+    del best_params['selector_type']
+    fitted_model = SVR(
+        **best_params, **extra_params).fit(
+        X[model_outputs['selected_features']],y)
        
     # check to see of the model has intercept and coefficients
     if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
