@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.17"
+__version__ = "1.2.18"
 
 def check_X_y(X,y):
 
@@ -522,7 +522,7 @@ def plot_predictions_from_test(
     pca_transform=False, pca=None, n_components=None):
 
     """
-    DEPRACATED
+    DEPRECATED
     
     Plots Actual vs Predicted and Residuals vs Predicted 
     for fitted sklearn linear regression models 
@@ -1405,7 +1405,7 @@ def stepwise(X, y, **kwargs):
     # Add a constant for the intercept
     X_ = sm.add_constant(X[selected_features])    
     vif = pd.DataFrame()
-    vif['Feature'] = X_.columns
+    vif['Feature'] = X_.columns.to_list()
     vif["VIF"] = [variance_inflation_factor(X_.values, i)
                         for i in range(len(X_.columns))]
     vif.set_index('Feature',inplace=True)
@@ -4401,7 +4401,7 @@ def svr_auto(X, y, **kwargs):
                 X, threshold=data['threshold'])
             X = data['preprocess_result']['df_processed']
 
-    data['feature_names'] = X.columns
+    data['feature_names'] = X.columns.to_list()
 
     # extra params in addition to those being optimized by optuna
     extra_params = {
@@ -5033,86 +5033,53 @@ def gbr(X, y, **kwargs):
         popt_table.set_index('Feature',inplace=True)
         model_outputs['popt_table'] = popt_table
     
-    # Calculate regression statistics
-    y_pred = fitted_model.predict(X)
-    stats = stats_given_y_pred(X,y,y_pred)
-    
-    # model objects and outputs returned by stacking
-    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
-    model_outputs['y_pred'] = stats['y_pred']
-    model_outputs['residuals'] = stats['residuals']
-    # model_objects = model
-    
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        '''
-        y_pred = stats['y_pred']
-        res = stats['residuals']
-        rmse = stats['RMSE']
-        plt.figure()
-        plt.scatter(y_pred, (res), s=40, label=('GradientBoostingRegressor (RMSE={:.2f})'.format(rmse)))
-        rmse_cv = np.sqrt(np.mean((res)**2))
-        plt.hlines(y=0, xmin=min(y), xmax=max(y), color='k')
-        plt.title("Residual plot for training error")
-        plt.legend();
-        plt.xlabel('y_pred')
-        plt.ylabel('residual')
-        plt.savefig("GradientBoostingRegressor_residuals.png", dpi=300)
-        '''
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=stats['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=stats['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={stats['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("GradientBoostingRegressor_predictions.png", dpi=300)
-    
-    # Make the model_outputs dataframes
-    '''
-    list1_name = ['r-squared','adjusted r-squared',
-                        'n_samples','df residuals','df model',
-                        'F-statistic','Prob (F-statistic)','RMSE',
-                        'Log-Likelihood','AIC','BIC']    
-    list1_val = [stats["rsquared"], stats["adj_rsquared"],
-                       stats["n_samples"], stats["df"], stats["dfn"], 
-                       stats["Fstat"], stats["pvalue"], stats["RMSE"],  
-                       stats["log_likelihood"],stats["aic"],stats["bic"]]
-    '''
-    list1_name = ['r-squared', 'RMSE', 'n_samples']        
-    list1_val = [stats["rsquared"], stats["RMSE"], stats["n_samples"]]
-    
-    stats = pd.DataFrame(
-        {
-            "Statistic": list1_name,
-            "GradientBoostingRegressor": list1_val
-        }
-        )
-    stats.set_index('Statistic',inplace=True)
+    # Goodness of fit statistics
+    metrics = fitness_metrics(
+        fitted_model, 
+        X, y)
+    stats = pd.DataFrame([metrics]).T
+    stats.index.name = 'Statistic'
+    stats.columns = ['GradientBoostingRegressor']
+    model_outputs['metrics'] = metrics
     model_outputs['stats'] = stats
-    print("GradientBoostingRegressor statistics of fitted model in model_outputs['stats']:")
-    print('')
-    print(model_outputs['stats'].to_markdown(index=True))
-    print('')
+    model_outputs['y_pred'] = fitted_model.predict(X)
+
+    if data['verbose'] == 'on':
+        print('')
+        print("GradientBoostingRegressor goodness of fit to training data in model_outputs['stats']:")
+        print('')
+        print(model_outputs['stats'].to_markdown(index=True))
+        print('')
+
     if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
         print("Parameters of fitted model in model_outputs['popt']:")
         print('')
         print(model_outputs['popt_table'].to_markdown(index=True))
         print('')
 
+    # residual plot for training error
+    if data['verbose'] == 'on':
+        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="actual_vs_predicted",
+            ax=axs[0]
+        )
+        axs[0].set_title("Actual vs. Predicted")
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="residual_vs_predicted",
+            ax=axs[1]
+        )
+        axs[1].set_title("Residuals vs. Predicted")
+        fig.suptitle(
+            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("GradientBoostingRegressor_predictions.png", dpi=300)
+    
     # Print the run time
     fit_time = time.time() - start_time
     print('Done')
@@ -5123,38 +5090,41 @@ def gbr(X, y, **kwargs):
     warnings.filterwarnings("default")
 
     return fitted_model, model_outputs
-
+    
 def gbr_objective(trial, X, y, **kwargs):
     '''
     Objective function used by optuna to find 
     the optimum hyper-parameters for GradientBoostingRegressor
     '''
     import numpy as np
+    import pandas as pd
     import xgboost as xgb
-    from sklearn.model_selection import cross_val_score, KFold
+    from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
+    from sklearn.pipeline import Pipeline
+    from sklearn.model_selection import cross_val_score, RepeatedKFold
     from PyMLR import detect_gpu
     from sklearn.ensemble import GradientBoostingRegressor
 
-    # Set global random seed
-    np.random.seed(kwargs['random_state'])
+    seed = kwargs.get("random_state", 42)
+    rng = np.random.default_rng(seed)
 
     params = {
         "learning_rate": trial.suggest_float("learning_rate",
-            0.01, 0.3),
+            *kwargs['learning_rate'], log=True),
         "n_estimators": trial.suggest_int("n_estimators",
-            100, 1000),
+            *kwargs['n_estimators']),
         "max_depth": trial.suggest_int("max_depth",
-            3, 10),
+            *kwargs['max_depth']),
         "min_samples_split": trial.suggest_int("min_samples_split",
-            2, 10),
+            *kwargs['min_samples_split']),
         "min_samples_leaf": trial.suggest_int("min_samples_leaf",
-            1, 10),
+            *kwargs['min_samples_leaf']),
         "subsample": trial.suggest_float("subsample",
-            0.5, 1.0),
+            *kwargs['subsample']),
     }
 
     # categorical params
-    if kwargs["max_features"] == ["auto", "sqrt", "log2"]:
+    if len(kwargs["max_features"]) > 1:
         params["max_features"] = trial.suggest_categorical(
             "max_features", kwargs["max_features"])
     elif len(kwargs["max_features"]) == 1:
@@ -5177,17 +5147,61 @@ def gbr_objective(trial, X, y, **kwargs):
         'tol': kwargs['tol'],    
         'ccp_alpha': kwargs['ccp_alpha']    
     }
-    
-    cv = KFold(n_splits=kwargs['n_splits'], 
-        shuffle=True, 
-        random_state=kwargs['random_state'])
-    
-    # Train model with CV
-    model = GradientBoostingRegressor(**params, **extra_params)
-    score = cross_val_score(model, X, y, cv=cv, 
-        scoring="neg_root_mean_squared_error", n_jobs=kwargs['n_jobs'])    
 
-    return np.mean(score)
+    # Feature selection
+    if kwargs.get("feature_selection", True):
+        num_features = trial.suggest_int("num_features", max(5, X.shape[1] // 10), X.shape[1])
+        selector_type = trial.suggest_categorical("selector_type", ["mutual_info", "f_regression"])
+
+        if selector_type == "mutual_info":
+            score_func = lambda X_, y_: mutual_info_regression(X_, y_, random_state=seed)
+        else:
+            score_func = f_regression
+
+        selector = SelectKBest(score_func=score_func, k=num_features)
+
+        pipeline = Pipeline([
+            ("feature_selector", selector),
+            ("regressor", GradientBoostingRegressor(**params, **extra_params))
+        ])
+    else:
+        pipeline = Pipeline([
+            ("regressor", GradientBoostingRegressor(**params, **extra_params))
+        ])
+        num_features = None
+
+    # Cross-validated scoring with RepeatedKFold
+    cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
+    scores = cross_val_score(
+        pipeline, X, y,
+        cv=cv,
+        scoring="neg_root_mean_squared_error",
+        n_jobs=kwargs['n_jobs']
+    )
+    score_mean = np.mean(scores)
+
+    # Fit on full data to extract feature info
+    pipeline.fit(X, y)
+
+    if kwargs.get("feature_selection", True):
+        selector_step = pipeline.named_steps["feature_selector"]
+        selected_indices = selector_step.get_support(indices=True)
+        selected_features = np.array(kwargs["feature_names"])[selected_indices].tolist()
+    else:
+        selected_features = kwargs["feature_names"]
+
+    # Log feature importances and metadata
+    model_step = pipeline.named_steps["regressor"]
+    importances = getattr(model_step, "feature_importances_", None)
+    if importances is not None:
+        trial.set_user_attr("feature_importances", importances.tolist())
+
+    trial.set_user_attr("model", pipeline)
+    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("selected_features", selected_features)
+    trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
+
+    return score_mean
 
 def gbr_auto(X, y, **kwargs):
 
@@ -5224,9 +5238,11 @@ def gbr_auto(X, y, **kwargs):
         n_jobs= 1,            # number of CPU cores to use for optuna
                               # n_jobs=1 is reproducible
                               # n_jobs-1 uses all cores but is not reproducible
+        pruning= False,             # prune poor optuna trials
+        feature_selection= True,    # optuna feature selection
 
         # [min, max] range of params optimized by optuna
-        learning_rate= [0.01, 0.3],    # Shrinks the contribution of each tree
+        learning_rate= [1e-4, 1.0],    # Shrinks the contribution of each tree
         n_estimators= [100, 1000],     # Number of boosting stages (trees)
         max_depth= [3, 10],            # Max depth of individual regression estimators
         min_samples_split= [2, 10],    # Min samples required to split an internal node
@@ -5263,10 +5279,16 @@ def gbr_auto(X, y, **kwargs):
                     - 'non_numeric_cats': non-numeric categorical columns 
                     - 'continous_cols': continuous numerical columns
                 - 'optuna_study': optimzed optuna study object
+                - 'optuna_model': optimzed optuna model object
+                - 'best_trial': best trial from the optuna study
+                - 'feature_selection' = option to select features (True, False)
+                - 'selected_features' = selected features
                 - 'best_params': best model hyper-parameters found by optuna
-                - 'y_pred': Predicted y values
-                - 'residuals': Residuals (y-y_pred) for each of the four methods
-                - 'stats': Regression statistics for each model
+                - 'extra_params': other model options used to fit the model
+                - 'metrics': dict of goodness of fit metrics for train data
+                - 'stats': dataframe of goodness of fit metrics for train data
+                - 'X_processed': pre-processed X with encoding and scaling
+                - 'y_pred': best model predicted y
 
     NOTE
     Do any necessary/optional cleaning of the data before 
@@ -5296,8 +5318,6 @@ def gbr_auto(X, y, **kwargs):
     import warnings
     import sys
     import statsmodels.api as sm
-    import xgboost as xgb
-    from xgboost import XGBRegressor
     import optuna
 
     # Define default values of input data arguments
@@ -5322,9 +5342,12 @@ def gbr_auto(X, y, **kwargs):
         'n_jobs': 1,            # number of CPU cores to use for optuna
                                 # n_jobs=1 is reproducible
                                 # n_jobs=-1 uses all cores
+
+        'pruning': False,                   # prune poor optuna trials
+        'feature_selection': True,          # optuna feature selection
         
         # [min, max] range of params optimized by optuna
-        'learning_rate': [0.01, 0.3],    # Shrinks the contribution of each tree
+        'learning_rate': [1e-4, 1.0],    # Shrinks the contribution of each tree
         'n_estimators': [100, 1000],     # Number of boosting stages (trees)
         'max_depth': [3, 10],            # Maximum depth of the individual regression estimators
         'min_samples_split': [2, 10],    # Minimum samples required to split an internal node
@@ -5353,13 +5376,6 @@ def gbr_auto(X, y, **kwargs):
     # Update input data arguments with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
 
-    '''
-    # Define KFold cross-validation with reproducibility
-    data['cv'] = KFold(n_splits=data['n_splits'], 
-        shuffle=True, 
-        random_state=data['random_state'])
-    '''
-    
     # Auto-detect if GPU is present and use GPU if present
     if data['gpu']:
         use_gpu = detect_gpu()
@@ -5401,7 +5417,7 @@ def gbr_auto(X, y, **kwargs):
                 X, threshold=data['threshold'])
             X = data['preprocess_result']['df_processed']
 
-    data['feature_names'] = X.columns
+    data['feature_names'] = X.columns.to_list()
 
     extra_params = {
         'random_state': data['random_state'],         
@@ -5421,7 +5437,8 @@ def gbr_auto(X, y, **kwargs):
 
     print('Running optuna to find best parameters, could take a few minutes, please wait...')
     optuna.logging.set_verbosity(optuna.logging.ERROR)
-
+    
+    '''    
     # study = optuna.create_study(direction="maximize")
     study = optuna.create_study(
         direction="maximize", 
@@ -5437,10 +5454,51 @@ def gbr_auto(X, y, **kwargs):
 
     print('Fitting GradientBoostingRegressor model with best parameters, please wait ...')
     fitted_model = GradientBoostingRegressor(**best_params, **extra_params).fit(X,y)
-       
+    '''
+
+    # optional pruning
+    if data['pruning']:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True),
+            pruner=optuna.pruners.MedianPruner())
+    else:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True))
+    
+    X_opt = X.copy()    # copy X to prevent altering the original
+
+    from PyMLR import gbr_objective
+    study.optimize(lambda trial: gbr_objective(
+        trial, X_opt, y, **data), n_trials=data['n_trials'], n_jobs=data['n_jobs'])
+
+    # save outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['X_processed'] = X.copy()
+    model_outputs['pruning'] = data['pruning']
+    model_outputs['optuna_study'] = study
+    model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
+    model_outputs['feature_selection'] = data['feature_selection']
+    model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['best_trial'] = study.best_trial
+        
+    best_params = study.best_params
+    model_outputs['best_params'] = best_params
+    model_outputs['extra_params'] = extra_params
+
+    print('Fitting GradientBoostingRegressor model with best parameters, please wait ...')
+    del best_params['num_features']
+    del best_params['selector_type']
+    fitted_model = GradientBoostingRegressor(
+        **best_params, **extra_params).fit(
+        X[model_outputs['selected_features']],y)
+    
     # check to see of the model has intercept and coefficients
     if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-            and fitted_model.coef_.size==len(X.columns)):
+            and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
         intercept = fitted_model.intercept_
         coefficients = fitted_model.coef_
         # dataframe of model parameters, intercept and coefficients, including zero coefs
@@ -5451,7 +5509,7 @@ def gbr_auto(X, y, **kwargs):
                 popt[0][i] = 'Intercept'
                 popt[1][i] = model.intercept_
             else:
-                popt[0][i] = X.columns[i-1]
+                popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
                 popt[1][i] = model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
@@ -5462,7 +5520,8 @@ def gbr_auto(X, y, **kwargs):
             })
         popt_table.set_index('Feature',inplace=True)
         model_outputs['popt_table'] = popt_table
-    
+        
+    '''
     # Calculate regression statistics
     y_pred = fitted_model.predict(X)
     stats = stats_given_y_pred(X,y,y_pred)
@@ -5518,6 +5577,65 @@ def gbr_auto(X, y, **kwargs):
         print('')
         print(model_outputs['popt_table'].to_markdown(index=True))
         print('')
+
+    # Print the run time
+    fit_time = time.time() - start_time
+    print('Done')
+    print(f"Time elapsed: {fit_time:.2f} sec")
+    print('')
+
+    # Restore warnings to normal
+    warnings.filterwarnings("default")
+
+    return fitted_model, model_outputs
+    '''
+
+    # Goodness of fit statistics
+    metrics = fitness_metrics(
+        fitted_model, 
+        X[model_outputs['selected_features']], y)
+    stats = pd.DataFrame([metrics]).T
+    stats.index.name = 'Statistic'
+    stats.columns = ['GradientBoostingRegressor']
+    model_outputs['metrics'] = metrics
+    model_outputs['stats'] = stats
+    model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
+
+    if data['verbose'] == 'on':
+        print('')
+        print("GradientBoostingRegressor goodness of fit to training data in model_outputs['stats']:")
+        print('')
+        print(model_outputs['stats'].to_markdown(index=True))
+        print('')
+
+    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+        print("Parameters of fitted model in model_outputs['popt']:")
+        print('')
+        print(model_outputs['popt_table'].to_markdown(index=True))
+        print('')
+
+    # residual plot for training error
+    if data['verbose'] == 'on':
+        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="actual_vs_predicted",
+            ax=axs[0]
+        )
+        axs[0].set_title("Actual vs. Predicted")
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="residual_vs_predicted",
+            ax=axs[1]
+        )
+        axs[1].set_title("Residuals vs. Predicted")
+        fig.suptitle(
+            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("GradientBoostingRegressor_predictions.png", dpi=300)
 
     # Print the run time
     fit_time = time.time() - start_time
@@ -6186,7 +6304,6 @@ def xgb_auto(X, y, **kwargs):
                 X, threshold=data['threshold'])
             X = data['preprocess_result']['df_processed']
 
-    # data['feature_names'] = X.columns
     data['feature_names'] = X.columns.to_list()
     
     extra_params = {
@@ -6241,8 +6358,6 @@ def xgb_auto(X, y, **kwargs):
     best_params = study.best_params
     model_outputs['best_params'] = best_params
     model_outputs['extra_params'] = extra_params
-
-    # user attributes for optuna
 
     print('Fitting XGBRegressor model with best parameters, please wait ...')
     fitted_model = XGBRegressor(
@@ -6878,62 +6993,53 @@ def catboost(X, y, **kwargs):
         popt_table.set_index('Feature',inplace=True)
         model_outputs['popt_table'] = popt_table
     
-    # Calculate regression statistics
-    y_pred = fitted_model.predict(X)
-    stats = stats_given_y_pred(X,y,y_pred)
-    
-    # model objects and outputs returned by stacking
-    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
-    model_outputs['y_pred'] = stats['y_pred']
-    model_outputs['residuals'] = stats['residuals']
-    # model_objects = model
-    
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=stats['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=stats['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={stats['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("CatBoostRegressor_predictions.png", dpi=300)
-    
-    # Make the model_outputs dataframes
-    list1_name = ['r-squared', 'RMSE', 'n_samples']        
-    list1_val = [stats["rsquared"], stats["RMSE"], stats["n_samples"]]
-    
-    stats = pd.DataFrame(
-        {
-            "Statistic": list1_name,
-            "CatBoostRegressor": list1_val
-        }
-        )
-    stats.set_index('Statistic',inplace=True)
+    # Goodness of fit statistics
+    metrics = fitness_metrics(
+        fitted_model, 
+        X, y)
+    stats = pd.DataFrame([metrics]).T
+    stats.index.name = 'Statistic'
+    stats.columns = ['CatBoostRegressor']
+    model_outputs['metrics'] = metrics
     model_outputs['stats'] = stats
-    print("CatBoostRegressor statistics of fitted model in model_outputs['stats']:")
-    print('')
-    print(model_outputs['stats'].to_markdown(index=True))
-    print('')
+    model_outputs['y_pred'] = fitted_model.predict(X)
+
+    if data['verbose'] == 'on':
+        print('')
+        print("CatBoostRegressor goodness of fit to training data in model_outputs['stats']:")
+        print('')
+        print(model_outputs['stats'].to_markdown(index=True))
+        print('')
+
     if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
         print("Parameters of fitted model in model_outputs['popt']:")
         print('')
         print(model_outputs['popt_table'].to_markdown(index=True))
         print('')
 
+    # residual plot for training error
+    if data['verbose'] == 'on':
+        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="actual_vs_predicted",
+            ax=axs[0]
+        )
+        axs[0].set_title("Actual vs. Predicted")
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="residual_vs_predicted",
+            ax=axs[1]
+        )
+        axs[1].set_title("Residuals vs. Predicted")
+        fig.suptitle(
+            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("CatBoostRegressor_predictions.png", dpi=300)
+    
     # Print the run time
     fit_time = time.time() - start_time
     print('Done')
@@ -7240,7 +7346,7 @@ def catboost_auto(X, y, **kwargs):
                 X, threshold=data['threshold'])
             X = data['preprocess_result']['df_processed']
 
-    data['feature_names'] = X.columns
+    data['feature_names'] = X.columns.to_list()
 
     extra_params = {
         'random_seed': data['random_state'],         
@@ -7976,7 +8082,7 @@ def forest_auto(X, y, **kwargs):
                 X, threshold=data['threshold'])
             X = data['preprocess_result']['df_processed']
 
-    data['feature_names'] = X.columns
+    data['feature_names'] = X.columns.to_list()
 
     extra_params = {
         'verbose': 0,                 
@@ -8738,7 +8844,7 @@ def knn_auto(X, y, **kwargs):
                 X, threshold=data['threshold'])
             X = data['preprocess_result']['df_processed']
 
-    data['feature_names'] = X.columns
+    data['feature_names'] = X.columns.to_list()
 
     extra_params = {
         # extra_params that are optional user-specified
@@ -9566,7 +9672,7 @@ def logistic_auto(X, y, **kwargs):
                 X, threshold=data['threshold'])
             X = data['preprocess_result']['df_processed']
 
-    data['feature_names'] = X.columns
+    data['feature_names'] = X.columns.to_list()
     # print('after preprocess_train: ',X.shape, y.shape,X.columns)
     
     extra_params = {
