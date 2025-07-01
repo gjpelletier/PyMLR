@@ -188,5 +188,5 @@ from PyMLR import model_agnostic
 
 # [Examples]([https://www.lexjansen.com/pnwsug/2008/DavidCassell-StoppingStepwise.pdf](https://github.com/gjpelletier/PyMLR/tree/main/Examples))
 
-[This folder]([https://www.lexjansen.com/pnwsug/2008/DavidCassell-StoppingStepwise.pdf](https://github.com/gjpelletier/PyMLR/tree/main/Examples)) contains examples using PyMLR in Jupyter Notebooks
+[This folder]([https://github.com/gjpelletier/PyMLR/tree/main/Examples]) contains examples using PyMLR in Jupyter Notebooks
 
