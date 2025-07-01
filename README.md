@@ -27,22 +27,21 @@ The PyMLR module includes the following main Python functions to facilitate the 
  
 The functions in PyMLR allow the user to write one line of high-level python code to provide the following:
 
-- final fitted model object
-- regression summary statistics of the best fit model (e.g. r-squared, adjusted r-squared, RMSE of residuals, p-value of the F-statistic, AIC, BIC, alpha, etc., if applicable)
-- best fit intercept and model coefficients (if applicable)
+- automatic cross-validated optimization of hyperparaneters by optuna with XGBoost, CatBoost, GradientBoostingRegressor, RandomForestRegressor, SVR, or KNeighborsRegressor
+- automated feature selection using SelectKBest, mutual_info, and f_regression in the optuna optimization pipeline 
+- automatic standardization of continuous features and output of the fitted StandardScaler 
+- automatic detection of categorical features and output of the fitted OneHotEncoder
+- output of metrics describing the model skill (e.g. r-squared, adjusted r-squared, RMSE of residuals, p-value of the F-statistic, AIC, BIC, alpha, etc., if applicable)
+- model-angostic analysis (plots of predicted vs actual, predicted vs residuals, SHAP Beeswarm, SHAP Importance, Permutation Importance, PDB/ICE)
+- plots of optuna optimization history, hyperparameter importance, and contour plots of relationships between hyperparameters and MSE 
+- plots showing other diagnostic descriptions of the analysis if applicable (e.g. coefficients vs alpha, MSE vs alpha, AIC and BIC vs alpha)
 - variance  inflation factors (if applicable)
-- plots of predicted vs actual and predicted vs residuals
-- figures showing other diagnostic descriptions of the analysis if applicable (e.g. coefficients vs alpha, MSE vs alpha, AIC and BIC vs alpha)
-- show plots of optuna optimization history, hyperparameter importance, and contour plots of relationships between hyperparameters and MSE 
-- automatic cross-validated Bayesian optimization of hyperparameters
+- best fit intercept and model coefficients (if applicable)
+- final fitted model object
 - automatic PCA transform of X with PCA-KNN regression and output of the optimized fitted PCA transformer (optional, knn_auto and knn)
-- automatic detection and use of GPU for computations (xgb, catboost)
+- automatic detection and use of GPU for computations (XGBoost)
 - automatic prevention of overfitting the training data with KNN regression (knn)
-- automatic detection of categorical features and application of OneHotEncoder (logistic, xgb)
-- automatic standardization of X and output of the scaler (optional)
-- optimization of feature selection (logistic, xgb)
 - optimization of logistic regression for binomial or multinomial response variables
-- perform model-agnostic analysis
 
 ### Lasso
 
