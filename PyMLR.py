@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.23"
+__version__ = "1.2.24"
 
 def check_X_y(X,y):
 
@@ -9881,7 +9881,6 @@ def model_agnostic(model, X_test, y_test,
         (feature importance and direction across all samples)
     - SHAP Bar Plot 
         (ranks features by mean absolute SHAP value)
-    - SHAP Waterfall Plot (of first observation only)
 
     Args:
     model= fitted sklearn/XGB/etc linear regression model object
@@ -10023,11 +10022,13 @@ def model_agnostic(model, X_test, y_test,
         plt.savefig(f"{output_dir}/shap_bar_importance.png", dpi=300, bbox_inches='tight')
         plt.close()
             
+        '''
         # Waterfall for first instance
         shap.plots.waterfall(shap_values[0], show=show)
         plt.savefig(f"{output_dir}/shap_waterfall_sample0.png", dpi=300, bbox_inches='tight')
         plt.close()
-    
+        '''
+        
         # Compute mean absolute SHAP values
         mean_abs_shap = np.abs(shap_values.values).mean(axis=0)
         
