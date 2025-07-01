@@ -27,7 +27,7 @@ The PyMLR module includes the following main Python functions to facilitate the 
  
 The functions in PyMLR allow the user to write one line of high-level python code to provide the following:
 
-- automatic cross-validated optimization of hyperparaneters by optuna with XGBoost, CatBoost, GradientBoostingRegressor, RandomForestRegressor, SVR, or KNeighborsRegressor
+- automatic cross-validated optimization of hyperparameters by optuna for XGBoost, CatBoost, GradientBoostingRegressor, RandomForestRegressor, SVR, or KNeighborsRegressor
 - automated feature selection using SelectKBest, mutual_info, and f_regression in the optuna optimization pipeline 
 - automatic standardization of continuous features and output of the fitted StandardScaler 
 - automatic detection of categorical features and output of the fitted OneHotEncoder
