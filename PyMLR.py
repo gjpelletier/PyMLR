@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.21"
+__version__ = "1.2.22"
 
 def check_X_y(X,y):
 
@@ -9947,6 +9947,9 @@ def model_agnostic(model, X_test, y_test,
         if continuous_cols != None:
             selected_features_continuous = list(
                 set(X_test_proc.columns) & set(continuous_cols))
+
+    if preprocess_result != None and selected_features == None:
+        selected_features= preprocess_result['columns_processed'] 
 
     # -------- Step 1: Residual Plot --------
     print('')
