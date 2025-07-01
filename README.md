@@ -181,8 +181,9 @@ from PyMLR import svr, svr_auto,
 from PyMLR import knn, knn_auto,
 from PyMLR import lgbm, stacking, stepwise
 from PyMLR import show_optuna
-from PyMLR import plot_predictions_from_test
-from PyMLR import plot_logistic_results_test
+from PyMLR import test_model
+from PyMLR import test_model_logistic
+from PyMLR import model_agnostic
 ```
 
 
