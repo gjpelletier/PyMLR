@@ -169,23 +169,6 @@ if you are upgrading from a previous installation of PyMLR, enter the following 
 pip install git+https://github.com/gjpelletier/PyMLR.git --upgrade
 ```
 
-Next import the main functions from the PyMLR module as needed using the following code in your notebook or python code:<br>
-```
-from PyMLR import logistic, logistic_auto
-from PyMLR import lasso, ridge, elastic
-from PyMLR import xgb, xgb_auto
-from PyMLR import catboost, catboost_auto,
-from PyMLR import gbr, gbr_auto,
-from PyMLR import forest, forest_auto,
-from PyMLR import svr, svr_auto,
-from PyMLR import knn, knn_auto,
-from PyMLR import lgbm, stacking, stepwise
-from PyMLR import show_optuna
-from PyMLR import test_model
-from PyMLR import test_model_logistic
-from PyMLR import model_agnostic
-```
-
 # [Examples](https://github.com/gjpelletier/PyMLR/tree/main/Examples)
 
 [The examples folder](https://github.com/gjpelletier/PyMLR/tree/main/Examples) contains examples using PyMLR in Jupyter Notebooks
