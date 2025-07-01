@@ -188,5 +188,5 @@ from PyMLR import model_agnostic
 
 # [Examples](https://github.com/gjpelletier/PyMLR/tree/main/Examples)
 
-[This folder](https://github.com/gjpelletier/PyMLR/tree/main/Examples) contains examples using PyMLR in Jupyter Notebooks
+[The examples folder](https://github.com/gjpelletier/PyMLR/tree/main/Examples) contains examples using PyMLR in Jupyter Notebooks
 
