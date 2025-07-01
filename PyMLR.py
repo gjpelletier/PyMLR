@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.22"
+__version__ = "1.2.23"
 
 def check_X_y(X,y):
 
@@ -9951,6 +9951,9 @@ def model_agnostic(model, X_test, y_test,
     if preprocess_result != None and selected_features == None:
         selected_features= preprocess_result['columns_processed'] 
 
+    if preprocess_result == None and selected_features == None:
+        selected_features= X_test_proc.columns.to_list() 
+    
     # -------- Step 1: Residual Plot --------
     print('')
     print('Step 1: Model skill metrics and residuals plot, please wait...')
