@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.24"
+__version__ = "1.2.25"
 
 def check_X_y(X,y):
 
@@ -4474,8 +4474,10 @@ def svr_auto(X, y, **kwargs):
     model_outputs['extra_params'] = extra_params
 
     print('Fitting SVR model with best parameters, please wait ...')
-    del best_params['num_features']
-    del best_params['selector_type']
+    if 'num_features' in best_params:
+        del best_params['num_features']
+    if 'selector_type' in best_params:
+        del best_params['selector_type']
     fitted_model = SVR(
         **best_params, **extra_params).fit(
         X[model_outputs['selected_features']],y)
@@ -5513,8 +5515,10 @@ def gbr_auto(X, y, **kwargs):
     model_outputs['extra_params'] = extra_params
 
     print('Fitting GradientBoostingRegressor model with best parameters, please wait ...')
-    del best_params['num_features']
-    del best_params['selector_type']
+    if 'num_features' in best_params:
+        del best_params['num_features']
+    if 'selector_type' in best_params:
+        del best_params['selector_type']
     fitted_model = GradientBoostingRegressor(
         **best_params, **extra_params).fit(
         X[model_outputs['selected_features']],y)
@@ -6383,8 +6387,10 @@ def xgb_auto(X, y, **kwargs):
     model_outputs['extra_params'] = extra_params
 
     print('Fitting XGBRegressor model with best parameters, please wait ...')
-    del best_params['num_features']
-    del best_params['selector_type']
+    if 'num_features' in best_params:
+        del best_params['num_features']
+    if 'selector_type' in best_params:
+        del best_params['selector_type']
     fitted_model = XGBRegressor(
         **best_params, **extra_params).fit(
         X[model_outputs['selected_features']],y)
@@ -7420,9 +7426,12 @@ def catboost_auto(X, y, **kwargs):
     model_outputs['extra_params'] = extra_params
 
     print('Fitting CatBoostRegressor model with best parameters, please wait ...')
-    del best_params['use_border_count']
-    del best_params['num_features']
-    del best_params['selector_type']
+    if 'use_border_count' in best_params:
+        del best_params['use_border_count']
+    if 'num_features' in best_params:
+        del best_params['num_features']
+    if 'selector_type' in best_params:
+        del best_params['selector_type']
     fitted_model = CatBoostRegressor(**best_params, **extra_params).fit(
         X[model_outputs['selected_features']],y)
        
@@ -8200,8 +8209,10 @@ def forest_auto(X, y, **kwargs):
     model_outputs['extra_params'] = extra_params
 
     print('Fitting RandomForestRegressor model with best parameters, please wait ...')
-    del best_params['num_features']
-    del best_params['selector_type']
+    if 'num_features' in best_params:
+        del best_params['num_features']
+    if 'selector_type' in best_params:
+        del best_params['selector_type']
     fitted_model = RandomForestRegressor(**best_params, **extra_params).fit(
         X[model_outputs['selected_features']],y)
     
@@ -8292,12 +8303,11 @@ def knn(X, y, **kwargs):
 
     """
     Linear regression with sklearn KNeighborsRegressor
-    Beta version
 
     by
     Greg Pelletier
     gjpelletier@gmail.com
-    10-June-2025
+    01-July-2025
 
     REQUIRED INPUTS (X and y should have same number of rows and 
     only contain real numbers)
@@ -8308,8 +8318,8 @@ def knn(X, y, **kwargs):
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
         # general params that are user-specified
-        random_state= 42,                 # random seed for reproducibility
-        n_trials= 50,                     # number of optuna trials
+        random_state= 42,           # random seed for reproducibility
+        n_trials= 50,               # number of optuna trials
         preprocess= True,           # Apply OneHotEncoder and StandardScaler
         preprocess_result= None,    # dict of the following result from 
                                     # preprocess_train if available:         
@@ -8319,24 +8329,19 @@ def knn(X, y, **kwargs):
                                     # - non_numeric_cats (non-num cat cols)
                                     # - continuous_cols  (continuous cols)
         verbose= 'on',
-        gpu= True,                        # Autodetect to use gpu if present
+        gpu= True,                  # Autodetect to use gpu if present
 
-        # user params 
-        pca_transform= False,             # PCA transform X
-        pca= None,                        # fitted PCA transform object
-        n_components= None,               # number of PCA components
-        
         # model params
-        n_neighbors= 5,                   # number of neighbors
-        p= 2,                             # power for Minkowski
-        leaf_size= 30,                    # Leaf size for BallTree or KDTree
-        weights= "uniform",               # weight function
-        metric= "minkowski",              # for distance comp
-        algorithm= "auto",                # algorithm    
+        n_neighbors= 5,             # number of neighbors
+        p= 2,                       # power for Minkowski
+        leaf_size= 30,              # Leaf size for BallTree or KDTree
+        weights= "uniform",         # weight function
+        metric= "minkowski",        # for distance comp
+        algorithm= "auto",          # algorithm    
         
         # model extra_params that are optional user-specified
-        n_jobs= -1,                       # number of jobs to run in parallel    
-        metric_params= None               # for user-specified metrics
+        n_jobs= -1,                 # number of jobs to run in parallel    
+        metric_params= None         # for user-specified metrics
 
     RETURNS
         fitted_model, model_outputs
@@ -8404,14 +8409,12 @@ def knn(X, y, **kwargs):
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
         'gpu': True,                        # Autodetect to use gpu if present
-        # 'n_splits': 5,                      # number of splits for KFold CV
-        # 'pruning': False,                   # prune poor optuna trials
 
-        # user params 
+        # # PCA may be added in a future version
         # 'pca_transform': True,            # force PCA transform
-        'pca_transform': False,             # force no PCA transform
-        'pca': None,                        # fitted PCA transform object
-        'n_components': None,               # number of PCA components
+        # 'pca_transform': False,           # force no PCA transform
+        # 'pca': None,                      # fitted PCA transform object
+        # 'n_components': None,             # number of PCA components
         
         # model params
         'n_neighbors': 5,                   # number of neighbors
@@ -8485,6 +8488,7 @@ def knn(X, y, **kwargs):
     if data['verbose'] == 'on':
         print('')
 
+    '''
     if data['pca_transform'] and data['pca'] == None:
         # fit new PCA transformer
         if n_components == None:
@@ -8510,6 +8514,7 @@ def knn(X, y, **kwargs):
         model_outputs['pca_transform'] = data['pca_transform']              
         model_outputs['pca'] = data['pca']                  
         model_outputs['n_components'] = data['n_components']             
+    '''
             
     params = {
         'n_neighbors': data['n_neighbors'],
@@ -8528,477 +8533,6 @@ def knn(X, y, **kwargs):
     
     fitted_model = KNeighborsRegressor(**params, **extra_params).fit(X,y)
         
-    # check to see of the model has intercept and coefficients
-    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-            and fitted_model.coef_.size==len(X.columns)):
-        intercept = fitted_model.intercept_
-        coefficients = fitted_model.coef_
-        # dataframe of model parameters, intercept and coefficients, including zero coefs
-        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
-        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
-        for i in range(n_param):
-            if i == 0:
-                popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
-            else:
-                popt[0][i] = X.columns[i-1]
-                popt[1][i] = model.coef_[i-1]
-        popt = pd.DataFrame(popt).T
-        popt.columns = ['Feature', 'Parameter']
-        # Table of intercept and coef
-        popt_table = pd.DataFrame({
-                "Feature": popt['Feature'],
-                "Parameter": popt['Parameter']
-            })
-        popt_table.set_index('Feature',inplace=True)
-        model_outputs['popt_table'] = popt_table
-    
-    # Calculate regression statistics
-    y_pred = fitted_model.predict(X)
-    stats = stats_given_y_pred(X,y,y_pred)
-    
-    # model objects and outputs returned by stacking
-    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    # model_outputs['standardize'] = data['standardize']   # 'on': X_scaled was used to fit, 'off': X was used
-    model_outputs['y_pred'] = stats['y_pred']
-    model_outputs['residuals'] = stats['residuals']
-    # model_objects = model
-    
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=stats['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=stats['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={stats['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("KNeighborsRegressor_predictions.png", dpi=300)
-    
-    # Make the model_outputs dataframes
-    list1_name = ['r-squared', 'RMSE', 'n_samples']        
-    list1_val = [stats["rsquared"], stats["RMSE"], stats["n_samples"]]
-    
-    stats = pd.DataFrame(
-        {
-            "Statistic": list1_name,
-            "KNeighborsRegressor": list1_val
-        }
-        )
-    stats.set_index('Statistic',inplace=True)
-    model_outputs['stats'] = stats
-    print("KNeighborsRegressor statistics of fitted model in model_outputs['stats']:")
-    print('')
-    print(model_outputs['stats'].to_markdown(index=True))
-    print('')
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
-        print("Parameters of fitted model in model_outputs['popt']:")
-        print('')
-        print(model_outputs['popt_table'].to_markdown(index=True))
-        print('')
-
-    # Print the run time
-    fit_time = time.time() - start_time
-    print('Done')
-    print(f"Time elapsed: {fit_time:.2f} sec")
-    print('')
-
-    # Restore warnings to normal
-    warnings.filterwarnings("default")
-
-    return fitted_model, model_outputs
-
-def knn_objective(trial, X, y, **kwargs):
-    '''
-    Objective function used by optuna 
-    to find the optimum hyper-parameters for 
-    sklearn KNeighborsRegressor
-    '''
-    import numpy as np
-    import pandas as pd
-    from sklearn.model_selection import cross_val_score, KFold
-    from PyMLR import detect_gpu
-    from sklearn.neighbors import KNeighborsRegressor
-    from sklearn.feature_selection import SelectKBest, mutual_info_regression
-    from sklearn.decomposition import PCA
-    from sklearn.metrics import mean_squared_error
-    import optuna
-    
-    # Set global random seed
-    np.random.seed(kwargs['random_state'])
-
-    # Make a copy of X to prevent changes in the calling function
-    # X = X.copy()
-
-    '''
-    # Feature Selection: Optimize number of features before PCA
-    if isinstance(kwargs['feature_selection'], list):
-        feature_selection = trial.suggest_categorical('feature_selection', kwargs['feature_selection']) 
-    else:
-        feature_selection = kwargs['feature_selection']    
-    # if kwargs['feature_selection'] == 'on':
-    # if kwargs['feature_selection']:
-    if feature_selection:
-        num_features = trial.suggest_int("num_features", 5, X.shape[1])  # Select top features
-        selector = SelectKBest(mutual_info_regression, k=num_features)
-        # X_selected = selector.fit_transform(X, y)
-        X = selector.fit_transform(X, y)
-        # Get indices of selected features
-        selected_indices = selector.get_support(indices=True)
-        # Get names of selected features
-        # feature_names = [f"Feature_{i}" for i in range(X.shape[1])]  # Assign names to features
-        feature_names = kwargs['feature_names']
-        selected_features = np.array(feature_names)[selected_indices]
-    else:
-        selected_features = kwargs['feature_names']
-    '''
-
-    # PCA Transformation: Optimize number of components
-    if isinstance(kwargs['pca_transform'], list):
-        # optuna chooses if pca_Transorm
-        pca_transform = trial.suggest_categorical('pca_transform', kwargs['pca_transform']) 
-    else:
-        # force input value of pca_transform= True or False
-        pca_transform = kwargs['pca_transform']
-    if pca_transform:
-        n_components = trial.suggest_int("n_components", 5, X.shape[1])  
-        pca = PCA(n_components=n_components).fit(X)
-        X = pd.DataFrame(pca.transform(X), columns= [f"PC_{i+1}" for i in range(n_components)])
-        X.index = y.index
-    else:
-        pca = None
-        n_components = None
-    
-    params = {
-        'n_neighbors': trial.suggest_int("n_neighbors",
-            kwargs['n_neighbors'][0], kwargs['n_neighbors'][1]),
-        'leaf_size': trial.suggest_int("leaf_size",
-            kwargs['leaf_size'][0], kwargs['leaf_size'][1])  ,  
-        'weights': trial.suggest_categorical("weights",
-            kwargs['weights']),
-        'metric': trial.suggest_categorical("metric",
-            kwargs['metric']),
-        'algorithm': trial.suggest_categorical("algorithm",
-            kwargs['algorithm']) 
-    }    
-
-    if params['metric'] == "minkowski":
-        params['p']= trial.suggest_int("p",
-            kwargs['p'][0], kwargs['p'][1], log=True) 
-    else:
-        params['p']= None
-
-    extra_params = {
-        'n_jobs': kwargs['n_jobs'],             
-        'metric_params': kwargs['metric_params']             
-    }
-
-    cv = KFold(n_splits=kwargs['n_splits'], 
-        shuffle=True, 
-        random_state=kwargs['random_state'])
-
-    # Train model with CV
-    model = KNeighborsRegressor(**params, **extra_params)
-
-    score = cross_val_score(model, X, y, cv=cv, scoring="neg_root_mean_squared_error")    
-
-    # prevent over-fitting of the train data
-    if not kwargs['allow_overfit']:
-        model.fit(X, y)
-        train_pred = model.predict(X)
-        train_mse = mean_squared_error(y, train_pred)    
-        if train_mse <= kwargs['tol']:
-            raise optuna.exceptions.TrialPruned(
-                "Training MSE is zero — likely overfitting")
-
-    # Store additional outputs
-    trial.set_user_attr("pca_transform", pca_transform)
-    trial.set_user_attr("pca", pca)
-    trial.set_user_attr("n_components", n_components)
-    trial.set_user_attr("X_opt", X)
-
-    return np.mean(score)
-    
-def knn_auto(X, y, **kwargs):
-
-    """
-    Autocalibration of KNeighborsRegressor hyperparameters
-    Beta version
-
-    by
-    Greg Pelletier
-    gjpelletier@gmail.com
-    13-June-2025
-
-    REQUIRED INPUTS (X and y should have same number of rows and 
-    only contain real numbers)
-    X = dataframe of the candidate independent variables 
-        (as many columns of data as needed)
-    y = dataframe of the dependent variable (one column of data)
-
-    OPTIONAL KEYWORD ARGUMENTS
-    **kwargs (optional keyword arguments):
-        # general params that are user-specified
-        random_state= 42,                 # random seed for reproducibility
-        n_trials= 50,                     # number of optuna trials
-        preprocess= True,           # Apply OneHotEncoder and StandardScaler
-        preprocess_result= None,    # dict of the following result from 
-                                    # preprocess_train if available:         
-                                    # - encoder          (OneHotEncoder)
-                                    # - scaler           (StandardScaler)
-                                    # - categorical_cols (categorical cols)
-                                    # - non_numeric_cats (non-num cat cols)
-                                    # - continuous_cols  (continuous cols)
-        verbose= 'on',
-        gpu= True,                        # Autodetect to use gpu if present
-        n_splits= 5,                      # number of splits for KFold CV
-        pruning= False,                   # prune poor optuna trials
-        allow_overfit= False,             # allow optuna to overfit train data
-        tol= 1e-6,                        # tolerance for overfit
-
-        # user params that are optimized by optuna
-        pca_transform= [True, False],     # PCA transform X
-                                          # [True, False] (default),
-                                          # True, or False
-        
-        # model params that are optimized by optuna
-        n_neighbors= [1, 50],             # number of neighbors
-        p= [1, 5],                        # power for Minkowski
-        leaf_size= [5, 100],              # Leaf size for BallTree or KDTree
-        weights= ["uniform", "distance"],    # weight function
-        metric= ["euclidean", "manhattan", "minkowski"],  # for distance comp
-        algorithm= ["ball_tree", "kd_tree", "brute"],    # algorithm    
-        
-        # model extra_params that are optional user-specified
-        n_jobs= -1,                       # number of jobs to run in parallel    
-        metric_params= None               # for user-specified metrics
-
-    RETURNS
-        fitted_model, model_outputs
-            model_objects is the fitted model object
-            model_outputs is a dictionary of the following outputs: 
-                - 'preprocess': True for OneHotEncoder and StandardScaler
-                - 'preprocess_result': output or echo of the following:
-                    - 'encoder': OneHotEncoder for categorical X
-                    - 'scaler': StandardScaler for continuous X
-                    - 'categorical_cols': categorical numerical columns 
-                    - 'non_numeric_cats': non-numeric categorical columns 
-                    - 'continous_cols': continuous numerical columns
-                - 'optuna_study': optimzed optuna study object
-                - 'best_trial': best trial from the optuna study
-                - 'feature_selection' = best_trial option to select features (True, False)
-                - 'selected_features' = best_trial selected features
-                - 'pca_transform' = best_trial option to PCA transform X (True, False)
-                - 'pca' = best_trial pca object if pca_transform
-                - 'n_components' = study.best_trial.user_attrs.get('n_components')
-                - 'best_params': best model hyper-parameters found by optuna
-                - 'y_pred': Predicted y values
-                - 'residuals': Residuals (y-y_pred) for each of the four methods
-                - 'stats': Regression statistics for each model
-
-    NOTE
-    Do any necessary/optional cleaning of the data before 
-    passing the data to this function. X and y should have the same number of rows
-    and contain only real numbers with no missing values. X can contain as many
-    columns as needed, but y should only be one column. X should have unique
-    column names for for each column
-
-    EXAMPLE 
-    model_objects, model_outputs = knn_auto(X, y)
-
-    """
-
-    from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
-    import time
-    import pandas as pd
-    import numpy as np
-    from sklearn.neighbors import KNeighborsRegressor
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.decomposition import PCA
-    from sklearn.model_selection import cross_val_score, train_test_split
-    from sklearn.metrics import mean_squared_error
-    from sklearn.base import clone
-    from sklearn.metrics import PredictionErrorDisplay
-    from sklearn.model_selection import train_test_split
-    import matplotlib.pyplot as plt
-    import warnings
-    import sys
-    import statsmodels.api as sm
-    import optuna
-
-    # Define default values of input data arguments
-    defaults = {
-
-        # general params that are user-specified
-        'random_state': 42,                 # random seed for reproducibility
-        'n_trials': 50,                     # number of optuna trials
-        'preprocess': True,           # True for OneHotEncoder and StandardScaler
-        'preprocess_result': None,    # dict of  the following result from 
-                                      # preprocess_train if available:         
-                                      # - encoder          (OneHotEncoder) 
-                                      # - scaler           (StandardScaler)
-                                      # - categorical_cols (categorical columns)
-                                      # - non_numeric_cats (non-numeric cats)
-                                      # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
-                                      # unique values for 
-                                      # categorical numeric features
-        'selected_features': None,    # pre-optimized selected features
-        'verbose': 'on',
-        'gpu': True,                        # Autodetect to use gpu if present
-        'n_splits': 5,                      # number of splits for KFold CV
-        'pruning': False,                   # prune poor optuna trials
-        'allow_overfit': False,             # allow optuna to overfit train data
-        'tol': 1e-6,                        # tolerance for overfit
-        
-        # user params that are optimized by optuna
-        'pca_transform': [True, False],     # optuna chooses if PCA transform
-        # 'pca_transform': True,            # force PCA transform
-        # 'pca_transform': False,           # force no PCA transform
-        
-        # [min,max] model params that are optimized by optuna
-        'n_neighbors': [1, 50],             # number of neighbors
-        'p': [1, 5],                        # power for Minkowski
-        'leaf_size': [5, 100],              # Leaf size for BallTree or KDTree
-
-        # categorical model params that are optimized by optuna
-        'weights': ["uniform", "distance"],    # weight function
-        'metric': ["euclidean", "manhattan", "minkowski"],  # for distance comp
-        'algorithm': ["ball_tree", "kd_tree", "brute"],    # algorithm    
-        
-        # model extra_params that are optional user-specified
-        'n_jobs': -1,                       # number of jobs to run in parallel    
-        'metric_params': None               # for user-specified metrics
-    }
-
-    # Update input data argumements with any provided keyword arguments in kwargs
-    data = {**defaults, **kwargs}
-     
-    # Auto-detect if GPU is present and use GPU if present
-    if data['gpu']:
-        use_gpu = detect_gpu()
-        if use_gpu:
-            data['device'] = 'gpu'
-        else:
-            data['device'] = 'cpu'
-    else:
-        data['device'] = 'cpu'
-
-    # copy X and y to avoid altering the originals
-    X = X.copy()
-    y = y.copy()
-    
-    X, y = check_X_y(X,y)
-
-    # Suppress warnings
-    warnings.filterwarnings('ignore')
-
-    # Set start time for calculating run time
-    start_time = time.time()
-
-    # Set global random seed
-    np.random.seed(data['random_state'])
-
-    # check if X contains dummy variables
-    X_has_dummies = detect_dummy_variables(X)
-
-    # Initialize output dictionaries
-    model_objects = {}
-    model_outputs = {}
-
-    # Pre-process X to apply OneHotEncoder and StandardScaler
-    if data['preprocess']:
-        if data['preprocess_result']!=None:
-            X = preprocess_test(X, data['preprocess_result'])
-        else:
-            data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
-            X = data['preprocess_result']['df_processed']
-
-    data['feature_names'] = X.columns.to_list()
-
-    extra_params = {
-        # extra_params that are optional user-specified
-        'n_jobs': data['n_jobs'],                       # number of jobs to run in parallel    
-        'metric_params': data['metric_params']               # for user-specified metrics
-    }
-
-    print('Running optuna to find best parameters, could take a few minutes, please wait...')
-    optuna.logging.set_verbosity(optuna.logging.ERROR)
-
-    if data['pruning']:
-        study = optuna.create_study(
-            direction="maximize", 
-            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True),
-            pruner=optuna.pruners.MedianPruner())
-    else:
-        study = optuna.create_study(
-            direction="maximize", 
-            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True))
-    
-    X_opt = X.copy()
-
-    from PyMLR import knn_objective
-    study.optimize(
-        lambda trial: knn_objective(trial, X_opt, y, **data), 
-        n_trials=data['n_trials'])
-
-    # best_params = study.best_params
-    # if 'n_components' in best_params:
-    #     best_params['pca_transform'] = True
-    # model_outputs['best_params'] = study.best_params
-    # model_outputs['best_params'] = best_params.copy()
-
-    model_outputs['optuna_study'] = study
-    model_outputs['best_trial'] = study.best_trial
-
-    # user attributes for optuna
-    # selected_features = study.best_trial.user_attrs.get('selected_features')
-    X_opt = study.best_trial.user_attrs.get('X_opt')
-    pca_transform = study.best_trial.user_attrs.get('pca_transform')
-    pca = study.best_trial.user_attrs.get('pca')
-    n_components = study.best_trial.user_attrs.get('n_components')
-    model_outputs['pruning'] = data['pruning']
-    model_outputs['X_opt'] = X_opt
-    model_outputs['pca_transform'] = pca_transform
-    model_outputs['pca'] = pca
-    model_outputs['n_components'] = n_components
-
-    print('Fitting KNeighborsRegressor model with best parameters, please wait ...')
-
-    # extract best_params from study and remove non-model params
-    best_params = study.best_params
-    if 'feature_selection' in best_params:
-        del best_params['feature_selection']
-    if 'num_features' in best_params:
-        del best_params['num_features']
-    if 'pca_transform' in best_params:
-        del best_params['pca_transform']
-    if 'n_components' in best_params:
-        del best_params['n_components']
-    model_outputs['best_params'] = best_params
-
-    # prepare X for use in the final fitted model
-    if pca_transform:
-        X = pd.DataFrame(pca.transform(X), columns= [f"PC_{i+1}" for i in range(n_components)])
-        X.index = y.index    
-        model_outputs['X_final'] = X
-    fitted_model = KNeighborsRegressor(
-        **best_params, **extra_params).fit(X,y)
-       
     # check to see of the model has intercept and coefficients
     if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
             and fitted_model.coef_.size==len(X.columns)):
@@ -9071,6 +8605,463 @@ def knn_auto(X, y, **kwargs):
         # plt.show()
         plt.savefig("KNeighborsRegressor_predictions.png", dpi=300)
     
+    # Print the run time
+    fit_time = time.time() - start_time
+    print('Done')
+    print(f"Time elapsed: {fit_time:.2f} sec")
+    print('')
+
+    # Restore warnings to normal
+    warnings.filterwarnings("default")
+
+    return fitted_model, model_outputs
+
+def knn_objective(trial, X, y, **kwargs):
+    '''
+    Objective function used by optuna 
+    to find the optimum hyper-parameters for 
+    sklearn KNeighborsRegressor
+    '''
+    import numpy as np
+    import pandas as pd
+    import xgboost as xgb
+    from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
+    from sklearn.pipeline import Pipeline
+    from sklearn.model_selection import cross_val_score, RepeatedKFold    
+    from PyMLR import detect_gpu
+    from sklearn.neighbors import KNeighborsRegressor
+    from sklearn.metrics import mean_squared_error
+    import optuna
+    # from sklearn.decomposition import PCA
+    
+    seed = kwargs.get("random_state", 42)
+    rng = np.random.default_rng(seed)
+
+    '''
+    # PCA Transformation: Optimize number of components
+    if isinstance(kwargs['pca_transform'], list):
+        # optuna chooses if pca_Transorm
+        pca_transform = trial.suggest_categorical('pca_transform', kwargs['pca_transform']) 
+    else:
+        # force input value of pca_transform= True or False
+        pca_transform = kwargs['pca_transform']
+    if pca_transform:
+        n_components = trial.suggest_int("n_components", 5, X.shape[1])  
+        pca = PCA(n_components=n_components).fit(X)
+        X = pd.DataFrame(pca.transform(X), columns= [f"PC_{i+1}" for i in range(n_components)])
+        X.index = y.index
+    else:
+        pca = None
+        n_components = None
+    '''
+    
+    params = {
+        'n_neighbors': trial.suggest_int("n_neighbors",
+            kwargs['n_neighbors'][0], kwargs['n_neighbors'][1]),
+        'leaf_size': trial.suggest_int("leaf_size",
+            kwargs['leaf_size'][0], kwargs['leaf_size'][1])  ,  
+        'weights': trial.suggest_categorical("weights",
+            kwargs['weights']),
+        'metric': trial.suggest_categorical("metric",
+            kwargs['metric']),
+        'algorithm': trial.suggest_categorical("algorithm",
+            kwargs['algorithm']) 
+    }    
+
+    if params['metric'] == "minkowski":
+        params['p']= trial.suggest_int("p",
+            kwargs['p'][0], kwargs['p'][1], log=True) 
+    else:
+        params['p']= None
+
+    extra_params = {
+        'n_jobs': kwargs['n_jobs'],             
+        'metric_params': kwargs['metric_params']             
+    }
+
+    # Feature selection
+    if kwargs.get("feature_selection", True):
+        num_features = trial.suggest_int("num_features", max(5, X.shape[1] // 10), X.shape[1])
+        selector_type = trial.suggest_categorical("selector_type", ["mutual_info", "f_regression"])
+
+        if selector_type == "mutual_info":
+            score_func = lambda X_, y_: mutual_info_regression(X_, y_, random_state=seed)
+        else:
+            score_func = f_regression
+
+        selector = SelectKBest(score_func=score_func, k=num_features)
+
+        pipeline = Pipeline([
+            ("feature_selector", selector),
+            ("regressor", KNeighborsRegressor(**params, **extra_params))
+        ])
+    else:
+        pipeline = Pipeline([
+            ("regressor", KNeighborsRegressor(**params, **extra_params))
+        ])
+        num_features = None
+
+    # Cross-validated scoring with RepeatedKFold
+    cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
+    scores = cross_val_score(
+        pipeline, X, y,
+        cv=cv,
+        scoring="neg_root_mean_squared_error"
+    )
+    score_mean = np.mean(scores)
+
+    # Fit on full data to extract feature info
+    pipeline.fit(X, y)
+
+    # prevent over-fitting of the train data
+    if not kwargs['allow_overfit']:
+        # pipeline.fit(X, y)
+        train_pred = pipeline.predict(X)
+        train_mse = mean_squared_error(y, train_pred)    
+        if train_mse <= kwargs['tol']:
+            raise optuna.exceptions.TrialPruned(
+                "Training MSE is zero — likely overfitting")
+        
+    if kwargs.get("feature_selection", True):
+        selector_step = pipeline.named_steps["feature_selector"]
+        selected_indices = selector_step.get_support(indices=True)
+        selected_features = np.array(kwargs["feature_names"])[selected_indices].tolist()
+    else:
+        selected_features = kwargs["feature_names"]
+
+    # Log feature importances and metadata
+    model_step = pipeline.named_steps["regressor"]
+    importances = getattr(model_step, "feature_importances_", None)
+    if importances is not None:
+        trial.set_user_attr("feature_importances", importances.tolist())
+
+    trial.set_user_attr("model", pipeline)
+    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("selected_features", selected_features)
+    trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
+
+    return score_mean
+   
+def knn_auto(X, y, **kwargs):
+
+    """
+    Autocalibration of KNeighborsRegressor hyperparameters
+    Beta version
+
+    by
+    Greg Pelletier
+    gjpelletier@gmail.com
+    01-July-2025
+
+    REQUIRED INPUTS (X and y should have same number of rows and 
+    only contain real numbers)
+    X = dataframe of the candidate independent variables 
+        (as many columns of data as needed)
+    y = dataframe of the dependent variable (one column of data)
+
+    OPTIONAL KEYWORD ARGUMENTS
+    **kwargs (optional keyword arguments):
+        # general params that are user-specified
+        random_state= 42,                 # random seed for reproducibility
+        n_trials= 50,                     # number of optuna trials
+        preprocess= True,                 # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,          # dict of the following result from 
+                                          # preprocess_train if available:         
+                                          # - encoder          (OneHotEncoder)
+                                          # - scaler           (StandardScaler)
+                                          # - categorical_cols (categorical cols)
+                                          # - non_numeric_cats (non-num cat cols)
+                                          # - continuous_cols  (continuous cols)
+        verbose= 'on',
+        gpu= True,                        # Autodetect to use gpu if present
+        n_splits= 5,                      # number of splits for KFold CV
+        pruning= False,                   # prune poor optuna trials
+        allow_overfit= False,             # allow optuna to overfit train data
+        tol= 1e-6,                        # tolerance for overfit
+                                          # used if allow_overfit=False
+                                          # as min allowable MSE
+
+        pruning= False,                   # prune poor optuna trials
+        feature_selection= True,          # optuna feature selection
+        
+        # model params that are optimized by optuna
+        n_neighbors= [1, 50],             # number of neighbors
+        p= [1, 5],                        # power for Minkowski
+        leaf_size= [5, 100],              # Leaf size for BallTree or KDTree
+        weights= ["uniform", "distance"],    # weight function
+        metric= ["euclidean", "manhattan", "minkowski"],  # for distance comp
+        algorithm= ["ball_tree", "kd_tree", "brute"],    # algorithm    
+        
+        # model extra_params that are optional user-specified
+        n_jobs= -1,                       # number of jobs to run in parallel    
+        metric_params= None               # for user-specified metrics
+
+    RETURNS
+        fitted_model, model_outputs
+            model_objects is the fitted model object
+            model_outputs is a dictionary of the following outputs: 
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
+                - 'optuna_study': optimzed optuna study object
+                - 'best_trial': best trial from the optuna study
+                - 'feature_selection' = best_trial option to select features (True, False)
+                - 'selected_features' = best_trial selected features
+                - 'best_params': best model hyper-parameters found by optuna
+                - 'y_pred': Predicted y values
+                - 'residuals': Residuals (y-y_pred) for each of the four methods
+                - 'stats': Regression statistics for each model
+
+    NOTE
+    Do any necessary/optional cleaning of the data before 
+    passing the data to this function. X and y should have the same number of rows
+    and contain only real numbers with no missing values. X can contain as many
+    columns as needed, but y should only be one column. X should have unique
+    column names for for each column
+
+    EXAMPLE 
+    model_objects, model_outputs = knn_auto(X, y)
+
+    """
+
+    from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    import time
+    import pandas as pd
+    import numpy as np
+    from sklearn.neighbors import KNeighborsRegressor
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.decomposition import PCA
+    from sklearn.model_selection import cross_val_score, train_test_split
+    from sklearn.metrics import mean_squared_error
+    from sklearn.base import clone
+    from sklearn.metrics import PredictionErrorDisplay
+    from sklearn.model_selection import train_test_split
+    import matplotlib.pyplot as plt
+    import warnings
+    import sys
+    import statsmodels.api as sm
+    import optuna
+
+    # Define default values of input data arguments
+    defaults = {
+
+        # general params that are user-specified
+        'random_state': 42,                 # random seed for reproducibility
+        'n_trials': 50,                     # number of optuna trials
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        'threshold': 10,              # threshold for number of 
+                                      # unique values for 
+                                      # categorical numeric features
+        'selected_features': None,    # pre-optimized selected features
+        'verbose': 'on',
+        'gpu': True,                        # Autodetect to use gpu if present
+        'n_splits': 5,                      # number of splits for KFold CV
+        'allow_overfit': False,             # allow optuna to overfit train data
+        'tol': 1e-6,                        # tolerance for overfit
+                                            # used if allow_overfit=False
+                                            # as min allowable MSE
+
+        'pruning': False,                   # prune poor optuna trials
+        'feature_selection': True,          # optuna feature selection
+        
+        # user params that are optimized by optuna (for future version)
+        # 'pca_transform': [True, False],     # optuna chooses if PCA transform
+        
+        # [min,max] model params that are optimized by optuna
+        'n_neighbors': [1, 50],             # number of neighbors
+        'p': [1, 5],                        # power for Minkowski
+        'leaf_size': [5, 100],              # Leaf size for BallTree or KDTree
+
+        # categorical model params that are optimized by optuna
+        'weights': ["uniform", "distance"],    # weight function
+        'metric': ["euclidean", "manhattan", "minkowski"],  # for distance comp
+        'algorithm': ["ball_tree", "kd_tree", "brute"],    # algorithm    
+        
+        # model extra_params that are optional user-specified
+        'n_jobs': -1,                       # number of jobs to run in parallel    
+        'metric_params': None               # for user-specified metrics
+    }
+
+    # Update input data argumements with any provided keyword arguments in kwargs
+    data = {**defaults, **kwargs}
+     
+    # Auto-detect if GPU is present and use GPU if present
+    if data['gpu']:
+        use_gpu = detect_gpu()
+        if use_gpu:
+            data['device'] = 'gpu'
+        else:
+            data['device'] = 'cpu'
+    else:
+        data['device'] = 'cpu'
+
+    # copy X and y to avoid altering the originals
+    X = X.copy()
+    y = y.copy()
+    
+    X, y = check_X_y(X,y)
+
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
+
+    # Set start time for calculating run time
+    start_time = time.time()
+
+    # Set global random seed
+    np.random.seed(data['random_state'])
+
+    # check if X contains dummy variables
+    X_has_dummies = detect_dummy_variables(X)
+
+    # Initialize output dictionaries
+    model_objects = {}
+    model_outputs = {}
+
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
+
+    data['feature_names'] = X.columns.to_list()
+
+    extra_params = {
+        # extra_params that are optional user-specified
+        'n_jobs': data['n_jobs'],                       # number of jobs to run in parallel    
+        'metric_params': data['metric_params']               # for user-specified metrics
+    }
+
+    print('Running optuna to find best parameters, could take a few minutes, please wait...')
+    optuna.logging.set_verbosity(optuna.logging.ERROR)
+       
+     # optional pruning
+    if data['pruning']:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True),
+            pruner=optuna.pruners.MedianPruner())
+    else:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True))
+    
+    X_opt = X.copy()    # copy X to prevent altering the original
+
+    from PyMLR import knn_objective
+    study.optimize(lambda trial: knn_objective(trial, X_opt, y, **data), n_trials=data['n_trials'])
+
+    # save outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['X_processed'] = X.copy()
+    model_outputs['pruning'] = data['pruning']
+    model_outputs['optuna_study'] = study
+    model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
+    model_outputs['feature_selection'] = data['feature_selection']
+    model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['best_trial'] = study.best_trial
+        
+    best_params = study.best_params
+    model_outputs['best_params'] = best_params
+    model_outputs['extra_params'] = extra_params
+
+    print('Fitting KNeighborsRegressor model with best parameters, please wait ...')
+    if 'num_features' in best_params:
+        del best_params['num_features']
+    if 'selector_type' in best_params:
+        del best_params['selector_type']
+    fitted_model = KNeighborsRegressor(
+        **best_params, **extra_params).fit(
+        X[model_outputs['selected_features']],y)
+        
+    # check to see of the model has intercept and coefficients
+    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+            and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
+        intercept = fitted_model.intercept_
+        coefficients = fitted_model.coef_
+        # dataframe of model parameters, intercept and coefficients, including zero coefs
+        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+        for i in range(n_param):
+            if i == 0:
+                popt[0][i] = 'Intercept'
+                popt[1][i] = model.intercept_
+            else:
+                popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
+                popt[1][i] = model.coef_[i-1]
+        popt = pd.DataFrame(popt).T
+        popt.columns = ['Feature', 'Parameter']
+        # Table of intercept and coef
+        popt_table = pd.DataFrame({
+                "Feature": popt['Feature'],
+                "Parameter": popt['Parameter']
+            })
+        popt_table.set_index('Feature',inplace=True)
+        model_outputs['popt_table'] = popt_table
+    
+    # Goodness of fit statistics
+    metrics = fitness_metrics(
+        fitted_model, 
+        X[model_outputs['selected_features']], y)
+    stats = pd.DataFrame([metrics]).T
+    stats.index.name = 'Statistic'
+    stats.columns = ['KNeighborsRegressor']
+    model_outputs['metrics'] = metrics
+    model_outputs['stats'] = stats
+    model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
+
+    if data['verbose'] == 'on':
+        print('')
+        print("KNeighborsRegressor goodness of fit to training data in model_outputs['stats']:")
+        print('')
+        print(model_outputs['stats'].to_markdown(index=True))
+        print('')
+
+    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+        print("Parameters of fitted model in model_outputs['popt']:")
+        print('')
+        print(model_outputs['popt_table'].to_markdown(index=True))
+        print('')
+
+    # residual plot for training error
+    if data['verbose'] == 'on':
+        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="actual_vs_predicted",
+            ax=axs[0]
+        )
+        axs[0].set_title("Actual vs. Predicted")
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="residual_vs_predicted",
+            ax=axs[1]
+        )
+        axs[1].set_title("Residuals vs. Predicted")
+        fig.suptitle(
+            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("KNeighborsRegressor_predictions.png", dpi=300)
+
     # Print the run time
     fit_time = time.time() - start_time
     print('Done')
