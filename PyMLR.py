@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.20"
+__version__ = "1.2.21"
 
 def check_X_y(X,y):
 
@@ -170,6 +170,8 @@ def preprocess_train(df, threshold=10, scale='standard'):
         dict: {
             'df': original data, converted to dataframe if needed
             'df_processed': Preprocessed DataFrame,
+            'columns_original': list of column names of original dataframe
+            'columns_processed': list of column names of processed dataframe            
             'encoder': Fitted OneHotEncoder or None,
             'scaler': Fitted Scaler or None,
             'categorical_cols': List of all categorical columns,
@@ -230,6 +232,8 @@ def preprocess_train(df, threshold=10, scale='standard'):
     return {
         'df': df,
         'df_processed': df_processed,
+        'columns_original': df.columns.to_list(),
+        'columns_processed': df_processed.columns.to_list(),
         'encoder': encoder,
         'scaler': scaler,
         'categorical_cols': all_cat_cols,
