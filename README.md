@@ -31,7 +31,7 @@ The functions in PyMLR allow the user to write one line of high-level python cod
 - automatic KFold cross-validated LassoCV, LassoLarsCV, RidgeCV, or ElasticNetCV regression
 - automated feature selection using SelectKBest, mutual_info regression, and f_regression in the optuna optimization pipeline 
 - automatic standardization of continuous features and output of the fitted StandardScaler 
-- automatic detection of categorical features and output of the fitted OneHotEncoder
+- automatic detection and encoding of categorical features and output of the fitted OneHotEncoder
 - metrics describing the model skill (e.g. r-squared, adjusted r-squared, RMSE of residuals, p-value of the F-statistic, AIC, BIC, alpha, etc., if applicable)
 - model-angostic analysis (plots of predicted vs actual, predicted vs residuals, SHAP Beeswarm, SHAP Importance, Permutation Importance, PDB/ICE)
 - plots of optuna optimization history, hyperparameter importance, and contour plots of relationships between hyperparameters and MSE 
