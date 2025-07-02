@@ -17,8 +17,8 @@ The PyMLR module includes the following main Python functions to facilitate the 
  - **forest** - RandomForestRegressor with user-specified hyperparameters
  - **svr_auto** - SVR with automatic cross-validated optimization of the hyperparameters
  - **svr** - SVR with user-specified hyperparameters
- - **knn_auto** - KNeighborsRegressor with automatic cross-validated optimization of the hyperparameters and optional PCA transformation
- - **knn** - KNeighborsRegressor with user-specified hyperparameters and optional PCA transformation
+ - **knn_auto** - KNeighborsRegressor with automatic cross-validated optimization of the hyperparameters
+ - **knn** - KNeighborsRegressor with user-specified hyperparameters
  - **lgbm** - LGBMRegressor with user-specified hyperparameters
  - **stacking** - StackingRegressor
  - **stepwise** - Stepwise multiple linear regression to minimize MSE, AIC, or BIC
@@ -39,9 +39,7 @@ The functions in PyMLR allow the user to write one line of high-level python cod
 - variance  inflation factors (if applicable)
 - best fit intercept and model coefficients (if applicable)
 - final fitted model object
-- automatic PCA transform of X with PCA-KNN regression and output of the optimized fitted PCA transformer (optional, knn_auto and knn)
 - automatic detection and use of GPU for computations (XGBoost)
-- automatic prevention of overfitting the training data with KNN regression (knn)
 - optimization of logistic regression for binomial or multinomial response variables
 
 ### Lasso
