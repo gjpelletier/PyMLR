@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.28"
+__version__ = "1.2.29"
 
 def check_X_y(X,y):
 
@@ -10542,6 +10542,7 @@ def linear_auto(X, y, **kwargs):
     import statsmodels.api as sm
     import optuna
     from sklearn.linear_model import LinearRegression
+    from statsmodels.stats.outliers_influence import variance_inflation_factor
 
     # Define default values of input data arguments
     defaults = {
