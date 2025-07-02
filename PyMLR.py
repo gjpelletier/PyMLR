@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.25"
+__version__ = "1.2.26"
 
 def check_X_y(X,y):
 
@@ -6482,7 +6482,6 @@ def lgbm(X, y, **kwargs):
 
     """
     Linear regression with LightGBM
-    Beta version
 
     by
     Greg Pelletier
@@ -6706,72 +6705,53 @@ def lgbm(X, y, **kwargs):
         popt_table.set_index('Feature',inplace=True)
         model_outputs['popt_table'] = popt_table
     
-    # Calculate regression statistics
-    y_pred = fitted_model.predict(X)
-    stats = stats_given_y_pred(X,y,y_pred)
-    
-    # model objects and outputs returned by stacking
-    # model_outputs['scaler'] = scaler                     # scaler used to standardize X
-    # model_outputs['standardize'] = data['standardize']   # True: X_scaled was used to fit, False: X was used
-    model_outputs['y_pred'] = stats['y_pred']
-    model_outputs['residuals'] = stats['residuals']
-    # model_objects = model
-    
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=stats['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=stats['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={stats['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("LGBMRegressor_predictions.png", dpi=300)
-    
-    # Make the model_outputs dataframes
-    '''
-    list1_name = ['r-squared','adjusted r-squared',
-                        'n_samples','df residuals','df model',
-                        'F-statistic','Prob (F-statistic)','RMSE',
-                        'Log-Likelihood','AIC','BIC']    
-    list1_val = [stats["rsquared"], stats["adj_rsquared"],
-                       stats["n_samples"], stats["df"], stats["dfn"], 
-                       stats["Fstat"], stats["pvalue"], stats["RMSE"],  
-                       stats["log_likelihood"],stats["aic"],stats["bic"]]
-    '''
-    list1_name = ['r-squared', 'RMSE', 'n_samples']        
-    list1_val = [stats["rsquared"], stats["RMSE"], stats["n_samples"]]
-    
-    stats = pd.DataFrame(
-        {
-            "Statistic": list1_name,
-            "LGBMRegressor": list1_val
-        }
-        )
-    stats.set_index('Statistic',inplace=True)
+    # Goodness of fit statistics
+    metrics = fitness_metrics(
+        fitted_model, 
+        X, y)
+    stats = pd.DataFrame([metrics]).T
+    stats.index.name = 'Statistic'
+    stats.columns = ['LGBMRegressor']
+    model_outputs['metrics'] = metrics
     model_outputs['stats'] = stats
-    print("LGBMRegressor statistics of fitted model in model_outputs['stats']:")
-    print('')
-    print(model_outputs['stats'].to_markdown(index=True))
-    print('')
+    model_outputs['y_pred'] = fitted_model.predict(X)
+
+    if data['verbose'] == 'on':
+        print('')
+        print("LGBMRegressor goodness of fit to training data in model_outputs['stats']:")
+        print('')
+        print(model_outputs['stats'].to_markdown(index=True))
+        print('')
+
     if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
         print("Parameters of fitted model in model_outputs['popt']:")
         print('')
         print(model_outputs['popt_table'].to_markdown(index=True))
         print('')
 
+    # residual plot for training error
+    if data['verbose'] == 'on':
+        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="actual_vs_predicted",
+            ax=axs[0]
+        )
+        axs[0].set_title("Actual vs. Predicted")
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="residual_vs_predicted",
+            ax=axs[1]
+        )
+        axs[1].set_title("Residuals vs. Predicted")
+        fig.suptitle(
+            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("LGBMRegressor_predictions.png", dpi=300)
+    
     # Print the run time
     fit_time = time.time() - start_time
     print('Done')
