@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.29"
+__version__ = "1.2.30"
 
 def check_X_y(X,y):
 
@@ -10371,15 +10371,40 @@ def linear_objective(trial, X, y, **kwargs):
     Supports selector choice, logs importances, and ensures reproducibility.
     '''
 
+    from PyMLR import stats_given_y_pred
     import numpy as np
     import pandas as pd
     from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
     from sklearn.pipeline import Pipeline
     from sklearn.model_selection import cross_val_score, RepeatedKFold
     from sklearn.linear_model import LinearRegression
+    from sklearn.metrics import make_scorer
 
     seed = kwargs.get("random_state", 42)
     rng = np.random.default_rng(seed)
+
+    # make custom aic_scorer using AIC
+    def aic_score(estimator, X, y):
+        # Fit the model on this fold
+        y_pred = estimator.predict(X)
+        n = len(y)
+        k = X.shape[1] + 1  # +1 for intercept        
+        residual = y - y_pred
+        rss = np.sum(residual ** 2)
+        aic = n * np.log(rss / n) + 2 * k
+        return -aic  # scikit-learn assumes higher is better
+    aic_scorer = make_scorer(aic_score, greater_is_better=True, needs_proba=False, needs_threshold=False)
+
+    # make custom bic_scorer using BIC
+    def bic_score(estimator, X, y):
+        y_pred = estimator.predict(X)
+        n = len(y)
+        k = X.shape[1] + 1  # number of parameters (+1 for intercept)
+        residual = y - y_pred
+        rss = np.sum(residual ** 2)
+        bic = n * np.log(rss / n) + k * np.log(n)
+        return -bic  # Negative because scikit-learn assumes greater is better
+    bic_scorer = make_scorer(bic_score, greater_is_better=True)
 
     # Define extra params
     extra_params = {
@@ -10413,11 +10438,20 @@ def linear_objective(trial, X, y, **kwargs):
 
     # Cross-validated scoring with RepeatedKFold
     cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
+
+    if kwargs['scorer'] == 'aic':
+        scorer = aic_scorer
+    elif kwargs['scorer'] == 'bic':
+        scorer = bic_scorer
+    else:
+        scorer ="neg_root_mean_squared_error"
     scores = cross_val_score(
         pipeline, X, y,
         cv=cv,
-        scoring="neg_root_mean_squared_error"
-    )
+        scoring=scorer
+        # scoring="neg_root_mean_squared_error"
+    )    
+
     score_mean = np.mean(scores)
 
     # Fit on full data to extract feature info
@@ -10483,6 +10517,8 @@ def linear_auto(X, y, **kwargs):
                                     # categorical numeric features
                                     # to encode with OneHotEncoder
 
+        scorer= 'aic',              # 'aic' or 'bic', otherwise
+                                    # 'neg_root_mean_squared_error' is used
         random_state= 42,           # Random seed for reproducibility.
         fit_intercept= True,        # calculate intercept
         copy_X= True,               # True: X will be copied
@@ -10565,6 +10601,8 @@ def linear_auto(X, y, **kwargs):
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
 
+        'scorer': 'aic',                    # 'aic' or 'bic', otherwise
+                                            # 'neg_root_mean_squared_error' is used
         'random_state': 42,                 # Random seed for reproducibility.
         'fit_intercept': True,              # calculate intercept
         'copy_X': True,                     # True: X will be copied
