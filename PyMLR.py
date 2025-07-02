@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.26"
+__version__ = "1.2.27"
 
 def check_X_y(X,y):
 
@@ -4061,10 +4061,10 @@ def svr(X, y, **kwargs):
         for i in range(n_param):
             if i == 0:
                 popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
+                popt[1][i] = fitted_model.intercept_
             else:
                 popt[0][i] = X.columns[i-1]
-                popt[1][i] = model.coef_[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
         # Table of intercept and coef
@@ -4493,10 +4493,10 @@ def svr_auto(X, y, **kwargs):
         for i in range(n_param):
             if i == 0:
                 popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
+                popt[1][i] = fitted_model.intercept_
             else:
                 popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
-                popt[1][i] = model.coef_[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
         # Table of intercept and coef
@@ -4508,7 +4508,10 @@ def svr_auto(X, y, **kwargs):
         model_outputs['popt_table'] = popt_table
     
     # Goodness of fit statistics
-    metrics = fitness_metrics(
+    # metrics = fitness_metrics(
+    #     fitted_model, 
+    #     X[model_outputs['selected_features']], y)
+    metrics = stats_given_model(
         fitted_model, 
         X[model_outputs['selected_features']], y)
     stats = pd.DataFrame([metrics]).T
@@ -5062,10 +5065,10 @@ def gbr(X, y, **kwargs):
         for i in range(n_param):
             if i == 0:
                 popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
+                popt[1][i] = fitted_model.intercept_
             else:
                 popt[0][i] = X.columns[i-1]
-                popt[1][i] = model.coef_[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
         # Table of intercept and coef
@@ -5534,10 +5537,10 @@ def gbr_auto(X, y, **kwargs):
         for i in range(n_param):
             if i == 0:
                 popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
+                popt[1][i] = fitted_model.intercept_
             else:
                 popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
-                popt[1][i] = model.coef_[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
         # Table of intercept and coef
@@ -5941,10 +5944,10 @@ def xgb(X, y, **kwargs):
         for i in range(n_param):
             if i == 0:
                 popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
+                popt[1][i] = fitted_model.intercept_
             else:
                 popt[0][i] = X.columns[i-1]
-                popt[1][i] = model.coef_[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
         # Table of intercept and coef
@@ -6406,10 +6409,10 @@ def xgb_auto(X, y, **kwargs):
         for i in range(n_param):
             if i == 0:
                 popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
+                popt[1][i] = fitted_model.intercept_
             else:
                 popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
-                popt[1][i] = model.coef_[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
         # Table of intercept and coef
@@ -6691,10 +6694,10 @@ def lgbm(X, y, **kwargs):
         for i in range(n_param):
             if i == 0:
                 popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
+                popt[1][i] = fitted_model.intercept_
             else:
                 popt[0][i] = X.columns[i-1]
-                popt[1][i] = model.coef_[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
         # Table of intercept and coef
@@ -6990,10 +6993,10 @@ def catboost(X, y, **kwargs):
         for i in range(n_param):
             if i == 0:
                 popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
+                popt[1][i] = fitted_model.intercept_
             else:
                 popt[0][i] = X.columns[i-1]
-                popt[1][i] = model.coef_[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
         # Table of intercept and coef
@@ -7426,10 +7429,10 @@ def catboost_auto(X, y, **kwargs):
         for i in range(n_param):
             if i == 0:
                 popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
+                popt[1][i] = fitted_model.intercept_
             else:
                 popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
-                popt[1][i] = model.coef_[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
         # Table of intercept and coef
@@ -7752,10 +7755,10 @@ def forest(X, y, **kwargs):
         for i in range(n_param):
             if i == 0:
                 popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
+                popt[1][i] = fitted_model.intercept_
             else:
                 popt[0][i] = X.columns[i-1]
-                popt[1][i] = model.coef_[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
         # Table of intercept and coef
@@ -8207,10 +8210,10 @@ def forest_auto(X, y, **kwargs):
         for i in range(n_param):
             if i == 0:
                 popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
+                popt[1][i] = fitted_model.intercept_
             else:
                 popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
-                popt[1][i] = model.coef_[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
         # Table of intercept and coef
@@ -8524,10 +8527,10 @@ def knn(X, y, **kwargs):
         for i in range(n_param):
             if i == 0:
                 popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
+                popt[1][i] = fitted_model.intercept_
             else:
                 popt[0][i] = X.columns[i-1]
-                popt[1][i] = model.coef_[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
         # Table of intercept and coef
@@ -8981,10 +8984,10 @@ def knn_auto(X, y, **kwargs):
         for i in range(n_param):
             if i == 0:
                 popt[0][i] = 'Intercept'
-                popt[1][i] = model.intercept_
+                popt[1][i] = fitted_model.intercept_
             else:
                 popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
-                popt[1][i] = model.coef_[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
         popt = pd.DataFrame(popt).T
         popt.columns = ['Feature', 'Parameter']
         # Table of intercept and coef
@@ -10096,7 +10099,682 @@ def model_agnostic(model, X_test, y_test,
 
     return output
 
+def linear(X, y, **kwargs):
 
+    """
+    Python function for sklearn LinearRegression 
 
-   
+    by
+    Greg Pelletier
+    gjpelletier@gmail.com
+    01-Jul-2025
 
+    REQUIRED INPUTS (X and y should have same number of rows and 
+    only contain real numbers)
+    X = dataframe of the candidate independent variables 
+        (as many columns of data as needed)
+    y = dataframe of the dependent variable (one column of data)
+
+    OPTIONAL KEYWORD ARGUMENTS
+    **kwargs (optional keyword arguments):
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
+        verbose= 'on' (default) or 'off' 
+        fit_intercept= True,        # calculate intercept
+        copy_X= True,               # True: X will be copied
+        n_jobs= None,               # -1 to use all CPUs
+        positive= False             # True forces coefficients to be positive
+
+    RETURNS
+        model_objects, model_outputs
+            model_objects is the fitted model object
+            model_outputs is a dictionary of the following outputs: 
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
+                - 'y_pred': Predicted y values
+                - 'residuals': Residuals (y-y_pred) for each of the four methods
+                - 'stats': Regression statistics for each model
+                - 'vif': Variance Inflation Factors of continuous features
+
+    NOTE
+    Do any necessary/optional cleaning of the data before 
+    passing the data to this function. X and y should have the same number of rows
+    and contain only real numbers with no missing values. X can contain as many
+    columns as needed, but y should only be one column. X should have unique
+    column names for for each column
+
+    EXAMPLE 
+    model_objects, model_outputs = svr(X, y)
+
+    """
+
+    from PyMLR import stats_given_y_pred, stats_given_model, detect_dummy_variables
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    import time
+    import pandas as pd
+    import numpy as np
+    from sklearn.linear_model import LinearRegression
+    from sklearn.metrics import PredictionErrorDisplay
+    import matplotlib.pyplot as plt
+    import warnings
+    import sys
+    import statsmodels.api as sm
+    from statsmodels.stats.outliers_influence import variance_inflation_factor
+    # import xgboost as xgb
+
+    # Define default values of input data arguments
+    defaults = {
+        'preprocess': True,         # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,  # dict of  the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder) 
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical columns)
+                                    # - non_numeric_cats (non-numeric cats)
+                                    # - continuous_cols  (continuous columns)
+        'threshold': 10,            # threshold for number of 
+                                    # unique values for 
+                                    # categorical numeric features
+        'selected_features': None,  # pre-optimized selected features
+        'verbose': 'on',
+        'fit_intercept': True,      # calculate intercept
+        'copy_X': True,             # True: X will be copied
+        'tol': 1e-6,                # precision of  solution (not used)
+        'n_jobs': None,             # -1 to use all CPUs
+        'positive': False           # True forces coefficients to be positive
+        }
+
+    # Update input data argumements with any provided keyword arguments in kwargs
+    data = {**defaults, **kwargs}
+
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
+    X, y = check_X_y(X,y)
+
+    # Set start time for calculating run time
+    start_time = time.time()
+
+    # check if X contains dummy variables
+    X_has_dummies = detect_dummy_variables(X)
+
+    # Initialize output dictionaries
+    model_objects = {}
+    model_outputs = {}
+
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
+
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
+    else:
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
+
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
+    print('Fitting LinearRegression model, please wait ...')
+    if data['verbose'] == 'on':
+        print('')
+
+    params = {
+        'fit_intercept': data['fit_intercept'], # calculate intercept
+        'copy_X':  data['copy_X'],              # True: X will be copied
+        'n_jobs':  data['n_jobs'],              # -1 to use all CPUs
+        'positive':  data['positive']           # True forces coefficients to be positive
+    }
+        
+    fitted_model = LinearRegression(**params).fit(X,y)
+
+    # check to see of the model has intercept and coefficients
+    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+            and fitted_model.coef_.size==len(X.columns)):
+        intercept = fitted_model.intercept_
+        coefficients = fitted_model.coef_
+        # dataframe of model parameters, intercept and coefficients, including zero coefs
+        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+        for i in range(n_param):
+            if i == 0:
+                popt[0][i] = 'Intercept'
+                popt[1][i] = fitted_model.intercept_
+            else:
+                popt[0][i] = X.columns[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
+        popt = pd.DataFrame(popt).T
+        popt.columns = ['Feature', 'Parameter']
+        # Table of intercept and coef
+        popt_table = pd.DataFrame({
+                "Feature": popt['Feature'],
+                "Parameter": popt['Parameter']
+            })
+        popt_table.set_index('Feature',inplace=True)
+        model_outputs['popt_table'] = popt_table
+    
+    # Goodness of fit statistics
+    y_pred = fitted_model.predict(X)
+    metrics = stats_given_y_pred(X, y, y_pred)
+    keys_to_select = ['rsquared', 'adj_rsquared','n_samples',
+        'df','dfn','Fstat','pvalue',
+        'RMSE','log_likelihood','aic','bic']    
+    metrics = {key: metrics[key] for key in keys_to_select if key in metrics}
+    stats = pd.DataFrame([metrics])
+    new_cols = ['r-squared','adjusted r-squared','n_samples',
+        'df residuals','df model','F-statistic','Prob (F-statistic)',
+        'RMSE','Log-Likelihood','AIC','BIC']
+    stats.columns = new_cols
+    stats = stats.T
+    stats.index.name = 'Statistic'
+    stats.columns = ['LinearRegression']
+    model_outputs['metrics'] = metrics
+    model_outputs['stats'] = stats
+    model_outputs['y_pred'] = fitted_model.predict(X)
+
+    # VIF
+    model_ = fitted_model
+    if data['preprocess']:
+        selected_continuous_cols = [
+            item for item in model_outputs['preprocess_result']['continuous_cols']
+            if item in model_outputs['selected_features']]
+        X_ = X[selected_continuous_cols].copy()
+    else:
+        X_ = X.copy()
+    X__ = sm.add_constant(X_)    # Add a constant for the intercept
+    vif = pd.DataFrame()
+    vif['Feature'] = X__.columns
+    vif["VIF"] = [variance_inflation_factor(X__.values, i)
+                        for i in range(len(X__.columns))]
+    vif.set_index('Feature',inplace=True)
+    vif.index.name = 'Feature'
+    model_outputs['vif'] = vif
+
+    if data['verbose'] == 'on':
+        print("LinearRegression goodness of fit to training data in model_outputs['stats']:")
+        print('')
+        print(model_outputs['stats'].to_markdown(index=True))
+        print('')
+
+    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+        print("Parameters of fitted model in model_outputs['popt']:")
+        print('')
+        print(model_outputs['popt_table'].to_markdown(index=True))
+        print('')
+
+    if data['verbose'] == 'on':
+        print("Variance Inflation Factors in model_outputs['vif']:")
+        print('')
+        print(model_outputs['vif'].to_markdown(index=True))
+        print('')
+
+    # residual plot for training error
+    if data['verbose'] == 'on':
+        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="actual_vs_predicted",
+            ax=axs[0]
+        )
+        axs[0].set_title("Actual vs. Predicted")
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="residual_vs_predicted",
+            ax=axs[1]
+        )
+        axs[1].set_title("Residuals vs. Predicted")
+        fig.suptitle(
+            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("LinearRegression_predictions.png", dpi=300)
+    
+    # Print the run time
+    fit_time = time.time() - start_time
+    print('Done')
+    print(f"Time elapsed: {fit_time:.2f} sec")
+    print('')
+
+    # Restore warnings to normal
+    warnings.filterwarnings("default")
+
+    return fitted_model, model_outputs
+
+def linear_objective(trial, X, y, **kwargs):
+    '''
+    Optuna objective for optimizing XGBRegressor with optional feature selection.
+    Supports selector choice, logs importances, and ensures reproducibility.
+    '''
+
+    import numpy as np
+    import pandas as pd
+    from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
+    from sklearn.pipeline import Pipeline
+    from sklearn.model_selection import cross_val_score, RepeatedKFold
+    from sklearn.linear_model import LinearRegression
+
+    seed = kwargs.get("random_state", 42)
+    rng = np.random.default_rng(seed)
+
+    # Define extra params
+    extra_params = {
+        'fit_intercept': kwargs['fit_intercept'], # calculate intercept
+        'copy_X': kwargs['copy_X'],              # True: X will be copied
+        'n_jobs': kwargs['n_jobs'],              # -1 to use all CPUs
+        'positive': kwargs['positive']           # True forces coefficients to be positive
+    }
+
+    # Feature selection
+    if kwargs.get("feature_selection", True):
+        num_features = trial.suggest_int("num_features", max(5, X.shape[1] // 10), X.shape[1])
+        selector_type = trial.suggest_categorical("selector_type", ["mutual_info", "f_regression"])
+
+        if selector_type == "mutual_info":
+            score_func = lambda X_, y_: mutual_info_regression(X_, y_, random_state=seed)
+        else:
+            score_func = f_regression
+
+        selector = SelectKBest(score_func=score_func, k=num_features)
+
+        pipeline = Pipeline([
+            ("feature_selector", selector),
+            ("regressor", LinearRegression(**extra_params))
+        ])
+    else:
+        pipeline = Pipeline([
+            ("regressor", LinearRegression(**extra_params))
+        ])
+        num_features = None
+
+    # Cross-validated scoring with RepeatedKFold
+    cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
+    scores = cross_val_score(
+        pipeline, X, y,
+        cv=cv,
+        scoring="neg_root_mean_squared_error"
+    )
+    score_mean = np.mean(scores)
+
+    # Fit on full data to extract feature info
+    pipeline.fit(X, y)
+
+    if kwargs.get("feature_selection", True):
+        selector_step = pipeline.named_steps["feature_selector"]
+        selected_indices = selector_step.get_support(indices=True)
+        selected_features = np.array(kwargs["feature_names"])[selected_indices].tolist()
+    else:
+        selected_features = kwargs["feature_names"]
+
+    # Log feature importances and metadata
+    model_step = pipeline.named_steps["regressor"]
+    importances = getattr(model_step, "feature_importances_", None)
+    if importances is not None:
+        trial.set_user_attr("feature_importances", importances.tolist())
+
+    trial.set_user_attr("model", pipeline)
+    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("selected_features", selected_features)
+    trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
+
+    return score_mean    
+
+def linear_auto(X, y, **kwargs):
+
+    """
+    Autocalibration of LinearRegression 
+    with optimized feature selection by optuna
+    Preprocess with OneHotEncoder and StandardScaler
+    Pipeline for feature selector and regressor
+
+    by
+    Greg Pelletier
+    gjpelletier@gmail.com
+    02-July-2025
+
+    REQUIRED INPUTS (X and y should have same number of rows and 
+    only contain real numbers)
+    X = dataframe of the candidate independent variables 
+        (as many columns of data as needed)
+    y = dataframe of the dependent variable (one column of data)
+
+    OPTIONAL KEYWORD ARGUMENTS
+    **kwargs (optional keyword arguments):
+        verbose= 'on' (default) or 'off'
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
+        gpu= True (default) or False to autodetect if the computer has a gpu and use it
+        n_trials= 50,               # number of optuna trials
+        n_splits= 5,                # number of splits for KFold CV
+        pruning= False,             # prune poor optuna trials
+        feature_selection= True,    # optuna feature selection
+        threshold= 10,              # threshold for number of 
+                                    # unique values to identify
+                                    # categorical numeric features
+                                    # to encode with OneHotEncoder
+
+        fit_intercept= True,        # calculate intercept
+        copy_X= True,               # True: X will be copied
+        n_jobs= None,               # -1 to use all CPUs
+        positive= False             # True forces coefficients to be positive
+
+    RETURNS
+        fitted_model, model_outputs
+            model_objects is the fitted model object
+            model_outputs is a dictionary of the following outputs: 
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns
+                    - 'non_numeric_cats': non-numeric categorical columns
+                    - 'continous_cols': continuous numerical columns                
+                - 'optuna_study': optimzed optuna study object
+                - 'optuna_model': optimzed optuna model object
+                - 'best_trial': best trial from the optuna study
+                - 'feature_selection' = option to select features (True, False)
+                - 'selected_features' = selected features
+                - 'best_params': best model hyper-parameters found by optuna
+                - 'extra_params': other model options used to fit the model
+                - 'metrics': dict of goodness of fit metrics for train data
+                - 'stats': dataframe of goodness of fit metrics for train data
+                - 'X_processed': pre-processed X with encoding and scaling
+                - 'y_pred': best model predicted y
+
+    NOTE
+    Do any necessary/optional cleaning of the data before 
+    passing the data to this function. X and y should have the same number of rows
+    and contain only real numbers with no missing values. X can contain as many
+    columns as needed, but y should only be one column. X should have unique
+    column names for for each column
+
+    EXAMPLE 
+    model_objects, model_outputs = xgb_auto(X, y)
+
+    """
+
+    from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test, fitness_metrics, check_X_y
+    import time
+    import pandas as pd
+    import numpy as np
+    from sklearn.ensemble import GradientBoostingRegressor
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.model_selection import cross_val_score, train_test_split
+    from sklearn.metrics import mean_squared_error
+    from sklearn.base import clone
+    from sklearn.metrics import PredictionErrorDisplay
+    from sklearn.model_selection import train_test_split
+    import matplotlib.pyplot as plt
+    import warnings
+    import sys
+    import statsmodels.api as sm
+    import optuna
+    from sklearn.linear_model import LinearRegression
+
+    # Define default values of input data arguments
+    defaults = {
+        'n_trials': 50,                     # number of optuna trials
+        'preprocess': True,                 # Apply OneHotEncoder and StandardScaler
+        'preprocess_result': None,          # dict of  the following result from 
+                                            # preprocess_train if available:         
+                                            # - encoder          (OneHotEncoder) 
+                                            # - scaler           (StandardScaler)
+                                            # - categorical_cols (categorical columns)
+                                            # - non_numeric_cats (non-numeric cats)
+                                            # - continuous_cols  (continuous columns)
+        'threshold': 10,                    # threshold for number of 
+                                            # unique values for 
+                                            # categorical numeric features
+        'verbose': 'on',
+        'gpu': True,                        # Autodetect to use gpu if present
+        'n_splits': 5,                      # number of splits for KFold CV
+
+        'pruning': False,                   # prune poor optuna trials
+        'feature_selection': True,          # optuna feature selection
+
+        'fit_intercept': True,              # calculate intercept
+        'copy_X': True,                     # True: X will be copied
+        'tol': 1e-6,                        # precision of  solution (not used)
+        'n_jobs': None,                     # -1 to use all CPUs
+        'positive': False                   # True forces coefficients to be positive
+    }
+
+    # Update input data argumements with any provided keyword arguments in kwargs
+    data = {**defaults, **kwargs}
+
+    # Auto-detect if GPU is present and use GPU if present
+    if data['gpu']:
+        use_gpu = detect_gpu()
+        if use_gpu:
+            data['device'] = 'gpu'
+        else:
+            data['device'] = 'cpu'
+    else:
+        data['device'] = 'cpu'
+
+    # copy X and y to avoid altering the originals
+    X = X.copy()
+    y = y.copy()
+    
+    X, y = check_X_y(X,y)
+
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
+
+    # Set start time for calculating run time
+    start_time = time.time()
+
+    # Set global random seed
+    np.random.seed(data['random_state'])
+
+    # check if X contains dummy variables
+    X_has_dummies = detect_dummy_variables(X)
+
+    # Initialize output dictionaries
+    model_objects = {}
+    model_outputs = {}
+
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            data['preprocess_result'] = preprocess_train(
+                X, threshold=data['threshold'])
+            X = data['preprocess_result']['df_processed']
+
+    data['feature_names'] = X.columns.to_list()
+    
+    extra_params = {
+        'fit_intercept': data['fit_intercept'], # calculate intercept
+        'copy_X':  data['copy_X'],              # True: X will be copied
+        'n_jobs':  data['n_jobs'],              # -1 to use all CPUs
+        'positive':  data['positive']           # True forces coefficients to be positive
+    }
+    
+    print('Running optuna to find best parameters, could take a few minutes, please wait...')
+    optuna.logging.set_verbosity(optuna.logging.ERROR)
+
+    # optional pruning
+    if data['pruning']:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True),
+            pruner=optuna.pruners.MedianPruner())
+    else:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True))
+    
+    X_opt = X.copy()    # copy X to prevent altering the original
+
+    from PyMLR import linear_objective
+    study.optimize(lambda trial: linear_objective(trial, X_opt, y, **data), n_trials=data['n_trials'])
+
+    # save outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['X_processed'] = X.copy()
+    model_outputs['pruning'] = data['pruning']
+    model_outputs['optuna_study'] = study
+    model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
+    model_outputs['feature_selection'] = data['feature_selection']
+    model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['best_trial'] = study.best_trial
+        
+    best_params = study.best_params
+    model_outputs['best_params'] = best_params
+    model_outputs['extra_params'] = extra_params
+
+    print('Fitting LinearRegression model with best parameters, please wait ...')
+    fitted_model = LinearRegression(
+        **extra_params).fit(
+        X[model_outputs['selected_features']],y)
+       
+    # check to see of the model has intercept and coefficients
+    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+            and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
+        intercept = fitted_model.intercept_
+        coefficients = fitted_model.coef_
+        # dataframe of model parameters, intercept and coefficients, including zero coefs
+        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+        for i in range(n_param):
+            if i == 0:
+                popt[0][i] = 'Intercept'
+                popt[1][i] = fitted_model.intercept_
+            else:
+                popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
+        popt = pd.DataFrame(popt).T
+        popt.columns = ['Feature', 'Parameter']
+        # Table of intercept and coef
+        popt_table = pd.DataFrame({
+                "Feature": popt['Feature'],
+                "Parameter": popt['Parameter']
+            })
+        popt_table.set_index('Feature',inplace=True)
+        model_outputs['popt_table'] = popt_table
+    
+    # Goodness of fit statistics
+    y_pred = fitted_model.predict(X[model_outputs['selected_features']])
+    metrics = stats_given_y_pred(X[model_outputs['selected_features']], y, y_pred)
+    keys_to_select = ['rsquared', 'adj_rsquared','n_samples',
+        'df','dfn','Fstat','pvalue',
+        'RMSE','log_likelihood','aic','bic']    
+    metrics = {key: metrics[key] for key in keys_to_select if key in metrics}
+    stats = pd.DataFrame([metrics])
+    new_cols = ['r-squared','adjusted r-squared','n_samples',
+        'df residuals','df model','F-statistic','Prob (F-statistic)',
+        'RMSE','Log-Likelihood','AIC','BIC']
+    stats.columns = new_cols
+    stats = stats.T
+    stats.index.name = 'Statistic'
+    stats.columns = ['LinearRegression']
+    model_outputs['metrics'] = metrics
+    model_outputs['stats'] = stats
+    model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
+
+    # VIF
+    model_ = fitted_model
+    if data['preprocess']:
+        selected_continuous_cols = [
+            item for item in model_outputs['preprocess_result']['continuous_cols']
+            if item in model_outputs['selected_features']]
+        X_ = X[selected_continuous_cols].copy()
+    else:
+        X_ = X.copy()
+    X__ = sm.add_constant(X_)    # Add a constant for the intercept
+    vif = pd.DataFrame()
+    vif['Feature'] = X__.columns
+    vif["VIF"] = [variance_inflation_factor(X__.values, i)
+                        for i in range(len(X__.columns))]
+    vif.set_index('Feature',inplace=True)
+    vif.index.name = 'Feature'
+    model_outputs['vif'] = vif
+
+    if data['verbose'] == 'on':
+        print("LinearRegression goodness of fit to training data in model_outputs['stats']:")
+        print('')
+        print(model_outputs['stats'].to_markdown(index=True))
+        print('')
+
+    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+        print("Parameters of fitted model in model_outputs['popt']:")
+        print('')
+        print(model_outputs['popt_table'].to_markdown(index=True))
+        print('')
+
+    if data['verbose'] == 'on':
+        print("Variance Inflation Factors in model_outputs['vif']:")
+        print('')
+        print(model_outputs['vif'].to_markdown(index=True))
+        print('')
+
+    # residual plot for training error
+    if data['verbose'] == 'on':
+        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="actual_vs_predicted",
+            ax=axs[0]
+        )
+        axs[0].set_title("Actual vs. Predicted")
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred=model_outputs['y_pred'],
+            kind="residual_vs_predicted",
+            ax=axs[1]
+        )
+        axs[1].set_title("Residuals vs. Predicted")
+        fig.suptitle(
+            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("LinearRegression_predictions.png", dpi=300)
+
+    # Print the run time
+    fit_time = time.time() - start_time
+    print('Done')
+    print(f"Time elapsed: {fit_time:.2f} sec")
+    print('')
+
+    # Restore warnings to normal
+    warnings.filterwarnings("default")
+
+    return fitted_model, model_outputs
+    
+    
