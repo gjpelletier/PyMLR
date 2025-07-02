@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.27"
+__version__ = "1.2.28"
 
 def check_X_y(X,y):
 
@@ -10483,6 +10483,7 @@ def linear_auto(X, y, **kwargs):
                                     # categorical numeric features
                                     # to encode with OneHotEncoder
 
+        random_state= 42,           # Random seed for reproducibility.
         fit_intercept= True,        # calculate intercept
         copy_X= True,               # True: X will be copied
         n_jobs= None,               # -1 to use all CPUs
@@ -10519,7 +10520,7 @@ def linear_auto(X, y, **kwargs):
     column names for for each column
 
     EXAMPLE 
-    model_objects, model_outputs = xgb_auto(X, y)
+    model_objects, model_outputs = linear_auto(X, y)
 
     """
 
@@ -10563,6 +10564,7 @@ def linear_auto(X, y, **kwargs):
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
 
+        'random_state': 42,                 # Random seed for reproducibility.
         'fit_intercept': True,              # calculate intercept
         'copy_X': True,                     # True: X will be copied
         'tol': 1e-6,                        # precision of  solution (not used)
