@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.30"
+__version__ = "1.2.31"
 
 def check_X_y(X,y):
 
@@ -10390,10 +10390,11 @@ def linear_objective(trial, X, y, **kwargs):
         n = len(y)
         k = X.shape[1] + 1  # +1 for intercept        
         residual = y - y_pred
-        rss = np.sum(residual ** 2)
+        # rss = np.sum(residual ** 2)
+        rss = max(np.sum(residual ** 2), 1e-8)
         aic = n * np.log(rss / n) + 2 * k
         return -aic  # scikit-learn assumes higher is better
-    aic_scorer = make_scorer(aic_score, greater_is_better=True, needs_proba=False, needs_threshold=False)
+    aic_scorer = make_scorer(aic_score, greater_is_better=True)
 
     # make custom bic_scorer using BIC
     def bic_score(estimator, X, y):
@@ -10401,7 +10402,8 @@ def linear_objective(trial, X, y, **kwargs):
         n = len(y)
         k = X.shape[1] + 1  # number of parameters (+1 for intercept)
         residual = y - y_pred
-        rss = np.sum(residual ** 2)
+        # rss = np.sum(residual ** 2)
+        rss = max(np.sum(residual ** 2), 1e-8)
         bic = n * np.log(rss / n) + k * np.log(n)
         return -bic  # Negative because scikit-learn assumes greater is better
     bic_scorer = make_scorer(bic_score, greater_is_better=True)
@@ -10448,8 +10450,8 @@ def linear_objective(trial, X, y, **kwargs):
     scores = cross_val_score(
         pipeline, X, y,
         cv=cv,
-        scoring=scorer
-        # scoring="neg_root_mean_squared_error"
+        # scoring=scorer                          # scorer still needs debugging as of 7/2/2025
+        scoring="neg_root_mean_squared_error"     # hard-wire until scorer is debugged
     )    
 
     score_mean = np.mean(scores)
@@ -10517,8 +10519,6 @@ def linear_auto(X, y, **kwargs):
                                     # categorical numeric features
                                     # to encode with OneHotEncoder
 
-        scorer= 'aic',              # 'aic' or 'bic', otherwise
-                                    # 'neg_root_mean_squared_error' is used
         random_state= 42,           # Random seed for reproducibility.
         fit_intercept= True,        # calculate intercept
         copy_X= True,               # True: X will be copied
@@ -10601,7 +10601,7 @@ def linear_auto(X, y, **kwargs):
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
 
-        'scorer': 'aic',                    # 'aic' or 'bic', otherwise
+        'scorer': None,                     # 'aic', 'bic', or None. If None, then
                                             # 'neg_root_mean_squared_error' is used
         'random_state': 42,                 # Random seed for reproducibility.
         'fit_intercept': True,              # calculate intercept
