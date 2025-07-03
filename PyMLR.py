@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.31"
+__version__ = "1.2.32"
 
 def check_X_y(X,y):
 
@@ -153,7 +153,9 @@ def check_X(X):
 
     return X
 
-def preprocess_train(df, threshold=10, scale='standard'):
+def preprocess_train(df, threshold=10, scale='standard', 
+    unskew_pos=False, threshold_skew_pos=0.5,
+    unskew_neg=False, threshold_skew_neg=-0.5):
     """
     Detects categorical (numeric and non-numeric) columns, applies one-hot encoding,
     scales continuous numeric columns, and safely handles cases with missing types.
@@ -165,6 +167,14 @@ def preprocess_train(df, threshold=10, scale='standard'):
         threshold (int): Max unique values for numeric columns 
             to be considered categorical
         scale (str): 'minmax' or 'standard' for scaler selection
+        unskew_pos (bool): True: use log1p transform on features with 
+            skewness greater than threshold_skew_pos
+        threshold_skew_pos: threshold skewness to log1p transform features
+            used if unskew_pos=True and min feature value >= 0
+        unskew_neg (bool): True: use sqrt transform on features with 
+            skewness less than threshold_skew_neg
+        threshold_skew_neg: threshold skewness to sqrt transform features
+            used if unskew_neg=True and min feature value >= 0
 
     Returns:
         dict: {
@@ -177,12 +187,21 @@ def preprocess_train(df, threshold=10, scale='standard'):
             'categorical_cols': List of all categorical columns,
             'non_numeric_cats': List of object/category columns,
             'continuous_cols': List of numeric continuous columns,
-            'category_mappings': Mapping of categories or {}
+            'category_mappings': Mapping of categories or {},
+            'threshold_skew_pos': same as input threshold_skew_pos,
+            'threshold_skew_neg': same as inpt threshold_skew_neg,
+            'skew_df': dataframe of skew of each feature in continuous_col,
+            'skewed_pos_cols': list of candidate features for positive unskewing, 
+            'skewed_neg_cols': list of candidate features for negative unskewing,
+            'unskew_pos': True if candidate features for positive unskewing were unskewed,
+            'unskew_neg': True if candidate features for negative unskewing were unskewed
         }
     """
+    import numpy as np
     import pandas as pd
     from sklearn.preprocessing import OneHotEncoder, MinMaxScaler, StandardScaler
     from PyMLR import check_X
+    import scipy.stats as stats
 
     # Start with a copy to avoid changing the original df
     df = df.copy()
@@ -201,6 +220,39 @@ def preprocess_train(df, threshold=10, scale='standard'):
 
     all_cat_cols = categorical_numeric + non_numeric_cats + bool_cols
 
+    # -------- Transforming skewed continuous_cols before scaling --------
+
+    # dataframe of skew of each feature
+    skew_df = pd.DataFrame(df[continuous_cols].columns, columns=['feature'])
+    skew_df['skew'] = skew_df['feature'].apply(lambda feature: stats.skew(df[feature]))
+    skew_df['skew_pos'] = skew_df['skew'].apply(lambda x: True if x >= threshold_skew_pos else False)
+    skew_df['skew_neg'] = skew_df['skew'].apply(lambda x: True if x <= threshold_skew_neg else False)
+
+    # function to loop through cols of dataframe and test condition
+    get_columns_by_condition = lambda df, condition: [col for col in df.columns if condition(df[col])]
+
+    # skewed_pos_cols is a list of continuous cols that can be log1p transformed if positive skew
+    col_test = skew_df['feature'][skew_df['skew']>=threshold_skew_pos].to_list()
+    df_test = df[col_test]
+    condition = lambda col: col.min() >= 0    # can only use log1p if >= 0
+    skewed_pos_cols = get_columns_by_condition(df_test, condition)
+    
+    # skewed_neg_cols is a list of continuous cols that can be sqrt transformed if negative skew
+    col_test = skew_df['feature'][skew_df['skew']<=threshold_skew_neg].to_list()
+    df_test = df[col_test]
+    condition = lambda col: col.min() >= 0    # can only use sqrt if >= 0
+    skewed_neg_cols = get_columns_by_condition(df_test, condition)
+    
+    # log1p-transform positively skewed features in df if unskew_pos==True
+    if unskew_pos:
+        df[skewed_pos_cols] = np.log1p(df[skewed_pos_cols])
+
+    # sqrt-transform negatively skewed features in df if unskew_neg==True
+    if unskew_neg:
+        df[skewed_neg_cols] = np.sqrt(df[skewed_neg_cols])
+    
+    # -------- One-hot encoding --------
+    
     # One-hot encoding
     if all_cat_cols:
         encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
@@ -214,6 +266,8 @@ def preprocess_train(df, threshold=10, scale='standard'):
         }
     else:
         encoder, encoded_df, category_mappings = None, pd.DataFrame(index=df.index), {}
+
+    # -------- Scaling --------
 
     # Scaling
     if continuous_cols:
@@ -239,7 +293,14 @@ def preprocess_train(df, threshold=10, scale='standard'):
         'categorical_cols': all_cat_cols,
         'non_numeric_cats': non_numeric_cats,
         'continuous_cols': continuous_cols,
-        'category_mappings': category_mappings
+        'category_mappings': category_mappings,
+        'unskew_pos': unskew_pos,
+        'unskew_neg': unskew_pos,
+        'threshold_skew_pos': threshold_skew_pos,
+        'threshold_skew_neg': threshold_skew_neg,
+        'skew_df': skew_df,
+        'skewed_pos_cols': skewed_pos_cols, 
+        'skewed_neg_cols': skewed_neg_cols 
     }
 
 def preprocess_test(df_test, preprocess_results):
@@ -265,6 +326,13 @@ def preprocess_test(df_test, preprocess_results):
         scaler = preprocess_results['scaler']
         categorical_cols = preprocess_results['categorical_cols']
         continuous_cols = preprocess_results['continuous_cols']
+        # unskewing of skewed continuous_cols
+        threshold_skew_pos = preprocess_results['threshold_skew_pos'] 
+        threshold_skew_neg = preprocess_results['threshold_skew_neg'] 
+        skewed_pos_cols = preprocess_results['skewed_pos_cols']  
+        skewed_neg_cols = preprocess_results['skewed_neg_cols']  
+        unskew_pos = preprocess_results['unskew_pos'] 
+        unskew_neg = preprocess_results['unskew_neg']     
     else:
         print('Exited preprocess_test because preprocess_results=None','\n')
         sys.exit()
@@ -275,10 +343,29 @@ def preprocess_test(df_test, preprocess_results):
     # check that df_test is a dataframe and convert to dataframe if needed
     df_test = check_X(df_test)
 
+    # -------- Transforming skewed continuous_cols before scaling --------
+
+    # log1p-transform positively skewed features in df if unskew_pos==True
+
+    if unskew_pos:
+        n_err = np.sum(df_test[skewed_pos_cols].values < 0)
+        if n_err > 0:
+            print(f'WARNING! - {n_err} negative values in skewed_pos_cols were transformed to nan')
+        df_test[skewed_pos_cols] = np.log1p(df_test[skewed_pos_cols])
+
+    # sqrt-transform negatively skewed features in df if unskew_neg==True
+    if unskew_neg:
+        n_err = np.sum(df_test[skewed_neg_cols].values < 0)
+        if n_err > 0:
+            print(f'WARNING! - {n_err} negative values in skewed_neg_cols were transformed to nan')
+        df_test[skewed_neg_cols] = np.sqrt(df_test[skewed_neg_cols])
+        
+    # -------- One-hot encoding --------
+
     for col in categorical_cols:
         if df_test.get(col, pd.Series(dtype=object)).dtype == bool:
             df_test[col] = df_test[col].astype(int)
-
+    
     # Encode categoricals
     if encoder is not None and categorical_cols:
         df_cat = pd.DataFrame(index=df_test.index)
@@ -294,6 +381,8 @@ def preprocess_test(df_test, preprocess_results):
     else:
         encoded_df = pd.DataFrame(index=df_test.index)
 
+    # -------- Scaling --------
+    
     # Scale continuous
     if scaler is not None and continuous_cols:
         df_num = pd.DataFrame(index=df_test.index)
@@ -939,7 +1028,7 @@ def stepwise(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -994,7 +1083,7 @@ def stepwise(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -1852,7 +1941,7 @@ def lasso(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -1889,7 +1978,7 @@ def lasso(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -2603,7 +2692,7 @@ def ridge(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -2647,7 +2736,7 @@ def ridge(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -3162,7 +3251,7 @@ def elastic(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -3200,7 +3289,7 @@ def elastic(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -3583,7 +3672,7 @@ def stacking(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -3632,7 +3721,7 @@ def stacking(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -3964,7 +4053,7 @@ def svr(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -4008,7 +4097,7 @@ def svr(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -4355,7 +4444,7 @@ def svr_auto(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -4422,7 +4511,7 @@ def svr_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     data['feature_names'] = X.columns.to_list()
@@ -4660,7 +4749,7 @@ def sgd(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -4694,7 +4783,7 @@ def sgd(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -4952,7 +5041,7 @@ def gbr(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -5011,7 +5100,7 @@ def gbr(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -5378,7 +5467,7 @@ def gbr_auto(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -5460,7 +5549,7 @@ def gbr_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     data['feature_names'] = X.columns.to_list()
@@ -5797,18 +5886,7 @@ def xgb(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
-                                      # unique values for 
-                                      # categorical numeric features
-        'preprocess': True,           # True for OneHotEncoder and StandardScaler
-        'preprocess_result': None,    # dict of  the following result from 
-                                      # preprocess_train if available:         
-                                      # - encoder          (OneHotEncoder) 
-                                      # - scaler           (StandardScaler)
-                                      # - categorical_cols (categorical columns)
-                                      # - non_numeric_cats (non-numeric cats)
-                                      # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -5886,7 +5964,7 @@ def xgb(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -6151,7 +6229,7 @@ def xgb_auto(X, y, **kwargs):
         n_splits= 5,                # number of splits for KFold CV
         pruning= False,             # prune poor optuna trials
         feature_selection= True,    # optuna feature selection
-        threshold= 10,              # threshold for number of 
+        threshold_cat= 10,          # threshold for number of 
                                     # unique values to identify
                                     # categorical numeric features
                                     # to encode with OneHotEncoder
@@ -6252,7 +6330,7 @@ def xgb_auto(X, y, **kwargs):
                                             # - categorical_cols (categorical columns)
                                             # - non_numeric_cats (non-numeric cats)
                                             # - continuous_cols  (continuous columns)
-        'threshold': 10,                    # threshold for number of 
+        'threshold_cat': 10,                # threshold for number of 
                                             # unique values for 
                                             # categorical numeric features
         'verbose': 'on',
@@ -6331,7 +6409,7 @@ def xgb_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     data['feature_names'] = X.columns.to_list()
@@ -6586,7 +6664,7 @@ def lgbm(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -6639,7 +6717,7 @@ def lgbm(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -6872,7 +6950,7 @@ def catboost(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -6933,7 +7011,7 @@ def catboost(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -7206,7 +7284,7 @@ def catboost_auto(X, y, **kwargs):
                                     # - categorical_cols (categorical cols)
                                     # - non_numeric_cats (non-num cat cols)
                                     # - continuous_cols  (continuous cols)
-        threshold= 10,              # threshold for number of 
+        threshold_cat= 10,          # threshold for number of 
                                     # unique values for 
                                     # categorical numeric features
         feature_selection= True,    # optuna feature selection
@@ -7292,7 +7370,7 @@ def catboost_auto(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'verbose': 'on',        # 'on' to display stats and residual plots
@@ -7357,7 +7435,7 @@ def catboost_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     data['feature_names'] = X.columns.to_list()
@@ -7621,7 +7699,7 @@ def forest(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -7698,7 +7776,7 @@ def forest(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -8054,7 +8132,7 @@ def forest_auto(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -8139,7 +8217,7 @@ def forest_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     data['feature_names'] = X.columns.to_list()
@@ -8386,7 +8464,7 @@ def knn(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -8451,7 +8529,7 @@ def knn(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -8844,7 +8922,7 @@ def knn_auto(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -8918,7 +8996,7 @@ def knn_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     data['feature_names'] = X.columns.to_list()
@@ -9236,7 +9314,7 @@ def logistic(X, y, **kwargs):
         selected_features= None,  # pre-optimized selected features
         verbose= 'on',      # display summary stats and plots
         gpu= True,          # autodetect gpu if present
-        threshold= 10,      # threshold for number of 
+        threshold_cat= 10,  # threshold for number of 
                             # unique values to identify
                             # categorical numeric features
                             # to encode with OneHotEncoder
@@ -9329,7 +9407,7 @@ def logistic(X, y, **kwargs):
         'selected_features': None,         # pre-optimized selected features
         'verbose': 'on',
         'gpu': True,                       # autodetect gpu if present
-        'threshold': 10,                   # threshold for number of 
+        'threshold_cat': 10,               # threshold_cat for number of 
                                            # unique values for 
                                            # categorical numeric features
         
@@ -9386,7 +9464,7 @@ def logistic(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -9566,7 +9644,7 @@ def logistic_auto(X, y, **kwargs):
         n_splits= 5,              # number of splits for KFold CV
         pruning= False,           # prune poor optuna trials
         feature_selection= True,  # optuna feature selection
-        threshold= 10,            # threshold for number of 
+        threshold_cat= 10,        # threshold for number of 
                                   # unique values to identify
                                   # categorical numeric features
                                   # to encode with OneHotEncoder
@@ -9658,7 +9736,7 @@ def logistic_auto(X, y, **kwargs):
                                       # - categorical_cols (categorical columns)
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
-        'threshold': 10,              # threshold for number of 
+        'threshold_cat': 10,          # threshold_cat for number of 
                                       # unique values for 
                                       # categorical numeric features
         'selected_features': None,    # pre-optimized selected features
@@ -9667,9 +9745,6 @@ def logistic_auto(X, y, **kwargs):
         'n_splits': 5,              # number of splits for KFold CV
         'pruning': False,           # prune poor optuna trials
         'feature_selection': True,  # optuna feature selection
-        'threshold': 10,            # threshold for number of 
-                                    # unique values for 
-                                    # categorical numeric features
         
         # [min,max] model params that are optimized by optuna
         'C': [1e-4, 10.0],                  # Inverse regularization strength
@@ -9718,7 +9793,7 @@ def logistic_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     data['feature_names'] = X.columns.to_list()
@@ -10183,7 +10258,7 @@ def linear(X, y, **kwargs):
                                     # - categorical_cols (categorical columns)
                                     # - non_numeric_cats (non-numeric cats)
                                     # - continuous_cols  (continuous columns)
-        'threshold': 10,            # threshold for number of 
+        'threshold_cat': 10,        # threshold for number of 
                                     # unique values for 
                                     # categorical numeric features
         'selected_features': None,  # pre-optimized selected features
@@ -10222,7 +10297,7 @@ def linear(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
@@ -10514,7 +10589,7 @@ def linear_auto(X, y, **kwargs):
         n_splits= 5,                # number of splits for KFold CV
         pruning= False,             # prune poor optuna trials
         feature_selection= True,    # optuna feature selection
-        threshold= 10,              # threshold for number of 
+        threshold_cat= 10,          # threshold for number of 
                                     # unique values to identify
                                     # categorical numeric features
                                     # to encode with OneHotEncoder
@@ -10591,7 +10666,7 @@ def linear_auto(X, y, **kwargs):
                                             # - categorical_cols (categorical columns)
                                             # - non_numeric_cats (non-numeric cats)
                                             # - continuous_cols  (continuous columns)
-        'threshold': 10,                    # threshold for number of 
+        'threshold_cat': 10,                # threshold for number of 
                                             # unique values for 
                                             # categorical numeric features
         'verbose': 'on',
@@ -10652,7 +10727,7 @@ def linear_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             data['preprocess_result'] = preprocess_train(
-                X, threshold=data['threshold'])
+                X, threshold_cat=data['threshold_cat'])
             X = data['preprocess_result']['df_processed']
 
     data['feature_names'] = X.columns.to_list()
