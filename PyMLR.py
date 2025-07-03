@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.33"
+__version__ = "1.2.34"
 
 def check_X_y(X,y):
 
@@ -294,7 +294,7 @@ def preprocess_train(df, threshold=10, scale='standard',
         'categorical_numeric': categorical_numeric,
         'non_numeric_cats': non_numeric_cats,
         'bool_cols': bool_cols,
-        'all_cat_cals': all_cat_cols,
+        'all_cat_cols': all_cat_cols,
         'category_mappings': category_mappings,
         'unskew_pos': unskew_pos,
         'unskew_neg': unskew_pos,
