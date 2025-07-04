@@ -22,7 +22,7 @@ The PyMLR module includes the following main Python functions to facilitate the 
  - **lgbm** - LGBMRegressor with user-specified hyperparameters
  - **stacking** - StackingRegressor
  - **stepwise** - Stepwise statsmodels linear regression to minimize MSE, AIC, or BIC
- - **linear_auto** - sklearn LinearRegression with optimization of the selected features by optuna to minimize MSE
+ - **linear_auto** - sklearn LinearRegression with optimization of selected features by optuna to minimize MSE
  - **linear** - sklearn LinearRegression using all features to minimize MSE
  - **model_agnostic** - Model-agnostic analysis (e.g. Shapley Additive Explantions (SHAP), Beeswarm and Bar plots, PDB-ICE plots, Permutation Importance plots)
  - **show_optuna** - Display the results of the hyperparameter optimization using optuna
