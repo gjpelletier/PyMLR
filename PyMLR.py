@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.39"
+__version__ = "1.2.40"
 
 def check_X_y(X,y):
 
@@ -153,7 +153,7 @@ def check_X(X):
 
     return X
 
-def preprocess_train(df, threshold=10, scale='standard', 
+def preprocess_train(df, threshold_cat=10, scale='standard', 
     unskew_pos=False, threshold_skew_pos=0.5,
     unskew_neg=False, threshold_skew_neg=-0.5):
     """
@@ -164,7 +164,7 @@ def preprocess_train(df, threshold=10, scale='standard',
     Args:
         df (pd.DataFrame): Training data 
             (if df is not a dataframe it will be converted to a dataframe)
-        threshold (int): Max unique values for numeric columns 
+        threshold_cat (int): Max unique values for numeric columns 
             to be considered categorical
         scale (str): 'minmax' or 'standard' for scaler selection
         unskew_pos (bool): True: use log1p transform on features with 
@@ -243,7 +243,7 @@ def preprocess_train(df, threshold=10, scale='standard',
     # remove items from non_numeric_cats that are in datetime_cols
     non_numeric_cats = [item for item in non_numeric_cats if item not in datetime_cols]
 
-    categorical_numeric = [col for col in numerical_cols if df[col].nunique() <= threshold and col not in bool_cols]
+    categorical_numeric = [col for col in numerical_cols if df[col].nunique() <= threshold_cat and col not in bool_cols]
     continuous_cols = [col for col in numerical_cols if col not in categorical_numeric and col not in bool_cols]
 
     all_cat_cols = categorical_numeric + non_numeric_cats + bool_cols
