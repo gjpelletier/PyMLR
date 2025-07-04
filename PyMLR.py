@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.40"
+__version__ = "1.2.41"
 
 def check_X_y(X,y):
 
@@ -188,7 +188,7 @@ def preprocess_train(df, threshold_cat=10, scale='standard',
             'categorical_numeric': list of categorical numeric columns,
             'non_numeric_cats': list of non_numeric categorical columns,
             'bool_cols': list of boolean columns,
-            'all_cat_cols': list of all categorical columns,
+            'categorical_cols': list of all categorical columns,
             'datetime_cols': list of datetime columns,
             'category_mappings': Mapping of categories or {},
             'threshold_skew_pos': same as input threshold_skew_pos,
@@ -326,7 +326,7 @@ def preprocess_train(df, threshold_cat=10, scale='standard',
         'categorical_numeric': categorical_numeric,
         'non_numeric_cats': non_numeric_cats,
         'bool_cols': bool_cols,
-        'all_cat_cols': all_cat_cols,
+        'categorical_cols': all_cat_cols,
         'datetime_cols': datetime_cols,
         'category_mappings': category_mappings,
         'unskew_pos': unskew_pos,
