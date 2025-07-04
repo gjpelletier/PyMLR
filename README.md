@@ -19,11 +19,11 @@ The PyMLR module includes the following main Python functions to facilitate the 
  - **svr** - SVR with user-specified hyperparameters
  - **knn_auto** - KNeighborsRegressor with automatic cross-validated optimization of the hyperparameters
  - **knn** - KNeighborsRegressor with user-specified hyperparameters
- - **linear_auto** - sklearn LinearRegression with optimization of the selected features by optuna
- - **linear** - sklearn LinearRegression using all features
  - **lgbm** - LGBMRegressor with user-specified hyperparameters
  - **stacking** - StackingRegressor
- - **stepwise** - Stepwise multiple linear regression to minimize MSE, AIC, or BIC
+ - **stepwise** - Stepwise multiple statsmodels linear regression to minimize MSE, AIC, or BIC
+ - **linear_auto** - sklearn LinearRegression with optimization of the selected features by optuna
+ - **linear** - sklearn LinearRegression using all features
  - **model_agnostic** - Model-agnostic analysis (e.g. Shapley Additive Explantions (SHAP), Beeswarm and Bar plots, PDB-ICE plots, Permutation Importance plots)
  - **show_optuna** - Display the results of the hyperparameter optimization using optuna
  
