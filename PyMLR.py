@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.36"
+__version__ = "1.2.37"
 
 def check_X_y(X,y):
 
@@ -205,6 +205,7 @@ def preprocess_train(df, threshold=10, scale='standard',
     from sklearn.preprocessing import OneHotEncoder, MinMaxScaler, StandardScaler
     from PyMLR import check_X
     import scipy.stats as stats
+    from datetime import datetime
 
     # Start with a copy to avoid changing the original df
     df = df.copy()
@@ -212,20 +213,25 @@ def preprocess_train(df, threshold=10, scale='standard',
     # check df and convert to dataframe if not already
     df = check_X(df)
 
-    # # identify columns that are any typed or coercible date or time
-    # datetime_cols = df.select_dtypes(
-    #     include=['datetime', 'datetimetz', 'timedelta']).columns.tolist()
-    def get_all_datetime_like_columns(df):
-        # 1. Already typed as datetime-like
-        typed = df.select_dtypes(include=['datetime', 'datetimetz', 'timedelta']).columns.tolist()        
-        # 2. Object/string columns that can be coerced
-        coercible = [
+    # identify columns that are any possible date or time compatible
+    datetime_cols = df.select_dtypes(
+        include=['datetime', 'datetimetz', 'timedelta']).columns.tolist()
+    def is_strptime_compatible(series, fmt):
+        try:
+            return series.dropna().apply(lambda x: isinstance(x, str) and bool(datetime.strptime(x, fmt))).all()
+        except Exception:
+            return False
+    def get_strptime_compatible_columns(df, fmt):
+        return [
             col for col in df.select_dtypes(include=['object', 'string']).columns
-            if not pd.to_datetime(df[col], errors='coerce').isna().all()
-        ]        
-        # 3. Union of both, preserving order and avoiding duplicates
-        return list(dict.fromkeys(typed + coercible))
-    datetime_cols = get_all_datetime_like_columns(df)
+            if is_strptime_compatible(df[col], fmt)
+        ]
+    cols_ymdThms = get_strptime_compatible_columns(df, "%Y%m%dT%H%M%S")
+    cols_ymdThm = get_strptime_compatible_columns(df, "%Y%m%dT%H%M")
+    cols_ymdTh = get_strptime_compatible_columns(df, "%Y%m%dT%H")
+    cols_ymd = get_strptime_compatible_columns(df, "%Y%m%d")
+    strptime_cols = cols_ymdThms + cols_ymdThm + cols_ymdTh + cols_ymd
+    datetime_cols = datetime_cols + strptime_cols
 
     # identify boolean columns and covert to int
     bool_cols = df.select_dtypes(include='bool').columns.tolist()
