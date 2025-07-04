@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.38"
+__version__ = "1.2.39"
 
 def check_X_y(X,y):
 
@@ -213,27 +213,6 @@ def preprocess_train(df, threshold=10, scale='standard',
     # check df and convert to dataframe if not already
     df = check_X(df)
 
-    # identify columns that are any possible date or time compatible
-    '''
-    datetime_cols = df.select_dtypes(
-        include=['datetime', 'datetimetz', 'timedelta']).columns.tolist()
-    def is_strptime_compatible(series, fmt):
-        try:
-            return series.dropna().apply(lambda x: isinstance(x, str) and bool(datetime.strptime(x, fmt))).all()
-        except Exception:
-            return False
-    def get_strptime_compatible_columns(df, fmt):
-        return [
-            col for col in df.select_dtypes(include=['object', 'string']).columns
-            if is_strptime_compatible(df[col], fmt)
-        ]
-    cols_ymdThms = get_strptime_compatible_columns(df, "%Y%m%dT%H%M%S")
-    cols_ymdThm = get_strptime_compatible_columns(df, "%Y%m%dT%H%M")
-    cols_ymdTh = get_strptime_compatible_columns(df, "%Y%m%dT%H")
-    cols_ymd = get_strptime_compatible_columns(df, "%Y%m%d")
-    strptime_cols = cols_ymdThms + cols_ymdThm + cols_ymdTh + cols_ymd
-    datetime_cols = datetime_cols + strptime_cols
-    '''
     # # identify columns that are any typed or coercible date or time
     # datetime_cols = df.select_dtypes(
     #     include=['datetime', 'datetimetz', 'timedelta']).columns.tolist()
@@ -331,9 +310,10 @@ def preprocess_train(df, threshold=10, scale='standard',
     df_processed = df.drop(columns=drop_cols, errors='ignore')
     df_processed = df_processed.join([encoded_df, scaled_df])
 
+    # set all_cols except datetime_cols to float
     all_cols = df_processed.columns.to_list()
     float_cols = [item for item in all_cols if item not in datetime_cols]
-    df_processed = df_processed[float_cols].astype(float)
+    df_processed[float_cols] = df_processed[float_cols].astype(float)
 
     return {
         'df': df,
