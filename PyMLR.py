@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.46"
+__version__ = "1.2.47"
 
 def check_X_y(X,y):
 
@@ -6629,10 +6629,6 @@ def xgb_auto(X, y, **kwargs):
         n_splits= 5,                # number of splits for KFold CV
         pruning= False,             # prune poor optuna trials
         feature_selection= True,    # optuna feature selection
-        threshold_cat= 10,          # threshold for number of 
-                                    # unique values to identify
-                                    # categorical numeric features
-                                    # to encode with OneHotEncoder
 
         # [min, max] ranges of params for model to be optimized by optuna:
         learning_rate= [1e-4, 1.0], # Step size shrinkage (also called eta).
@@ -7775,9 +7771,6 @@ def catboost_auto(X, y, **kwargs):
                                     # - categorical_cols (categorical cols)
                                     # - non_numeric_cats (non-num cat cols)
                                     # - continuous_cols  (continuous cols)
-        threshold_cat= 10,          # threshold for number of 
-                                    # unique values for 
-                                    # categorical numeric features
         feature_selection= True,    # optuna feature selection
         verbose= 'on',        # 'on' to display summary stats and residual plots
         n_splits= 5,          # number of splits for KFold CV
@@ -11322,10 +11315,6 @@ def linear_auto(X, y, **kwargs):
         n_splits= 5,                # number of splits for KFold CV
         pruning= False,             # prune poor optuna trials
         feature_selection= True,    # optuna feature selection
-        threshold_cat= 10,          # threshold for number of 
-                                    # unique values to identify
-                                    # categorical numeric features
-                                    # to encode with OneHotEncoder
 
         random_state= 42,           # Random seed for reproducibility.
         fit_intercept= True,        # calculate intercept
