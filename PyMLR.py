@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.44"
+__version__ = "1.2.45"
 
 def check_X_y(X,y):
 
@@ -1100,7 +1100,7 @@ def stepwise(X, y, **kwargs):
         'selected_features': None,    # pre-optimized selected features
         'allow_dummies': False,
         'drop_insig': 'on',
-        'p_threshold': 0.05
+        'p_threshold': 0.05,
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
