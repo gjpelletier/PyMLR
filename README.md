@@ -42,6 +42,27 @@ The functions in PyMLR allow the user to write one line of high-level python cod
 - automatic detection and use of GPU for computations (XGBoost)
 - optimization of logistic regression for binomial or multinomial response variables
 
+## Installation for Python or Jupyter Notebook
+
+The PyMLR module require that you have already installed numpy, pandas, scikit-learn, tabulate, matplotlib, seaborn, statsmodels, xgboost, lightgbm, mlxtend, shap, and optuna packages. In addition, the auto-optimization functions, because they use optuna, require that you have already installed and enabled ipywidgets in your Python environment if you are working in a Jupyter notebook. 
+
+If you have not already installed PyMLR, enter the following with pip or !pip in your notebook or terminal:<br>
+```
+pip install git+https://github.com/gjpelletier/PyMLR.git
+```
+
+if you are upgrading from a previous installation of PyMLR, enter the following with pip pr !pip in your notebook or terminal:<br>
+```
+pip install git+https://github.com/gjpelletier/PyMLR.git --upgrade
+```
+
+# [Examples](https://github.com/gjpelletier/PyMLR/tree/main/Examples)
+
+[The examples folder](https://github.com/gjpelletier/PyMLR/tree/main/Examples) contains examples using PyMLR in Jupyter Notebooks
+
+---
+# Additional information on selected topics
+
 ### Lasso
 
 The **lasso** function in the PyMLR module provides output of regression models and summary statistics using the following methods using sklearn.linear_model:
@@ -152,22 +173,4 @@ Ridge regression reduces the Variance Inflation Factors of the features by addin
 Cross-validated ridge regression (e.g. using RidgeCV) does not always result in acceptable multicollinearity as indicated by VIF. While cross-validation helps in fine-tuning the regression coefficients, it does not always result in VIF values close to 1. Ideally the VIF of all features should be as close as possibe to VIF=1. This can be achieved using a trial and error method of evaluating the VIF values of the model features over a range of alpha values. 
 
 The **ridge** function in PyMLR includes an algorithm (RidgeVIF) to find the model with the optimum value of alpha that will result in VIF values as close as possible to a user-specified target VIF (default target VIF=1.0). This assures that there will be acceptable multicollinearity for all features. The trade-off is that this algorithm reduces the model coefficients such that the target VIF will be achieved. The user has the option to specify any target for VIF to explore the balance between VIF and coefficient values.  
-
-## Installation for Python or Jupyter Notebook
-
-The PyMLR module require that you have already installed numpy, pandas, scikit-learn, tabulate, matplotlib, seaborn, statsmodels, xgboost, lightgbm, mlxtend, shap, and optuna packages. In addition, the auto-optimization functions, because they use optuna, require that you have already installed and enabled ipywidgets in your Python environment if you are working in a Jupyter notebook. 
-
-If you have not already installed PyMLR, enter the following with pip or !pip in your notebook or terminal:<br>
-```
-pip install git+https://github.com/gjpelletier/PyMLR.git
-```
-
-if you are upgrading from a previous installation of PyMLR, enter the following with pip pr !pip in your notebook or terminal:<br>
-```
-pip install git+https://github.com/gjpelletier/PyMLR.git --upgrade
-```
-
-# [Examples](https://github.com/gjpelletier/PyMLR/tree/main/Examples)
-
-[The examples folder](https://github.com/gjpelletier/PyMLR/tree/main/Examples) contains examples using PyMLR in Jupyter Notebooks
 
