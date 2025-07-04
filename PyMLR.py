@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.45"
+__version__ = "1.2.46"
 
 def check_X_y(X,y):
 
@@ -219,6 +219,12 @@ def preprocess_train(df, **kwargs):
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
 
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
+
     # extract control variables from data dictionary
     threshold_cat = data['threshold_cat']
     scale = data['scale']
@@ -226,12 +232,6 @@ def preprocess_train(df, **kwargs):
     threshold_skew_pos = data['threshold_skew_pos']
     unskew_neg = data['unskew_neg']
     threshold_skew_neg = data['threshold_skew_neg']
-
-    # print a warning for unexpected input kwargs
-    unexpected = kwargs.keys() - defaults.keys()
-    if unexpected:
-        # raise ValueError(f"Unexpected argument(s): {unexpected}")
-        print(f"Unexpected input kwargs: {unexpected}")
 
     # Start with a copy to avoid changing the original df
     df = df.copy()
@@ -1015,6 +1015,18 @@ def stepwise(X, y, **kwargs):
             'off': keep all predictors regardless of p-value
         p_threshold= threshold p-value to eliminate predictors (default 0.05)                
         allow_dummies= True or False (default)                
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         model_object, model_outputs 
@@ -1111,6 +1123,13 @@ def stepwise(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
+    
     p_threshold = data['p_threshold']
     if data['criterion'] == 'aic':
         data['criterion'] = 'AIC'
@@ -1124,7 +1143,7 @@ def stepwise(X, y, **kwargs):
         crit = 'rsq_adj'
     if data['criterion'] == 'p_coef':
         data['direction'] = 'backward'
-    
+
     # check for input errors
     ctrl = detect_dummy_variables(X)
     if ctrl and not data['allow_dummies']:
@@ -1936,6 +1955,18 @@ def lasso(X, y, **kwargs):
         alpha_max= maximum value of range of alphas to evaluate (default=1e3)
         n_alpha= number of log-spaced alphas to evaluate (default=100)
         verbose= 'on' (default), 'off', or 1=show stats and residuals plot
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     It is generally recommended to use a largest possible number of folds 
     for LassoCV and LassoLarsCV to ensure more accurate model selection. 
@@ -2037,6 +2068,12 @@ def lasso(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # copy X and y to prevent altering original
     X = X.copy()
@@ -2712,6 +2749,18 @@ def ridge(X, y, **kwargs):
         n_alpha= number of log-spaced alphas to evaluate (default=100)
         vif_target= VIF target for use with RidgeVIF (default=1.0)
         verbose= 'on' (default), 'off', or 1=show stats and residuals plot
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         model_objects, model_outputs
@@ -2801,6 +2850,12 @@ def ridge(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # check for input errors
     has_dummies = detect_dummy_variables(X)
@@ -3282,6 +3337,18 @@ def elastic(X, y, **kwargs):
             and the one giving the best prediction score is used. 
             default is l1_ratio= np.linspace(0.01,1,100)        
         verbose= 'on' (default), 'off', or 1=show stats and residuals plot
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     It is generally recommended to use a largest possible number of folds 
     to ensure more accurate model selection. 
@@ -3372,6 +3439,12 @@ def elastic(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # copy X and y to prevent altering original
     X = X.copy()
@@ -3722,6 +3795,18 @@ def stacking(X, y, **kwargs):
             mlp= 'on' or 'off' (default)          - MLPRegressor
 
         verbose= 'on' (default) or 'off'
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         model_objects, model_outputs
@@ -3816,6 +3901,12 @@ def stacking(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # copy X and y to prevent altering original
     X = X.copy()
@@ -4118,6 +4209,18 @@ def svr(X, y, **kwargs):
         shrinking= True    # Whether to use the shrinking heuristic
         cache_size= 200    # Specify the size of the kernel cache (in MB)
         max_iter= -1       # Hard limit on iterations within solver, or -1 for no limit.
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         model_objects, model_outputs
@@ -4204,6 +4307,12 @@ def svr(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # copy X and y to prevent altering original
     X = X.copy()
@@ -4518,6 +4627,18 @@ def svr_auto(X, y, **kwargs):
         cache_size= 200,          # Specify the size of the kernel cache (in MB)
         max_iter= -1              # Hard limit on iterations within solver, 
                                   # or -1 for no limit
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         fitted_model, model_outputs
@@ -4615,6 +4736,12 @@ def svr_auto(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # Dictionary to pass to optuna
 
@@ -4838,6 +4965,18 @@ def sgd(X, y, **kwargs):
                                     # - continuous_cols  (continuous cols)
         random_state= (default random_state=42)        - initial random seed
         verbose= 'on' (default) or 'off'
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         model_objects, model_outputs
@@ -4915,6 +5054,12 @@ def sgd(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # copy X and y to prevent altering original
     X = X.copy()
@@ -5149,6 +5294,18 @@ def gbr(X, y, **kwargs):
         tol=1e-4,                      # Tolerance for early stopping. Default is 1e-4.
         ccp_alpha=0.0                  # Complexity parameter for Minimal Cost-Complexity Pruning. 
                                        # Default is 0.0.
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         model_objects, model_outputs
@@ -5244,6 +5401,12 @@ def gbr(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # copy X and y to prevent altering original
     X = X.copy()
@@ -5577,6 +5740,18 @@ def gbr_auto(X, y, **kwargs):
         n_iter_no_change= None,         # Stop training if no improvement
         tol= 1e-4,                      # Tolerance for early stopping
         ccp_alpha= 0.0                  # Parameter for Min Cost-Complexity Pruning
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         fitted_model, model_outputs
@@ -5691,6 +5866,12 @@ def gbr_auto(X, y, **kwargs):
     
     # Update input data arguments with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # Auto-detect if GPU is present and use GPU if present
     if data['gpu']:
@@ -6012,6 +6193,18 @@ def xgb(X, y, **kwargs):
         importance_type= "gain",    # Feature importance type ('weight', 'gain', 'cover', 'total_gain', 'total_cover').
         predictor= "auto",          # Type of predictor ('cpu_predictor', 'gpu_predictor').
         enable_categorical= False   # Whether to enable categorical data support.    
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         fitted_model, model_outputs
@@ -6118,6 +6311,12 @@ def xgb(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # Suppress warnings
     warnings.filterwarnings('ignore')
@@ -6464,6 +6663,18 @@ def xgb_auto(X, y, **kwargs):
                                     # ('weight', 'gain', 'cover', 'total_gain', 'total_cover').
         predictor= "auto",          # Type of predictor ('cpu_predictor', 'gpu_predictor').
         enable_categorical= False   # Whether to enable categorical data support.    
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         fitted_model, model_outputs
@@ -6576,6 +6787,12 @@ def xgb_auto(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # Auto-detect if GPU is present and use GPU if present
     if data['gpu']:
@@ -6820,6 +7037,18 @@ def lgbm(X, y, **kwargs):
         n_jobs=-1,             # Number of parallel threads (-1 uses all available cores)
         verbosity=-1,          # -1 to turn off lightgbm warnings
         importance_type='split' # Type of feature importance ('split' or 'gain')
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         fitted_model, model_outputs
@@ -6911,6 +7140,12 @@ def lgbm(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # copy X and y to prevent altering original
     X = X.copy()
@@ -7119,6 +7354,18 @@ def catboost(X, y, **kwargs):
                                             # (best for categorical features)
                                             # False = use max_bin 
                                             # (best for continuous features)
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         model_objects, model_outputs
@@ -7207,6 +7454,12 @@ def catboost(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # Auto-detect if GPU is present and use GPU if present
     if data['gpu']:
@@ -7547,6 +7800,18 @@ def catboost_auto(X, y, **kwargs):
                                             # (best for categorical features)
                                             # False = use max_bin 
                                             # (best for continuous features)
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         fitted_model, model_outputs
@@ -7639,6 +7904,12 @@ def catboost_auto(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # Auto-detect if GPU is present and use GPU if present
     if data['gpu']:
@@ -7893,6 +8164,18 @@ def forest(X, y, **kwargs):
                                           # to train each base estimator
         monotonic_cst= None               # monotonicity constraint 
                                           # to enforce on each feature
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         fitted_model, model_outputs
@@ -7998,6 +8281,12 @@ def forest(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     if data['gpu']:
         use_gpu = detect_gpu()
@@ -8336,6 +8625,18 @@ def forest_auto(X, y, **kwargs):
                                           # to train each base estimator
         monotonic_cst= None               # monotonicity constraint 
                                           # to enforce on each feature
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         fitted_model, model_outputs
@@ -8446,6 +8747,12 @@ def forest_auto(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # Auto-detect if GPU is present and use GPU if present
     if data['gpu']:
@@ -8679,6 +8986,18 @@ def knn(X, y, **kwargs):
         # model extra_params that are optional user-specified
         n_jobs= -1,                 # number of jobs to run in parallel    
         metric_params= None         # for user-specified metrics
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         fitted_model, model_outputs
@@ -8776,6 +9095,12 @@ def knn(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     if data['gpu']:
         use_gpu = detect_gpu()
@@ -9144,6 +9469,18 @@ def knn_auto(X, y, **kwargs):
         # model extra_params that are optional user-specified
         n_jobs= -1,                       # number of jobs to run in parallel    
         metric_params= None               # for user-specified metrics
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         fitted_model, model_outputs
@@ -9251,6 +9588,12 @@ def knn_auto(X, y, **kwargs):
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
      
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
+
     # Auto-detect if GPU is present and use GPU if present
     if data['gpu']:
         use_gpu = detect_gpu()
@@ -9631,6 +9974,18 @@ def logistic(X, y, **kwargs):
         random_state= 42,   # random seed for reproducibility
         max_iter= 500,      # max iterations for solver
         n_jobs= -1,         # number of jobs to run in parallel    
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     Note: StandardScaler standardizing of continuous numerical features 
     and OneHoteEncoder encoding of categorical numerical features is optional
@@ -9729,6 +10084,12 @@ def logistic(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # Auto-detect if GPU is present and use GPU if present
     if data['gpu']:
@@ -9971,6 +10332,18 @@ def logistic_auto(X, y, **kwargs):
         random_state= 42,         # random seed for reproducibility
         max_iter= 500,            # max iterations for solver
         n_jobs= -1,               # number of jobs to run in parallel    
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     Note: StandardScaler standardizing of continuous numerical features 
     and OneHoteEncoder encoding of categorical numerical features is optional
@@ -10077,6 +10450,12 @@ def logistic_auto(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # Auto-detect if GPU is present and use GPU if present
     if data['gpu']:
@@ -10529,6 +10908,18 @@ def linear(X, y, **kwargs):
         copy_X= True,               # True: X will be copied
         n_jobs= None,               # -1 to use all CPUs
         positive= False             # True forces coefficients to be positive
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         model_objects, model_outputs
@@ -10601,6 +10992,12 @@ def linear(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # copy X and y to prevent altering original
     X = X.copy()
@@ -10935,6 +11332,18 @@ def linear_auto(X, y, **kwargs):
         copy_X= True,               # True: X will be copied
         n_jobs= None,               # -1 to use all CPUs
         positive= False             # True forces coefficients to be positive
+        preprocessing options:
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     RETURNS
         fitted_model, model_outputs
@@ -11029,6 +11438,12 @@ def linear_auto(X, y, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # Auto-detect if GPU is present and use GPU if present
     if data['gpu']:
