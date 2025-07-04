@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.42"
+__version__ = "1.2.43"
 
 def check_X_y(X,y):
 
@@ -218,6 +218,14 @@ def preprocess_train(df, **kwargs):
 
     # Update input data argumements with any provided keyword arguments in kwargs
     data = {**defaults, **kwargs}
+
+    # extract control variables from data dictionary
+    threshold_cat = data['threshold_cat']
+    scale = data['scale']
+    unskew_pos = data['unskew_pos']
+    threshold_skew_pos = data['threshold_skew_pos']
+    unskew_neg = data['unskew_neg']
+    threshold_skew_neg = data['threshold_skew_neg']
 
     # print a warning for unexpected input kwargs
     unexpected = kwargs.keys() - defaults.keys()
