@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.35"
+__version__ = "1.2.36"
 
 def check_X_y(X,y):
 
@@ -212,9 +212,20 @@ def preprocess_train(df, threshold=10, scale='standard',
     # check df and convert to dataframe if not already
     df = check_X(df)
 
-    # identify columns that are any type of date or time
-    datetime_cols = df.select_dtypes(
-        include=['datetime', 'datetimetz', 'timedelta']).columns.tolist()
+    # # identify columns that are any typed or coercible date or time
+    # datetime_cols = df.select_dtypes(
+    #     include=['datetime', 'datetimetz', 'timedelta']).columns.tolist()
+    def get_all_datetime_like_columns(df):
+        # 1. Already typed as datetime-like
+        typed = df.select_dtypes(include=['datetime', 'datetimetz', 'timedelta']).columns.tolist()        
+        # 2. Object/string columns that can be coerced
+        coercible = [
+            col for col in df.select_dtypes(include=['object', 'string']).columns
+            if not pd.to_datetime(df[col], errors='coerce').isna().all()
+        ]        
+        # 3. Union of both, preserving order and avoiding duplicates
+        return list(dict.fromkeys(typed + coercible))
+    datetime_cols = get_all_datetime_like_columns(df)
 
     # identify boolean columns and covert to int
     bool_cols = df.select_dtypes(include='bool').columns.tolist()
@@ -223,10 +234,13 @@ def preprocess_train(df, threshold=10, scale='standard',
     # identify numeric columns
     numerical_cols = df.select_dtypes(include='number').columns.tolist()
 
-    # identify columns that are not any type of number, date, or time
+    # # identify columns that are not any type of number, date, or time
     # non_numeric_cats = df.select_dtypes(include=['object', 'category']).columns.tolist()
-    non_numeric_cats = df.select_dtypes(
-        exclude=['number', 'datetime', 'datetimetz', 'timedelta']).columns.tolist()    
+    # non_numeric_cats = df.select_dtypes(
+    #     exclude=['number', 'datetime', 'datetimetz', 'timedelta']).columns.tolist()    
+    non_numeric_cats = df.select_dtypes(exclude=['number']).columns.tolist()    
+    # remove items from non_numeric_cats that are in datetime_cols
+    non_numeric_cats = [item for item in non_numeric_cats if item not in datetime_cols]
 
     categorical_numeric = [col for col in numerical_cols if df[col].nunique() <= threshold and col not in bool_cols]
     continuous_cols = [col for col in numerical_cols if col not in categorical_numeric and col not in bool_cols]
