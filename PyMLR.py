@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.41"
+__version__ = "1.2.42"
 
 def check_X_y(X,y):
 
@@ -153,9 +153,7 @@ def check_X(X):
 
     return X
 
-def preprocess_train(df, threshold_cat=10, scale='standard', 
-    unskew_pos=False, threshold_skew_pos=0.5,
-    unskew_neg=False, threshold_skew_neg=-0.5):
+def preprocess_train(df, **kwargs):
     """
     Detects categorical (numeric and non-numeric) columns, applies one-hot encoding,
     scales continuous numeric columns, and safely handles cases with missing types.
@@ -164,17 +162,18 @@ def preprocess_train(df, threshold_cat=10, scale='standard',
     Args:
         df (pd.DataFrame): Training data 
             (if df is not a dataframe it will be converted to a dataframe)
-        threshold_cat (int): Max unique values for numeric columns 
-            to be considered categorical
-        scale (str): 'minmax' or 'standard' for scaler selection
-        unskew_pos (bool): True: use log1p transform on features with 
-            skewness greater than threshold_skew_pos
-        threshold_skew_pos: threshold skewness to log1p transform features
-            used if unskew_pos=True and min feature value >= 0
-        unskew_neg (bool): True: use sqrt transform on features with 
-            skewness less than threshold_skew_neg
-        threshold_skew_neg: threshold skewness to sqrt transform features
-            used if unskew_neg=True and min feature value >= 0
+        kwargs: optional keyword arguments
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 10)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
 
     Returns:
         dict: {
@@ -206,6 +205,25 @@ def preprocess_train(df, threshold_cat=10, scale='standard',
     from PyMLR import check_X
     import scipy.stats as stats
     from datetime import datetime
+
+    # Define default values of input data arguments
+    defaults = {
+        'threshold_cat': 10, 
+        'scale': 'standard', 
+        'unskew_pos': False, 
+        'threshold_skew_pos': 0.5,
+        'unskew_neg': False, 
+        'threshold_skew_neg': -0.5        
+        }
+
+    # Update input data argumements with any provided keyword arguments in kwargs
+    data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
 
     # Start with a copy to avoid changing the original df
     df = df.copy()
