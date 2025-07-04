@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.34"
+__version__ = "1.2.35"
 
 def check_X_y(X,y):
 
@@ -184,9 +184,12 @@ def preprocess_train(df, threshold=10, scale='standard',
             'columns_processed': list of column names of processed dataframe            
             'encoder': Fitted OneHotEncoder or None,
             'scaler': Fitted Scaler or None,
-            'categorical_cols': List of all categorical columns,
-            'non_numeric_cats': List of object/category columns,
-            'continuous_cols': List of numeric continuous columns,
+            'continuous_cols': list of continuous numeric columns,
+            'categorical_numeric': list of categorical numeric columns,
+            'non_numeric_cats': list of non_numeric categorical columns,
+            'bool_cols': list of boolean columns,
+            'all_cat_cols': list of all categorical columns,
+            'datetime_cols': list of datetime columns,
             'category_mappings': Mapping of categories or {},
             'threshold_skew_pos': same as input threshold_skew_pos,
             'threshold_skew_neg': same as inpt threshold_skew_neg,
@@ -208,12 +211,22 @@ def preprocess_train(df, threshold=10, scale='standard',
 
     # check df and convert to dataframe if not already
     df = check_X(df)
-    
+
+    # identify columns that are any type of date or time
+    datetime_cols = df.select_dtypes(
+        include=['datetime', 'datetimetz', 'timedelta']).columns.tolist()
+
+    # identify boolean columns and covert to int
     bool_cols = df.select_dtypes(include='bool').columns.tolist()
     df[bool_cols] = df[bool_cols].astype(int)
 
+    # identify numeric columns
     numerical_cols = df.select_dtypes(include='number').columns.tolist()
-    non_numeric_cats = df.select_dtypes(include=['object', 'category']).columns.tolist()
+
+    # identify columns that are not any type of number, date, or time
+    # non_numeric_cats = df.select_dtypes(include=['object', 'category']).columns.tolist()
+    non_numeric_cats = df.select_dtypes(
+        exclude=['number', 'datetime', 'datetimetz', 'timedelta']).columns.tolist()    
 
     categorical_numeric = [col for col in numerical_cols if df[col].nunique() <= threshold and col not in bool_cols]
     continuous_cols = [col for col in numerical_cols if col not in categorical_numeric and col not in bool_cols]
@@ -295,6 +308,7 @@ def preprocess_train(df, threshold=10, scale='standard',
         'non_numeric_cats': non_numeric_cats,
         'bool_cols': bool_cols,
         'all_cat_cols': all_cat_cols,
+        'datetime_cols': datetime_cols,
         'category_mappings': category_mappings,
         'unskew_pos': unskew_pos,
         'unskew_neg': unskew_pos,
