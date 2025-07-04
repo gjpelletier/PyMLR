@@ -21,7 +21,7 @@ The PyMLR module includes the following main Python functions to facilitate the 
  - **knn** - KNeighborsRegressor with user-specified hyperparameters
  - **lgbm** - LGBMRegressor with user-specified hyperparameters
  - **stacking** - StackingRegressor
- - **stepwise** - Stepwise multiple statsmodels linear regression to minimize MSE, AIC, or BIC
+ - **stepwise** - Stepwise statsmodels linear regression to minimize MSE, AIC, or BIC
  - **linear_auto** - sklearn LinearRegression with optimization of the selected features by optuna
  - **linear** - sklearn LinearRegression using all features
  - **model_agnostic** - Model-agnostic analysis (e.g. Shapley Additive Explantions (SHAP), Beeswarm and Bar plots, PDB-ICE plots, Permutation Importance plots)
