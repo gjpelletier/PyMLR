@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.48"
+__version__ = "1.2.49"
 
 def check_X_y(X,y):
 
@@ -241,6 +241,7 @@ def preprocess_train(df, **kwargs):
     df = check_X(df)
 
     # # identify columns that are any typed or coercible date or time
+    '''
     # Suppress warnings
     warnings.filterwarnings('ignore')
     def get_all_datetime_like_columns(df):
@@ -255,6 +256,23 @@ def preprocess_train(df, **kwargs):
         return list(dict.fromkeys(typed + coercible))
     # Restore warnings to normal
     warnings.filterwarnings("default")
+    '''
+    def get_all_datetime_like_columns(df):
+        # 1. Columns with datetime-like dtypes
+        typed = df.select_dtypes(include=['datetime', 'datetimetz', 'timedelta']).columns.tolist()    
+        # 2. Columns of type object or string that appear coercible
+        coercible = []
+        for col in df.select_dtypes(include=['object', 'string']).columns:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=UserWarning)
+                try:
+                    converted = pd.to_datetime(df[col], errors='coerce')
+                    if not converted.isna().all():
+                        coercible.append(col)
+                except Exception:
+                    continue  # Skip completely incompatible columns
+        return list(dict.fromkeys(typed + coercible))  # Preserve order and uniqueness
+
     datetime_cols = get_all_datetime_like_columns(df)
 
     # identify boolean columns and covert to int
