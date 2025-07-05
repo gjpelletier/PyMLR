@@ -58,11 +58,14 @@ if you are upgrading from a previous installation of PyMLR, enter the following 
 pip install git+https://github.com/gjpelletier/PyMLR.git --upgrade
 ```
 
+---
+
 # [Examples](https://github.com/gjpelletier/PyMLR/tree/main/Examples)
 
 [The examples folder](https://github.com/gjpelletier/PyMLR/tree/main/Examples) contains examples using PyMLR in Jupyter Notebooks
 
 ---
+
 # Additional information on selected topics
 
 ### Lasso
