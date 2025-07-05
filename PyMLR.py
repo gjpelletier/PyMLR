@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.49"
+__version__ = "1.2.50"
 
 def check_X_y(X,y):
 
@@ -164,7 +164,7 @@ def preprocess_train(df, **kwargs):
             (if df is not a dataframe it will be converted to a dataframe)
         kwargs: optional keyword arguments
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -209,7 +209,7 @@ def preprocess_train(df, **kwargs):
 
     # Define default values of input data arguments
     defaults = {
-        'threshold_cat': 10, 
+        'threshold_cat': 12, 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -1038,7 +1038,7 @@ def stepwise(X, y, **kwargs):
         allow_dummies= True or False (default)                
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -1123,7 +1123,7 @@ def stepwise(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -1978,7 +1978,7 @@ def lasso(X, y, **kwargs):
         verbose= 'on' (default), 'off', or 1=show stats and residuals plot
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -2073,7 +2073,7 @@ def lasso(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -2772,7 +2772,7 @@ def ridge(X, y, **kwargs):
         verbose= 'on' (default), 'off', or 1=show stats and residuals plot
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -2854,7 +2854,7 @@ def ridge(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -3360,7 +3360,7 @@ def elastic(X, y, **kwargs):
         verbose= 'on' (default), 'off', or 1=show stats and residuals plot
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -3443,7 +3443,7 @@ def elastic(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -3818,7 +3818,7 @@ def stacking(X, y, **kwargs):
         verbose= 'on' (default) or 'off'
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -3894,7 +3894,7 @@ def stacking(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -4232,7 +4232,7 @@ def svr(X, y, **kwargs):
         max_iter= -1       # Hard limit on iterations within solver, or -1 for no limit.
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -4305,7 +4305,7 @@ def svr(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -4650,7 +4650,7 @@ def svr_auto(X, y, **kwargs):
                                   # or -1 for no limit
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -4726,7 +4726,7 @@ def svr_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -4988,7 +4988,7 @@ def sgd(X, y, **kwargs):
         verbose= 'on' (default) or 'off'
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -5062,7 +5062,7 @@ def sgd(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -5317,7 +5317,7 @@ def gbr(X, y, **kwargs):
                                        # Default is 0.0.
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -5384,7 +5384,7 @@ def gbr(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -5763,7 +5763,7 @@ def gbr_auto(X, y, **kwargs):
         ccp_alpha= 0.0                  # Parameter for Min Cost-Complexity Pruning
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -5840,7 +5840,7 @@ def gbr_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -6216,7 +6216,7 @@ def xgb(X, y, **kwargs):
         enable_categorical= False   # Whether to enable categorical data support.    
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -6290,7 +6290,7 @@ def xgb(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -6682,7 +6682,7 @@ def xgb_auto(X, y, **kwargs):
         enable_categorical= False   # Whether to enable categorical data support.    
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -6760,7 +6760,7 @@ def xgb_auto(X, y, **kwargs):
                                             # - non_numeric_cats (non-numeric cats)
                                             # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -7056,7 +7056,7 @@ def lgbm(X, y, **kwargs):
         importance_type='split' # Type of feature importance ('split' or 'gain')
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -7125,7 +7125,7 @@ def lgbm(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -7373,7 +7373,7 @@ def catboost(X, y, **kwargs):
                                             # (best for continuous features)
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -7441,7 +7441,7 @@ def catboost(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -7816,7 +7816,7 @@ def catboost_auto(X, y, **kwargs):
                                             # (best for continuous features)
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -7888,7 +7888,7 @@ def catboost_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -8180,7 +8180,7 @@ def forest(X, y, **kwargs):
                                           # to enforce on each feature
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -8248,7 +8248,7 @@ def forest(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -8641,7 +8641,7 @@ def forest_auto(X, y, **kwargs):
                                           # to enforce on each feature
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -8711,7 +8711,7 @@ def forest_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -9002,7 +9002,7 @@ def knn(X, y, **kwargs):
         metric_params= None         # for user-specified metrics
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -9074,7 +9074,7 @@ def knn(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -9485,7 +9485,7 @@ def knn_auto(X, y, **kwargs):
         metric_params= None               # for user-specified metrics
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -9562,7 +9562,7 @@ def knn_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -9990,7 +9990,7 @@ def logistic(X, y, **kwargs):
         n_jobs= -1,         # number of jobs to run in parallel    
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -10078,7 +10078,7 @@ def logistic(X, y, **kwargs):
         'verbose': 'on',
         'gpu': True,                       # autodetect gpu if present
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -10348,7 +10348,7 @@ def logistic_auto(X, y, **kwargs):
         n_jobs= -1,               # number of jobs to run in parallel    
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -10435,7 +10435,7 @@ def logistic_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -10924,7 +10924,7 @@ def linear(X, y, **kwargs):
         positive= False             # True forces coefficients to be positive
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -10988,7 +10988,7 @@ def linear(X, y, **kwargs):
                                     # - non_numeric_cats (non-numeric cats)
                                     # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -11344,7 +11344,7 @@ def linear_auto(X, y, **kwargs):
         positive= False             # True forces coefficients to be positive
         preprocessing options:
             threshold_cat (int): Max unique values for numeric columns 
-                to be considered categorical (default: 10)
+                to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
             unskew_pos (bool): True: use log1p transform on features with 
                 skewness greater than threshold_skew_pos (default: False)
@@ -11422,7 +11422,7 @@ def linear_auto(X, y, **kwargs):
                                             # - non_numeric_cats (non-numeric cats)
                                             # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'threshold_cat': 10,    # threshold number of unique items for categorical 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
