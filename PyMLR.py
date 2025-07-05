@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.47"
+__version__ = "1.2.48"
 
 def check_X_y(X,y):
 
@@ -205,6 +205,7 @@ def preprocess_train(df, **kwargs):
     from PyMLR import check_X
     import scipy.stats as stats
     from datetime import datetime
+    import warnings
 
     # Define default values of input data arguments
     defaults = {
@@ -240,8 +241,8 @@ def preprocess_train(df, **kwargs):
     df = check_X(df)
 
     # # identify columns that are any typed or coercible date or time
-    # datetime_cols = df.select_dtypes(
-    #     include=['datetime', 'datetimetz', 'timedelta']).columns.tolist()
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
     def get_all_datetime_like_columns(df):
         # 1. Already typed as datetime-like
         typed = df.select_dtypes(include=['datetime', 'datetimetz', 'timedelta']).columns.tolist()        
@@ -252,6 +253,8 @@ def preprocess_train(df, **kwargs):
         ]        
         # 3. Union of both, preserving order and avoiding duplicates
         return list(dict.fromkeys(typed + coercible))
+    # Restore warnings to normal
+    warnings.filterwarnings("default")
     datetime_cols = get_all_datetime_like_columns(df)
 
     # identify boolean columns and covert to int
