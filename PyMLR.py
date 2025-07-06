@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.53"
+__version__ = "1.2.54"
 
 def check_X_y(X,y):
 
@@ -2963,10 +2963,9 @@ def ridge(X, y, **kwargs):
         vifs_ = vifs.copy()     # vifs_ = vifs before inserting alphas
         vifs.insert(0, 'alpha', alphas)
         vifs.set_index('alpha',inplace=True)
-        model_outputs['alpha_vs_vif'] = vifs
-        
-    model_outputs['alpha_vs_coef'] = alpha_vs_coef
-    model_outputs['alpha_vs_penalty'] = alpha_vs_penalty
+        model_outputs['alpha_vs_vif'] = vifs        
+        model_outputs['alpha_vs_coef'] = alpha_vs_coef
+        model_outputs['alpha_vs_penalty'] = alpha_vs_penalty
     
     # RidgeCV default using MSE
     model_cv = RidgeCV(alphas=alphas, store_cv_results=True).fit(X, y)
