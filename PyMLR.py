@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.52"
+__version__ = "1.2.53"
 
 def check_X_y(X,y):
 
@@ -361,7 +361,7 @@ def preprocess_train(df, **kwargs):
         'datetime_cols': datetime_cols,
         'category_mappings': category_mappings,
         'unskew_pos': unskew_pos,
-        'unskew_neg': unskew_pos,
+        'unskew_neg': unskew_neg,
         'threshold_skew_pos': threshold_skew_pos,
         'threshold_skew_neg': threshold_skew_neg,
         'skew_df': skew_df,
