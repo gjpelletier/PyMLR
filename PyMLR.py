@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.50"
+__version__ = "1.2.51"
 
 def check_X_y(X,y):
 
@@ -385,7 +385,7 @@ def preprocess_train(df, **kwargs):
         'skewed_neg_cols': skewed_neg_cols 
     }
 
-def preprocess_test(df_test, preprocess_results):
+def preprocess_test(df_test, preprocess_result):
     """
     Transforms the test DataFrame using artifacts from preprocess_train.
     Handles missing columns and unknown categories safely.
@@ -393,7 +393,7 @@ def preprocess_test(df_test, preprocess_results):
     Args:
         df_test (pd.DataFrame): Input test DataFrame 
             if df_test is not a dataframe it will be converted to dataframe
-        preprocess_results (dict): Output dictionary from preprocess_train
+        preprocess_result (dict): Output dictionary from preprocess_train
 
     Returns:
         pd.DataFrame: Preprocessed test DataFrame
@@ -403,20 +403,20 @@ def preprocess_test(df_test, preprocess_results):
     import sys
     from PyMLR import check_X
 
-    if preprocess_results != None:
-        encoder = preprocess_results['encoder']
-        scaler = preprocess_results['scaler']
-        categorical_cols = preprocess_results['categorical_cols']
-        continuous_cols = preprocess_results['continuous_cols']
+    if preprocess_result != None:
+        encoder = preprocess_result['encoder']
+        scaler = preprocess_result['scaler']
+        categorical_cols = preprocess_result['categorical_cols']
+        continuous_cols = preprocess_result['continuous_cols']
         # unskewing of skewed continuous_cols
-        threshold_skew_pos = preprocess_results['threshold_skew_pos'] 
-        threshold_skew_neg = preprocess_results['threshold_skew_neg'] 
-        skewed_pos_cols = preprocess_results['skewed_pos_cols']  
-        skewed_neg_cols = preprocess_results['skewed_neg_cols']  
-        unskew_pos = preprocess_results['unskew_pos'] 
-        unskew_neg = preprocess_results['unskew_neg']     
+        threshold_skew_pos = preprocess_result['threshold_skew_pos'] 
+        threshold_skew_neg = preprocess_result['threshold_skew_neg'] 
+        skewed_pos_cols = preprocess_result['skewed_pos_cols']  
+        skewed_neg_cols = preprocess_result['skewed_neg_cols']  
+        unskew_pos = preprocess_result['unskew_pos'] 
+        unskew_neg = preprocess_result['unskew_neg']     
     else:
-        print('Exited preprocess_test because preprocess_results=None','\n')
+        print('Exited preprocess_test because preprocess_result=None','\n')
         sys.exit()
     
     # copy df_test to prevent altering the original
@@ -614,7 +614,7 @@ def test_model(
     model= fitted sklearn linear regression model object
     X = dataframe of the candidate independent variables 
     y = series of the dependent variable (one column of data)
-    preprocess_results = results of preprocess_train
+    preprocess_result = results of preprocess_train
     selected_features = optimized selected features
     Returns: dict of the following:
         metrics: goodness of fit metrics
@@ -10652,7 +10652,7 @@ def model_agnostic(model, X_test, y_test,
     model= fitted sklearn/XGB/etc linear regression model object
     X_test = dataframe of the independent variables to test 
     y_test = series of the dependent variable to test (one column of data)
-    preprocess_results = results of preprocess_train
+    preprocess_result = results of preprocess_train
     selected_features = optimized selected features
     output_dir = directory to store output plots
     show = True (default) or False to display the plots
