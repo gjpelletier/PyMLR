@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.54"
+__version__ = "1.2.55"
 
 def check_X_y(X,y):
 
@@ -1737,8 +1737,8 @@ def stats_given_model(X,y,model):
     import numpy as np
     import pandas as pd
     from scipy import stats
-    from sklearn.linear_model import LassoLarsIC
-    from sklearn.linear_model import LassoCV
+    # from sklearn.linear_model import LassoLarsIC
+    # from sklearn.linear_model import LassoCV
     import sys
 
     from PyMLR import check_X_y
@@ -3437,7 +3437,8 @@ def elastic(X, y, **kwargs):
         'alpha_min': 1.0e-3,
         'alpha_max': 1.0e3,
         'n_alpha': 100,
-        'l1_ratio': np.linspace(0.01,1,100),      # e.g. 0.5 or list [.1, .5, .7, .9, .95, .99, 1]
+        # 'l1_ratio': np.linspace(0.01,1,100),      # e.g. 0.5 or list [.1, .5, .7, .9, .95, .99, 1]
+        'l1_ratio': [.1, .2, .3, .4, .5, .6, .7, .8, .9, .95, .99, 1],     
         'verbose': 'on'
         }
 
@@ -4884,8 +4885,7 @@ def svr_auto(X, y, **kwargs):
     #     fitted_model, 
     #     X[model_outputs['selected_features']], y)
     metrics = stats_given_model(
-        fitted_model, 
-        X[model_outputs['selected_features']], y)
+        X[model_outputs['selected_features']], y, fitted_model)
     stats = pd.DataFrame([metrics]).T
     stats.index.name = 'Statistic'
     stats.columns = ['SVR']
