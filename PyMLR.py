@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.55"
+__version__ = "1.2.56"
 
 def check_X_y(X,y):
 
@@ -4881,11 +4881,11 @@ def svr_auto(X, y, **kwargs):
         model_outputs['popt_table'] = popt_table
     
     # Goodness of fit statistics
-    # metrics = fitness_metrics(
-    #     fitted_model, 
-    #     X[model_outputs['selected_features']], y)
-    metrics = stats_given_model(
-        X[model_outputs['selected_features']], y, fitted_model)
+    metrics = fitness_metrics(
+        fitted_model, 
+        X[model_outputs['selected_features']], y)
+    # metrics = stats_given_model(
+    #     X[model_outputs['selected_features']], y, fitted_model)
     stats = pd.DataFrame([metrics]).T
     stats.index.name = 'Statistic'
     stats.columns = ['SVR']
