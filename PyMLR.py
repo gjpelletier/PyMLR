@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.56"
+__version__ = "1.2.57"
 
 def check_X_y(X,y):
 
@@ -153,6 +153,23 @@ def check_X(X):
 
     return X
 
+def show_dtypes(df):
+    '''
+    Show the dtype and number of unique values for each column of a dataframe
+    Arg:
+        df: dataframe to be examined
+    Returns transposed dataframe of each feature, dtype, and number of unique values    
+    '''
+    import pandas as pd
+    
+    # Display dtype and number of unique values for each column
+    result = df.apply(lambda col: pd.Series({'dtype': col.dtype, 'unique_values': col.nunique()}))
+    
+    with pd.option_context('display.max_rows', None):
+        print(result.T)
+
+    return result.T
+    
 def preprocess_train(df, **kwargs):
     """
     Detects categorical (numeric and non-numeric) columns, applies one-hot encoding,
@@ -279,6 +296,8 @@ def preprocess_train(df, **kwargs):
 
     all_cat_cols = categorical_numeric + non_numeric_cats + bool_cols
 
+    non_bool_cats = categorical_numeric + non_numeric_cats
+
     # -------- Transforming skewed continuous_cols before scaling --------
 
     # dataframe of skew of each feature
@@ -313,6 +332,7 @@ def preprocess_train(df, **kwargs):
     # -------- One-hot encoding --------
     
     # One-hot encoding
+    '''
     if all_cat_cols:
         encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
         encoded_array = encoder.fit_transform(df[all_cat_cols])
@@ -322,6 +342,19 @@ def preprocess_train(df, **kwargs):
         category_mappings = {
             col: encoder.categories_[i].tolist()
             for i, col in enumerate(all_cat_cols)
+        }
+    else:
+        encoder, encoded_df, category_mappings = None, pd.DataFrame(index=df.index), {}
+    '''
+    if non_bool_cats:
+        encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
+        encoded_array = encoder.fit_transform(df[non_bool_cats])
+        encoded_df = pd.DataFrame(encoded_array,
+                                  columns=encoder.get_feature_names_out(non_bool_cats),
+                                  index=df.index).astype(float)
+        category_mappings = {
+            col: encoder.categories_[i].tolist()
+            for i, col in enumerate(non_bool_cats)
         }
     else:
         encoder, encoded_df, category_mappings = None, pd.DataFrame(index=df.index), {}
@@ -337,7 +370,10 @@ def preprocess_train(df, **kwargs):
         scaler, scaled_df = None, pd.DataFrame(index=df.index)
 
     # Merge all transformed features
-    drop_cols = all_cat_cols + continuous_cols
+
+    # drop_cols = all_cat_cols + continuous_cols
+    drop_cols = non_bool_cats + continuous_cols
+
     df_processed = df.drop(columns=drop_cols, errors='ignore')
     df_processed = df_processed.join([encoded_df, scaled_df])
 
@@ -358,6 +394,7 @@ def preprocess_train(df, **kwargs):
         'non_numeric_cats': non_numeric_cats,
         'bool_cols': bool_cols,
         'categorical_cols': all_cat_cols,
+        'non_bool_cats': non_bool_cats,
         'datetime_cols': datetime_cols,
         'category_mappings': category_mappings,
         'unskew_pos': unskew_pos,
@@ -386,6 +423,8 @@ def preprocess_test(df_test, preprocess_result):
     import numpy as np
     import sys
     from PyMLR import check_X
+    import warnings
+    warnings.filterwarnings('ignore')
 
     if preprocess_result != None:
         encoder = preprocess_result['encoder']
@@ -465,6 +504,9 @@ def preprocess_test(df_test, preprocess_result):
 
     df_processed = remaining.join([encoded_df, scaled_df])
     df_processed = df_processed.astype(float)
+
+    # Restore warnings to normal
+    warnings.filterwarnings("default")
 
     return df_processed
 
