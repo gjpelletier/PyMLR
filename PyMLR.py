@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.57"
+__version__ = "1.2.58"
 
 def check_X_y(X,y):
 
@@ -430,6 +430,7 @@ def preprocess_test(df_test, preprocess_result):
         encoder = preprocess_result['encoder']
         scaler = preprocess_result['scaler']
         categorical_cols = preprocess_result['categorical_cols']
+        non_bool_cats = preprocess_result['non_bool_cats']
         continuous_cols = preprocess_result['continuous_cols']
         # unskewing of skewed continuous_cols
         threshold_skew_pos = preprocess_result['threshold_skew_pos'] 
@@ -467,6 +468,7 @@ def preprocess_test(df_test, preprocess_result):
         
     # -------- One-hot encoding --------
 
+    '''
     for col in categorical_cols:
         if df_test.get(col, pd.Series(dtype=object)).dtype == bool:
             df_test[col] = df_test[col].astype(int)
@@ -485,6 +487,25 @@ def preprocess_test(df_test, preprocess_result):
         ).astype(float)
     else:
         encoded_df = pd.DataFrame(index=df_test.index)
+    '''
+    for col in non_bool_cats:
+        if df_test.get(col, pd.Series(dtype=object)).dtype == bool:
+            df_test[col] = df_test[col].astype(int)
+    
+    # Encode categoricals
+    if encoder is not None and non_bool_cats:
+        df_cat = pd.DataFrame(index=df_test.index)
+        for col in non_bool_cats:
+            df_cat[col] = df_test[col] if col in df_test.columns else np.nan
+
+        encoded_array = encoder.transform(df_cat[non_bool_cats])
+        encoded_df = pd.DataFrame(
+            encoded_array,
+            columns=encoder.get_feature_names_out(non_bool_cats),
+            index=df_test.index
+        ).astype(float)
+    else:
+        encoded_df = pd.DataFrame(index=df_test.index)
 
     # -------- Scaling --------
     
@@ -499,7 +520,9 @@ def preprocess_test(df_test, preprocess_result):
     else:
         scaled_df = pd.DataFrame(index=df_test.index)
 
-    drop_cols = set(categorical_cols + continuous_cols)
+    # drop_cols = set(categorical_cols + continuous_cols)
+    drop_cols = set(non_bool_cats + continuous_cols)
+
     remaining = df_test.drop(columns=[col for col in drop_cols if col in df_test.columns], errors='ignore')
 
     df_processed = remaining.join([encoded_df, scaled_df])
