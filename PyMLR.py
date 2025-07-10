@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.58"
+__version__ = "1.2.59"
 
 def check_X_y(X,y):
 
@@ -205,6 +205,7 @@ def preprocess_train(df, **kwargs):
             'non_numeric_cats': list of non_numeric categorical columns,
             'bool_cols': list of boolean columns,
             'categorical_cols': list of all categorical columns,
+            'non_bool_cats': list of categorical columns that are not boolean,
             'datetime_cols': list of datetime columns,
             'category_mappings': Mapping of categories or {},
             'threshold_skew_pos': same as input threshold_skew_pos,
@@ -10965,7 +10966,7 @@ def linear(X, y, **kwargs):
                                     # - categorical_cols (categorical cols)
                                     # - non_numeric_cats (non-num cat cols)
                                     # - continuous_cols  (continuous cols)
-        verbose= 'on' (default) or 'off' 
+        verbose= 'on' (default), 'off', or 1 (model skill and residuals plots) 
         fit_intercept= True,        # calculate intercept
         copy_X= True,               # True: X will be copied
         n_jobs= None,               # -1 to use all CPUs
@@ -11109,7 +11110,7 @@ def linear(X, y, **kwargs):
     # Suppress warnings
     warnings.filterwarnings('ignore')
     print('Fitting LinearRegression model, please wait ...')
-    if data['verbose'] == 'on':
+    if data['verbose'] == 'on' or data['verbose'] == 1:
         print('')
 
     params = {
@@ -11183,13 +11184,13 @@ def linear(X, y, **kwargs):
     vif.index.name = 'Feature'
     model_outputs['vif'] = vif
 
-    if data['verbose'] == 'on':
+    if data['verbose'] == 'on' or data['verbose'] == 1:
         print("LinearRegression goodness of fit to training data in model_outputs['stats']:")
         print('')
         print(model_outputs['stats'].to_markdown(index=True))
         print('')
 
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+    if data['verbose'] == 'on' and hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
         print("Parameters of fitted model in model_outputs['popt']:")
         print('')
         print(model_outputs['popt_table'].to_markdown(index=True))
@@ -11202,7 +11203,7 @@ def linear(X, y, **kwargs):
         print('')
 
     # residual plot for training error
-    if data['verbose'] == 'on':
+    if data['verbose'] == 'on' or data['verbose'] == 1:
         fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
         PredictionErrorDisplay.from_predictions(
             y,
@@ -11663,13 +11664,13 @@ def linear_auto(X, y, **kwargs):
     vif.index.name = 'Feature'
     model_outputs['vif'] = vif
 
-    if data['verbose'] == 'on':
+    if data['verbose'] == 'on' or data['verbose'] == 1:
         print("LinearRegression goodness of fit to training data in model_outputs['stats']:")
         print('')
         print(model_outputs['stats'].to_markdown(index=True))
         print('')
 
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+    if data['verbose'] == 'on' and hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
         print("Parameters of fitted model in model_outputs['popt']:")
         print('')
         print(model_outputs['popt_table'].to_markdown(index=True))
@@ -11682,7 +11683,7 @@ def linear_auto(X, y, **kwargs):
         print('')
 
     # residual plot for training error
-    if data['verbose'] == 'on':
+    if data['verbose'] == 'on' or data['verbose'] == 1:
         fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
         PredictionErrorDisplay.from_predictions(
             y,
