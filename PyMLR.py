@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.65"
+__version__ = "1.2.66"
 
 def check_X_y(X,y):
 
@@ -6303,6 +6303,8 @@ def xgb(X, y, **kwargs):
         predictor= "auto",          # Type of predictor ('cpu_predictor', 'gpu_predictor').
         enable_categorical= False   # Whether to enable categorical data support.    
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -6378,6 +6380,8 @@ def xgb(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -6466,6 +6470,8 @@ def xgb(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -6769,6 +6775,8 @@ def xgb_auto(X, y, **kwargs):
         predictor= "auto",          # Type of predictor ('cpu_predictor', 'gpu_predictor').
         enable_categorical= False   # Whether to enable categorical data support.    
         preprocessing options:
+            use_encoder (bool): True (default) or False 
+            use_scaler (bool): True (default) or False 
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -6848,6 +6856,8 @@ def xgb_auto(X, y, **kwargs):
                                             # - non_numeric_cats (non-numeric cats)
                                             # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -6938,6 +6948,8 @@ def xgb_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
