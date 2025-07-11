@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.63"
+__version__ = "1.2.64"
 
 def check_X_y(X,y):
 
@@ -11005,6 +11005,8 @@ def linear(X, y, **kwargs):
         n_jobs= None,               # -1 to use all CPUs
         positive= False             # True forces coefficients to be positive
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -11070,6 +11072,8 @@ def linear(X, y, **kwargs):
                                     # - non_numeric_cats (non-numeric cats)
                                     # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -11119,6 +11123,8 @@ def linear(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'], 
+                'use_scaler': data['use_scaler'], 
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -11425,6 +11431,8 @@ def linear_auto(X, y, **kwargs):
         n_jobs= None,               # -1 to use all CPUs
         positive= False             # True forces coefficients to be positive
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -11504,6 +11512,8 @@ def linear_auto(X, y, **kwargs):
                                             # - non_numeric_cats (non-numeric cats)
                                             # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -11576,6 +11586,8 @@ def linear_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'], 
+                'use_scaler': data['use_scaler'], 
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
