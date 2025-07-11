@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.66"
+__version__ = "1.2.67"
 
 def check_X_y(X,y):
 
@@ -239,6 +239,7 @@ def preprocess_train(df, **kwargs):
     defaults = {
         'use_scaler': True, 
         'use_encoder': True, 
+        'threshold_cat': 12,
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
