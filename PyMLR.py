@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.61"
+__version__ = "1.2.62"
 
 def check_X_y(X,y):
 
@@ -256,6 +256,8 @@ def preprocess_train(df, **kwargs):
         print(f"Unexpected input kwargs: {unexpected}")
 
     # extract control variables from data dictionary
+    use_encoder = data['use_encoder']
+    use_scaler = data['use_scaler']
     threshold_cat = data['threshold_cat']
     scale = data['scale']
     unskew_pos = data['unskew_pos']
