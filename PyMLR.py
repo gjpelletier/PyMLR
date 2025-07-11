@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.60"
+__version__ = "1.2.61"
 
 def check_X_y(X,y):
 
@@ -197,6 +197,8 @@ def preprocess_train(df, **kwargs):
                 skewness less than threshold_skew_neg (default: False)
             threshold_skew_neg: threshold skewness to sqrt transform features
                 used if unskew_neg=True (default: -0.5)
+            use_encoder: True (default) or False
+            use_scaler: True (default) or False
 
     Returns:
         dict: {
@@ -206,6 +208,8 @@ def preprocess_train(df, **kwargs):
             'columns_processed': list of column names of processed dataframe            
             'encoder': Fitted OneHotEncoder or None,
             'scaler': Fitted Scaler or None,
+            'use_encoder': True or False, whether to one-hot encode non_bool_cats
+            'use_scaler': True or False, whether to scale continupus_cols
             'continuous_cols': list of continuous numeric columns,
             'categorical_numeric': list of categorical numeric columns,
             'non_numeric_cats': list of non_numeric categorical columns,
@@ -233,7 +237,8 @@ def preprocess_train(df, **kwargs):
 
     # Define default values of input data arguments
     defaults = {
-        'threshold_cat': 12, 
+        'use_scaler': True, 
+        'use_encoder': True, 
         'scale': 'standard', 
         'unskew_pos': False, 
         'threshold_skew_pos': 0.5,
@@ -353,7 +358,7 @@ def preprocess_train(df, **kwargs):
     else:
         encoder, encoded_df, category_mappings = None, pd.DataFrame(index=df.index), {}
     '''
-    if non_bool_cats:
+    if use_encoder and non_bool_cats:
         encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
         encoded_array = encoder.fit_transform(df[non_bool_cats])
         encoded_df = pd.DataFrame(encoded_array,
@@ -369,7 +374,7 @@ def preprocess_train(df, **kwargs):
     # -------- Scaling --------
 
     # Scaling
-    if continuous_cols:
+    if use_scaler and continuous_cols:
         scaler = StandardScaler() if scale == 'standard' else MinMaxScaler()
         scaled_array = scaler.fit_transform(df[continuous_cols])
         scaled_df = pd.DataFrame(scaled_array, columns=continuous_cols, index=df.index).astype(float)
@@ -378,11 +383,17 @@ def preprocess_train(df, **kwargs):
 
     # Merge all transformed features
 
-    # drop_cols = all_cat_cols + continuous_cols
-    drop_cols = non_bool_cats + continuous_cols
+    # drop_cols = non_bool_cats + continuous_cols
+    # df_processed = df.drop(columns=drop_cols, errors='ignore')
+    # df_processed = df_processed.join([encoded_df, scaled_df])
 
-    df_processed = df.drop(columns=drop_cols, errors='ignore')
-    df_processed = df_processed.join([encoded_df, scaled_df])
+    df_processed = df.copy()
+    if use_encoder:
+        df_processed = df_processed.drop(columns=non_bool_cats, errors='ignore')
+        df_processed = df_processed.join([encoded_df])
+    if use_scaler:
+        df_processed = df_processed.drop(columns=continuous_cols, errors='ignore')
+        df_processed = df_processed.join([scaled_df])
 
     # set all_cols except datetime_cols to float
     all_cols = df_processed.columns.to_list()
@@ -396,6 +407,8 @@ def preprocess_train(df, **kwargs):
         'columns_processed': df_processed.columns.to_list(),
         'encoder': encoder,
         'scaler': scaler,
+        'use_encoder': use_encoder,
+        'use_scaler': use_scaler,
         'continuous_cols': continuous_cols,
         'categorical_numeric': categorical_numeric,
         'non_numeric_cats': non_numeric_cats,
@@ -436,6 +449,8 @@ def preprocess_test(df_test, preprocess_result):
     if preprocess_result != None:
         encoder = preprocess_result['encoder']
         scaler = preprocess_result['scaler']
+        use_encoder = preprocess_result['use_encoder']
+        use_scaler = preprocess_result['use_scaler']
         categorical_cols = preprocess_result['categorical_cols']
         non_bool_cats = preprocess_result['non_bool_cats']
         continuous_cols = preprocess_result['continuous_cols']
@@ -500,7 +515,7 @@ def preprocess_test(df_test, preprocess_result):
             df_test[col] = df_test[col].astype(int)
     
     # Encode categoricals
-    if encoder is not None and non_bool_cats:
+    if use_encoder and encoder is not None and non_bool_cats:
         df_cat = pd.DataFrame(index=df_test.index)
         for col in non_bool_cats:
             df_cat[col] = df_test[col] if col in df_test.columns else np.nan
@@ -517,7 +532,7 @@ def preprocess_test(df_test, preprocess_result):
     # -------- Scaling --------
     
     # Scale continuous
-    if scaler is not None and continuous_cols:
+    if use_scaler and scaler is not None and continuous_cols:
         df_num = pd.DataFrame(index=df_test.index)
         for col in continuous_cols:
             df_num[col] = df_test[col] if col in df_test.columns else 0.0
@@ -527,13 +542,22 @@ def preprocess_test(df_test, preprocess_result):
     else:
         scaled_df = pd.DataFrame(index=df_test.index)
 
-    # drop_cols = set(categorical_cols + continuous_cols)
-    drop_cols = set(non_bool_cats + continuous_cols)
+    # drop_cols = set(non_bool_cats + continuous_cols)
+    # remaining = df_test.drop(columns=[col for col in drop_cols if col in df_test.columns], errors='ignore')
+    # df_processed = remaining.join([encoded_df, scaled_df])
+    df_processed = df_test.copy()
+    if use_encoder:
+        df_processed = df_processed.drop(columns=non_bool_cats, errors='ignore')
+        df_processed = df_processed.join([encoded_df])
+    if use_scaler:
+        df_processed = df_processed.drop(columns=continuous_cols, errors='ignore')
+        df_processed = df_processed.join([scaled_df])
 
-    remaining = df_test.drop(columns=[col for col in drop_cols if col in df_test.columns], errors='ignore')
-
-    df_processed = remaining.join([encoded_df, scaled_df])
-    df_processed = df_processed.astype(float)
+    # # set all_cols except datetime_cols to float
+    # df_processed = df_processed.astype(float)
+    all_cols = df_processed.columns.to_list()
+    float_cols = [item for item in all_cols if item not in datetime_cols]
+    df_processed[float_cols] = df_processed[float_cols].astype(float)
 
     # Restore warnings to normal
     warnings.filterwarnings("default")
@@ -10822,7 +10846,7 @@ def model_agnostic(model, X_test, y_test,
     plt.close()
             
     # -------- Step 2: SHAP Explainer (auto-detect) --------
-    print('Step 2: SHAP Beeswarm, Bar importance, and Waterfall, please wait...')
+    print('Step 2: SHAP Beeswarm and Bar importance...')
     try:
         model_name = model.__class__.__name__.lower()
         if "linear" in model_name:
@@ -10869,7 +10893,7 @@ def model_agnostic(model, X_test, y_test,
         shap_ordered_features = None
     
     # -------- Step 3: Permutation Importance --------
-    print('Step 3: Permutation Importance, please wait...')
+    print('Step 3: Permutation Importance...')
     try:
         result = permutation_importance(
             model, X_test_proc, y_test, n_repeats=10, random_state=42
@@ -10898,7 +10922,7 @@ def model_agnostic(model, X_test, y_test,
         permutation_ordered_features = None
     
     # -------- Step 4: PDP + ICE --------
-    print('Step 4: PDP + ICE plots of each continuous feature, please wait...')
+    print('Step 4: PDP + ICE plots of each continuous features...')
     try:
         # features_for_pdp = optimum_selected_features[:2]  # choose top 2
         # if selected_features_continuous != None:
