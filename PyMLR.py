@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.59"
+__version__ = "1.2.60"
 
 def check_X_y(X,y):
 
@@ -163,7 +163,13 @@ def show_dtypes(df):
     import pandas as pd
     
     # Display dtype and number of unique values for each column
-    result = df.apply(lambda col: pd.Series({'dtype': col.dtype, 'unique_values': col.nunique()}))
+    # result = df.apply(lambda col: pd.Series({'dtype': col.dtype, 'unique_values': col.nunique()}))
+    result = df.apply(lambda col: pd.Series({'dtype': col.dtype, 
+                                             'nunique': col.nunique(),
+                                             'isna_sum': col.isna().sum(),
+                                             'zero_sum': (col == 0).sum(),
+                                             'one_sum': (col == 1).sum()
+                                            }))
     
     with pd.option_context('display.max_rows', None):
         print(result.T)
