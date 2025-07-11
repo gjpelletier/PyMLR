@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.62"
+__version__ = "1.2.63"
 
 def check_X_y(X,y):
 
@@ -456,6 +456,7 @@ def preprocess_test(df_test, preprocess_result):
         categorical_cols = preprocess_result['categorical_cols']
         non_bool_cats = preprocess_result['non_bool_cats']
         continuous_cols = preprocess_result['continuous_cols']
+        datetime_cols = preprocess_result['datetime_cols']
         # unskewing of skewed continuous_cols
         threshold_skew_pos = preprocess_result['threshold_skew_pos'] 
         threshold_skew_neg = preprocess_result['threshold_skew_neg'] 
