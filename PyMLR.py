@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.69"
+__version__ = "1.2.70"
 
 def check_X_y(X,y):
 
@@ -687,11 +687,17 @@ def show_optuna(study):
 
 def show_coef(fitted_model, X):
     '''
-    Show the intercept  and coefs of an sklearn model that has intercept and coefs
+    Show the intercept and coefs of a fitted sklearn model that has intercept and coefs
     '''
+    import numpy as np
+    import pandas as pd
+    import sys
+    ctrl = fitted_model.coef_.size==len(X.columns))
+    if not ctrl:
+        print('Error: Mismatch between len(X.columns) and model.coef_.size!','\n')
+        sys.exit()
     if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
             and fitted_model.coef_.size==len(X.columns)):
-
         intercept = fitted_model.intercept_
         coefficients = fitted_model.coef_
         # dataframe of model parameters, intercept and coefficients, including zero coefs
