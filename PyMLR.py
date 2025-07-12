@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.67"
+__version__ = "1.2.68"
 
 def check_X_y(X,y):
 
@@ -10880,20 +10880,29 @@ def model_agnostic(model, X_test, y_test,
         output['shap_values'] = shap_values
     
         # Beeswarm
-        shap.plots.beeswarm(shap_values, show=show)
+        shap.plots.beeswarm(shap_values, show=False)  # show=False required to savefig
         plt.savefig(f"{output_dir}/shap_beeswarm.png", dpi=300, bbox_inches='tight')
         plt.close()
+        if show:
+            shap.plots.beeswarm(shap_values, show=True)  # show=True to display
+            plt.close()
     
         # Bar plot for global feature importance
-        shap.plots.bar(shap_values, show=show)
+        shap.plots.bar(shap_values, show=False)  # show=False required to savefig
         plt.savefig(f"{output_dir}/shap_bar_importance.png", dpi=300, bbox_inches='tight')
         plt.close()
+        if show:
+            shap.plots.bar(shap_values, show=True)  # show=True to display
+            plt.close()
             
         '''
         # Waterfall for first instance
-        shap.plots.waterfall(shap_values[0], show=show)
+        shap.plots.waterfall(shap_values[0], show=False)
         plt.savefig(f"{output_dir}/shap_waterfall_sample0.png", dpi=300, bbox_inches='tight')
         plt.close()
+        if show:
+            shap.plots.waterfall(shap_values[0], show=True)  # show=True to display
+            plt.close()
         '''
         
         # Compute mean absolute SHAP values
