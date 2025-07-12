@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.71"
+__version__ = "1.2.72"
 
 def check_X_y(X,y):
 
@@ -723,6 +723,25 @@ def show_coef(fitted_model, X):
         print('The fitted model does not have intercept and/or coefficients')
         popt_table = None
     return popt_table
+
+def show_vif(X):
+    '''
+    Show Variance Inflation Factors of X
+    '''
+    import numpy as np
+    import pandas as pd
+    import statsmodels.api as sm
+    from statsmodels.stats.outliers_influence import variance_inflation_factor
+    X_ = X.copy()
+    X__ = sm.add_constant(X_)    # Add a constant for the intercept
+    vif = pd.DataFrame()
+    vif['Feature'] = X__.columns
+    vif["VIF"] = [variance_inflation_factor(X__.values, i)
+                        for i in range(len(X__.columns))]
+    vif.set_index('Feature',inplace=True)
+    vif.index.name = 'Feature'
+    print(vif.to_markdown(index=True))
+    return vif
 
 def test_model(
         model, X, y, preprocess_result=None, selected_features=None):
@@ -11273,6 +11292,7 @@ def linear(X, y, **kwargs):
     model_outputs['y_pred'] = fitted_model.predict(X)
 
     # VIF
+    '''
     model_ = fitted_model
     if data['preprocess']:
         selected_continuous_cols = [
@@ -11281,6 +11301,8 @@ def linear(X, y, **kwargs):
         X_ = X[selected_continuous_cols].copy()
     else:
         X_ = X.copy()
+    '''
+    X_ = X.copy()
     X__ = sm.add_constant(X_)    # Add a constant for the intercept
     vif = pd.DataFrame()
     vif['Feature'] = X__.columns
@@ -11759,6 +11781,7 @@ def linear_auto(X, y, **kwargs):
     model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
 
     # VIF
+    '''
     model_ = fitted_model
     if data['preprocess']:
         selected_continuous_cols = [
@@ -11767,6 +11790,8 @@ def linear_auto(X, y, **kwargs):
         X_ = X[selected_continuous_cols].copy()
     else:
         X_ = X.copy()
+    '''
+    X_ = X.copy()    
     X__ = sm.add_constant(X_)    # Add a constant for the intercept
     vif = pd.DataFrame()
     vif['Feature'] = X__.columns
