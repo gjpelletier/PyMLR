@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.70"
+__version__ = "1.2.71"
 
 def check_X_y(X,y):
 
@@ -692,7 +692,7 @@ def show_coef(fitted_model, X):
     import numpy as np
     import pandas as pd
     import sys
-    ctrl = fitted_model.coef_.size==len(X.columns))
+    ctrl = fitted_model.coef_.size==len(X.columns)
     if not ctrl:
         print('Error: Mismatch between len(X.columns) and model.coef_.size!','\n')
         sys.exit()
