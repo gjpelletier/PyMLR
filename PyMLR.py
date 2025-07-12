@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.68"
+__version__ = "1.2.69"
 
 def check_X_y(X,y):
 
@@ -684,6 +684,39 @@ def show_optuna(study):
     warnings.filterwarnings("default")
 
     return
+
+def show_coef(fitted_model, X):
+    '''
+    Show the intercept  and coefs of an sklearn model that has intercept and coefs
+    '''
+    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+            and fitted_model.coef_.size==len(X.columns)):
+
+        intercept = fitted_model.intercept_
+        coefficients = fitted_model.coef_
+        # dataframe of model parameters, intercept and coefficients, including zero coefs
+        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+        for i in range(n_param):
+            if i == 0:
+                popt[0][i] = 'Intercept'
+                popt[1][i] = fitted_model.intercept_
+            else:
+                popt[0][i] = X.columns[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
+        popt = pd.DataFrame(popt).T
+        popt.columns = ['Feature', 'Parameter']
+        # Table of intercept and coef
+        popt_table = pd.DataFrame({
+                "Feature": popt['Feature'],
+                "Parameter": popt['Parameter']
+            })
+        popt_table.set_index('Feature',inplace=True)
+        print(popt_table.to_markdown(index=True))
+    else:
+        print('The fitted model does not have intercept and/or coefficients')
+        popt_table = None
+    return popt_table
 
 def test_model(
         model, X, y, preprocess_result=None, selected_features=None):
