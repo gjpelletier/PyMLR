@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.72"
+__version__ = "1.2.73"
 
 def check_X_y(X,y):
 
@@ -2125,6 +2125,8 @@ def lasso(X, y, **kwargs):
         n_alpha= number of log-spaced alphas to evaluate (default=100)
         verbose= 'on' (default), 'off', or 1=show stats and residuals plot
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -2221,6 +2223,8 @@ def lasso(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -2268,6 +2272,8 @@ def lasso(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -2919,6 +2925,8 @@ def ridge(X, y, **kwargs):
         vif_target= VIF target for use with RidgeVIF (default=1.0)
         verbose= 'on' (default), 'off', or 1=show stats and residuals plot
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -3002,6 +3010,8 @@ def ridge(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -3056,6 +3066,8 @@ def ridge(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -3506,6 +3518,8 @@ def elastic(X, y, **kwargs):
             default is l1_ratio= np.linspace(0.01,1,100)        
         verbose= 'on' (default), 'off', or 1=show stats and residuals plot
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -3590,6 +3604,8 @@ def elastic(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -3639,6 +3655,8 @@ def elastic(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -3965,6 +3983,8 @@ def stacking(X, y, **kwargs):
 
         verbose= 'on' (default) or 'off'
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -4042,6 +4062,8 @@ def stacking(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -4101,6 +4123,8 @@ def stacking(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -4379,6 +4403,8 @@ def svr(X, y, **kwargs):
         cache_size= 200    # Specify the size of the kernel cache (in MB)
         max_iter= -1       # Hard limit on iterations within solver, or -1 for no limit.
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -4453,6 +4479,8 @@ def svr(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -4507,6 +4535,8 @@ def svr(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -4797,6 +4827,8 @@ def svr_auto(X, y, **kwargs):
         max_iter= -1              # Hard limit on iterations within solver, 
                                   # or -1 for no limit
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -4874,6 +4906,8 @@ def svr_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -4952,6 +4986,8 @@ def svr_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -5134,6 +5170,8 @@ def sgd(X, y, **kwargs):
         random_state= (default random_state=42)        - initial random seed
         verbose= 'on' (default) or 'off'
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -5209,6 +5247,8 @@ def sgd(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -5253,6 +5293,8 @@ def sgd(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -5463,6 +5505,8 @@ def gbr(X, y, **kwargs):
         ccp_alpha=0.0                  # Complexity parameter for Minimal Cost-Complexity Pruning. 
                                        # Default is 0.0.
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -5531,6 +5575,8 @@ def gbr(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -5600,6 +5646,8 @@ def gbr(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -5909,6 +5957,8 @@ def gbr_auto(X, y, **kwargs):
         tol= 1e-4,                      # Tolerance for early stopping
         ccp_alpha= 0.0                  # Parameter for Min Cost-Complexity Pruning
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -5987,6 +6037,8 @@ def gbr_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -6080,6 +6132,8 @@ def gbr_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -7214,6 +7268,8 @@ def lgbm(X, y, **kwargs):
         verbosity=-1,          # -1 to turn off lightgbm warnings
         importance_type='split' # Type of feature importance ('split' or 'gain')
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -7284,6 +7340,8 @@ def lgbm(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -7347,6 +7405,8 @@ def lgbm(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -7531,6 +7591,8 @@ def catboost(X, y, **kwargs):
                                             # False = use max_bin 
                                             # (best for continuous features)
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -7600,6 +7662,8 @@ def catboost(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -7671,6 +7735,8 @@ def catboost(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -7974,6 +8040,8 @@ def catboost_auto(X, y, **kwargs):
                                             # False = use max_bin 
                                             # (best for continuous features)
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -8047,6 +8115,8 @@ def catboost_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -8123,6 +8193,8 @@ def catboost_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -8338,6 +8410,8 @@ def forest(X, y, **kwargs):
         monotonic_cst= None               # monotonicity constraint 
                                           # to enforce on each feature
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -8407,6 +8481,8 @@ def forest(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -8494,6 +8570,8 @@ def forest(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -8799,6 +8877,8 @@ def forest_auto(X, y, **kwargs):
         monotonic_cst= None               # monotonicity constraint 
                                           # to enforce on each feature
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -8870,6 +8950,8 @@ def forest_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -8966,6 +9048,8 @@ def forest_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -9160,6 +9244,8 @@ def knn(X, y, **kwargs):
         n_jobs= -1,                 # number of jobs to run in parallel    
         metric_params= None         # for user-specified metrics
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -9233,6 +9319,8 @@ def knn(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -9308,6 +9396,8 @@ def knn(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -9643,6 +9733,8 @@ def knn_auto(X, y, **kwargs):
         n_jobs= -1,                       # number of jobs to run in parallel    
         metric_params= None               # for user-specified metrics
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -9721,6 +9813,8 @@ def knn_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -9806,6 +9900,8 @@ def knn_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -10148,6 +10244,8 @@ def logistic(X, y, **kwargs):
         max_iter= 500,      # max iterations for solver
         n_jobs= -1,         # number of jobs to run in parallel    
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -10237,6 +10335,8 @@ def logistic(X, y, **kwargs):
         'verbose': 'on',
         'gpu': True,                       # autodetect gpu if present
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -10302,6 +10402,8 @@ def logistic(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
@@ -10506,6 +10608,8 @@ def logistic_auto(X, y, **kwargs):
         max_iter= 500,            # max iterations for solver
         n_jobs= -1,               # number of jobs to run in parallel    
         preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
             threshold_cat (int): Max unique values for numeric columns 
                 to be considered categorical (default: 12)
             scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
@@ -10594,6 +10698,8 @@ def logistic_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
         'scale': 'standard', 
         'unskew_pos': False, 
@@ -10662,6 +10768,8 @@ def logistic_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
                 'scale': data['scale'], 
                 'unskew_pos': data['unskew_pos'], 
