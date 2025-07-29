@@ -48,12 +48,7 @@ The functions in PyMLR allow the user to write one line of high-level python cod
 
 The PyMLR module require that you have already installed numpy, pandas, scikit-learn, tabulate, matplotlib, seaborn, statsmodels, xgboost, lightgbm, mlxtend, shap, and optuna packages. In addition, the auto-optimization functions, because they use optuna, require that you have already installed and enabled ipywidgets in your Python environment if you are working in a Jupyter notebook. 
 
-If you have not already installed PyMLR, enter the following with pip or !pip in your notebook or terminal:<br>
-```
-pip install git+https://github.com/gjpelletier/PyMLR.git
-```
-
-if you are upgrading from a previous installation of PyMLR, enter the following with pip pr !pip in your notebook or terminal:<br>
+If you have not already installed PyMLR, or you are upgrading from a previous installation of PyMLR, enter the following with pip pr !pip in your notebook or terminal:<br>
 ```
 pip install git+https://github.com/gjpelletier/PyMLR.git --upgrade
 ```
