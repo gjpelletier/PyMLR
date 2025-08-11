@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.73"
+__version__ = "1.2.74"
 
 def check_X_y(X,y):
 
@@ -152,30 +152,7 @@ def check_X(X):
         X.columns = ['X' + str(i) for i in X.columns]       
 
     return X
-
-def show_dtypes(df):
-    '''
-    Show the dtype and number of unique values for each column of a dataframe
-    Arg:
-        df: dataframe to be examined
-    Returns transposed dataframe of each feature, dtype, and number of unique values    
-    '''
-    import pandas as pd
-    
-    # Display dtype and number of unique values for each column
-    # result = df.apply(lambda col: pd.Series({'dtype': col.dtype, 'unique_values': col.nunique()}))
-    result = df.apply(lambda col: pd.Series({'dtype': col.dtype, 
-                                             'nunique': col.nunique(),
-                                             'isna_sum': col.isna().sum(),
-                                             'zero_sum': (col == 0).sum(),
-                                             'one_sum': (col == 1).sum()
-                                            }))
-    
-    with pd.option_context('display.max_rows', None):
-        print(result.T)
-
-    return result.T
-    
+   
 def preprocess_train(df, **kwargs):
     """
     Detects categorical (numeric and non-numeric) columns, applies one-hot encoding,
@@ -568,6 +545,29 @@ def preprocess_test(df_test, preprocess_result):
 
     return df_processed
 
+def show_dtypes(df):
+    '''
+    Show the dtype and number of unique values for each column of a dataframe
+    Arg:
+        df: dataframe to be examined
+    Returns transposed dataframe of each feature, dtype, and number of unique values    
+    '''
+    import pandas as pd
+    
+    # Display dtype and number of unique values for each column
+    # result = df.apply(lambda col: pd.Series({'dtype': col.dtype, 'unique_values': col.nunique()}))
+    result = df.apply(lambda col: pd.Series({'dtype': col.dtype, 
+                                             'nunique': col.nunique(),
+                                             'isna_sum': col.isna().sum(),
+                                             # 'zero_sum': (col == 0).sum(),
+                                             # 'one_sum': (col == 1).sum()
+                                            }))
+    
+    with pd.option_context('display.max_rows', None):
+        print(result.T)
+
+    return result.T
+ 
 def show_optuna(study):
 
     '''
@@ -11463,6 +11463,7 @@ def linear(X, y, **kwargs):
     
     # Print the run time
     fit_time = time.time() - start_time
+    print('')
     print('Done')
     print(f"Time elapsed: {fit_time:.2f} sec")
     print('')
