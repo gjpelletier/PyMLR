@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.75"
+__version__ = "1.2.76"
 
 def check_X_y(X,y):
 
@@ -1020,7 +1020,7 @@ def pseudo_r2(model, X, y):
     
     return 1 - ll_full / ll_null
 
-def fitness_metrics_logistic(model, X, y, brier=False):
+def fitness_metrics_logistic(model, X, y, brier=True):
     """
     Extracts multiple evaluation metrics 
     from a trained LogisticRegression model
