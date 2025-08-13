@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.76"
+__version__ = "1.2.77
 
 def check_X_y(X,y):
 
@@ -1054,7 +1054,7 @@ def fitness_metrics_logistic(model, X, y, brier=True):
     }
 
     # Brier score only valid for binary: take prob class 1
-    if brier and len(np.unique(y)) == 2  and np.max(y_proba, axis=1)<=1:
+    if brier and len(np.unique(y)) == 2  and np.max(y_proba)<=1:
         metrics["brier_score"] = brier_score_loss(y, y_proba[:, 1])
 
     metrics['n_classes'] = len(np.unique(y))
