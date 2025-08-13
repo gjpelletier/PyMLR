@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.74"
+__version__ = "1.2.75"
 
 def check_X_y(X,y):
 
@@ -1020,7 +1020,7 @@ def pseudo_r2(model, X, y):
     
     return 1 - ll_full / ll_null
 
-def fitness_metrics_logistic(model, X, y):
+def fitness_metrics_logistic(model, X, y, brier=False):
     """
     Extracts multiple evaluation metrics 
     from a trained LogisticRegression model
@@ -1054,7 +1054,7 @@ def fitness_metrics_logistic(model, X, y):
     }
 
     # Brier score only valid for binary: take prob class 1
-    if len(np.unique(y)) == 2:
+    if brier and len(np.unique(y)) == 2  and np.max(y_proba, axis=1)<=1:
         metrics["brier_score"] = brier_score_loss(y, y_proba[:, 1])
 
     metrics['n_classes'] = len(np.unique(y))
