@@ -9,14 +9,14 @@ The PyMLR module includes the following main Python functions to facilitate the 
  - **elastic** - ElasticNetCV
  - **xgb_auto** - XGBoost XGBRegressor (default) or XGBClassifier (if optional kwarg classify=True) with automatic cross-validated optimization of the hyperparameters
  - **xgb** - XGBRegressor (default) or XGBClassifier (if optional kwarg classify=True) with user-specified hyperparameters
+ - **svr_auto** - SVR with automatic cross-validated optimization of the hyperparameters
+ - **svr** - SVR with user-specified hyperparameters
  - **catboost_auto** - CatBoostRegressor with automatic cross-validated optimization of the hyperparameters
  - **catboost** - CatBoostRegressor with user-specified hyperparameters
  - **gbr_auto** - GradientBoostingRegressor with automatic cross-validated optimization of the hyperparameters
  - **gbr** - GradientBoostingRegressor with user-specified hyperparameters
  - **forest_auto** - RandomForestRegressor with automatic cross-validated optimization of the hyperparameters
  - **forest** - RandomForestRegressor with user-specified hyperparameters
- - **svr_auto** - SVR with automatic cross-validated optimization of the hyperparameters
- - **svr** - SVR with user-specified hyperparameters
  - **knn_auto** - KNeighborsRegressor with automatic cross-validated optimization of the hyperparameters
  - **knn** - KNeighborsRegressor with user-specified hyperparameters
  - **lgbm** - LGBMRegressor with user-specified hyperparameters
@@ -173,6 +173,7 @@ Ridge regression reduces the Variance Inflation Factors of the features by addin
 Cross-validated ridge regression (e.g. using RidgeCV) does not always result in acceptable multicollinearity as indicated by VIF. While cross-validation helps in fine-tuning the regression coefficients, it does not always result in VIF values close to 1. Ideally the VIF of all features should be as close as possibe to VIF=1. This can be achieved using a trial and error method of evaluating the VIF values of the model features over a range of alpha values. 
 
 The **ridge** function in PyMLR includes an algorithm (RidgeVIF) to find the model with the optimum value of alpha that will result in VIF values as close as possible to a user-specified target VIF (default target VIF=1.0). This assures that there will be acceptable multicollinearity for all features. The trade-off is that this algorithm reduces the model coefficients such that the target VIF will be achieved. The user has the option to specify any target for VIF to explore the balance between VIF and coefficient values.  
+
 
 
 
