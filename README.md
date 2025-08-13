@@ -42,7 +42,7 @@ The functions in PyMLR allow the user to write one line of high-level python cod
 - best fit intercept and model coefficients (if applicable)
 - final fitted model object
 - automatic detection and use of GPU for computations (XGBoost)
-- optimization binomial or multinomial response variables with either sklearn LogisticRegression or XGBoost XGBClassifier
+- optimization of binomial or multinomial response variables with either sklearn LogisticRegression or XGBoost XGBClassifier
 
 ## Installation for Python or Jupyter Notebook
 
@@ -173,5 +173,6 @@ Ridge regression reduces the Variance Inflation Factors of the features by addin
 Cross-validated ridge regression (e.g. using RidgeCV) does not always result in acceptable multicollinearity as indicated by VIF. While cross-validation helps in fine-tuning the regression coefficients, it does not always result in VIF values close to 1. Ideally the VIF of all features should be as close as possibe to VIF=1. This can be achieved using a trial and error method of evaluating the VIF values of the model features over a range of alpha values. 
 
 The **ridge** function in PyMLR includes an algorithm (RidgeVIF) to find the model with the optimum value of alpha that will result in VIF values as close as possible to a user-specified target VIF (default target VIF=1.0). This assures that there will be acceptable multicollinearity for all features. The trade-off is that this algorithm reduces the model coefficients such that the target VIF will be achieved. The user has the option to specify any target for VIF to explore the balance between VIF and coefficient values.  
+
 
 
