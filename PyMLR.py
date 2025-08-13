@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.77"
+__version__ = "1.2.78"
 
 def check_X_y(X,y):
 
@@ -6362,13 +6362,12 @@ def gbr_auto(X, y, **kwargs):
 def xgb(X, y, **kwargs):
 
     """
-    Linear regression with XGBoost
-    Beta version
+    Linear regression or classification with XGBoost
 
     by
     Greg Pelletier
     gjpelletier@gmail.com
-    18-June-2025
+    13-Aug-2025
 
     REQUIRED INPUTS (X and y should have same number of rows and 
     only contain real numbers)
@@ -6379,6 +6378,7 @@ def xgb(X, y, **kwargs):
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
         verbose= 'on' (default) or 'off'
+        classify= False,            # Use XGBClassifier if True
         preprocess= True,           # Apply OneHotEncoder and StandardScaler
         preprocess_result= None,    # dict of the following result from 
                                     # preprocess_train if available:         
@@ -6403,7 +6403,6 @@ def xgb(X, y, **kwargs):
         # extra_params that are optional user-specified
         random_state= 42,           # Random seed for reproducibility.
         verbosity= 1,               # Verbosity of output (0 = silent, 1 = warnings, 2 = info).
-        objective= "reg:squarederror",  # Loss function for regression.
         booster= "gbtree",          # Type of booster ('gbtree', 'gblinear', or 'dart').
         tree_method= "auto",        # Tree construction algorithm.
         nthread= -1,                # Number of parallel threads.
@@ -6465,6 +6464,8 @@ def xgb(X, y, **kwargs):
     from PyMLR import detect_dummy_variables, detect_gpu
     from PyMLR import check_X_y, fitness_metrics
     from PyMLR import preprocess_train, preprocess_test
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
     import time
     import pandas as pd
     import numpy as np
@@ -6480,10 +6481,11 @@ def xgb(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     import xgboost as xgb
-    from xgboost import XGBRegressor
+    from xgboost import XGBRegressor, XGBClassifier
 
     # Define default values of input data arguments
     defaults = {
+        'classify': False,            # Use XGBClassifier if True
         'preprocess': True,           # True for OneHotEncoder and StandardScaler
         'preprocess_result': None,    # dict of  the following result from 
                                       # preprocess_train if available:         
@@ -6520,7 +6522,7 @@ def xgb(X, y, **kwargs):
         # extra_params that are optional user-specified
         'random_state': 42,           # Random seed for reproducibility.
         'verbosity': 1,               # Verbosity of output (0 = silent, 1 = warnings, 2 = info).
-        'objective': "reg:squarederror",  # Loss function for regression.
+        # 'objective': "reg:squarederror",  # Loss function for regression.
         'booster': "gbtree",          # Type of booster ('gbtree', 'gblinear', or 'dart').
         'tree_method': "auto",        # Tree construction algorithm.
         'nthread': -1,                # Number of parallel threads.
@@ -6546,7 +6548,7 @@ def xgb(X, y, **kwargs):
 
     # Suppress warnings
     warnings.filterwarnings('ignore')
-    print('Fitting XGBRegressor model, please wait ...')
+    # print('Fitting XGBRegressor model, please wait ...')
     if data['verbose'] == 'on':
         print('')
     
@@ -6566,6 +6568,21 @@ def xgb(X, y, **kwargs):
     # QC check X and y
     X, y = check_X_y(X,y)
 
+    # assign objective depending on type of model
+    if data['classify']:
+        # objective for XGBClassifier
+        num_class = y.nunique()
+        if num_class == 2:
+            # binomial response variable
+            data['objective'] = 'binary:logistic'
+        else:
+            # multinomial response variable
+            data['objective'] = 'multi:softmax'
+            data['num_class'] = num_class
+    else:
+        # objective for XGBRegressor
+        data['objective'] = 'reg:squarederror'
+    
     # Set start time for calculating run time
     start_time = time.time()
 
@@ -6637,7 +6654,14 @@ def xgb(X, y, **kwargs):
         'enable_categorical': data['enable_categorical']  
     }
     
-    fitted_model = XGBRegressor(**params, **extra_params).fit(X,y)
+    if data['classify']:
+        print('Fitting XGBClassifier model, please wait ...')
+        if y.nunique() > 2:
+            extra_params['num_class'] = data['num_class']
+        fitted_model = XGBClassifier(**params, **extra_params).fit(X,y)
+    else:
+        print('Fitting XGBRegressor model, please wait ...')    
+        fitted_model = XGBRegressor(**params, **extra_params).fit(X,y)
         
     # check to see of the model has intercept and coefficients
     if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
@@ -6663,53 +6687,80 @@ def xgb(X, y, **kwargs):
             })
         popt_table.set_index('Feature',inplace=True)
         model_outputs['popt_table'] = popt_table
+
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            # selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X, y)
+            hfig.savefig("XGBClassifier_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X, y)
+            hfig.savefig("XGBClassifier_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X, y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['XGBClassifier']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)    
+        if data['verbose'] == 'on':
+            print('')
+            print("XGBClassifier goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:            
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X, y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['XGBRegressor']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)
     
-    # Goodness of fit statistics
-    metrics = fitness_metrics(
-        fitted_model, 
-        X, y)
-    stats = pd.DataFrame([metrics]).T
-    stats.index.name = 'Statistic'
-    stats.columns = ['XGBRegressor']
-    model_outputs['metrics'] = metrics
-    model_outputs['stats'] = stats
-    model_outputs['y_pred'] = fitted_model.predict(X)
-
-    if data['verbose'] == 'on':
-        print('')
-        print("XGBRegressor goodness of fit to training data in model_outputs['stats']:")
-        print('')
-        print(model_outputs['stats'].to_markdown(index=True))
-        print('')
-
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
-        print("Parameters of fitted model in model_outputs['popt']:")
-        print('')
-        print(model_outputs['popt_table'].to_markdown(index=True))
-        print('')
-
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("XGBRegressor_predictions.png", dpi=300)
+        if data['verbose'] == 'on':
+            print('')
+            print("XGBRegressor goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
+    
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
+    
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("XGBRegressor_predictions.png", dpi=300)
     
     # Print the run time
     fit_time = time.time() - start_time
@@ -6724,7 +6775,7 @@ def xgb(X, y, **kwargs):
 
 def xgb_objective(trial, X, y, **kwargs):
     '''
-    Optuna objective for optimizing XGBRegressor with optional feature selection.
+    Optuna objective for optimizing XGBRegressor or XGBClassifier with optional feature selection.
     Supports selector choice, logs importances, and ensures reproducibility.
     '''
 
@@ -6769,6 +6820,9 @@ def xgb_objective(trial, X, y, **kwargs):
         "enable_categorical": kwargs["enable_categorical"],
     }
 
+    if kwargs['objective'] == 'multi:softmax':
+        extra_params['num_class'] = kwargs['num_class']
+    
     # Feature selection
     if kwargs.get("feature_selection", True):
         num_features = trial.suggest_int("num_features", max(5, X.shape[1] // 10), X.shape[1])
@@ -6781,14 +6835,26 @@ def xgb_objective(trial, X, y, **kwargs):
 
         selector = SelectKBest(score_func=score_func, k=num_features)
 
-        pipeline = Pipeline([
-            ("feature_selector", selector),
-            ("regressor", xgb.XGBRegressor(**params, **extra_params))
-        ])
+        if kwargs['classify']:
+            pipeline = Pipeline([
+                ("feature_selector", selector),
+                ("regressor", xgb.XGBClassifier(**params, **extra_params))
+            ])
+        else:
+            pipeline = Pipeline([
+                ("feature_selector", selector),
+                ("regressor", xgb.XGBRegressor(**params, **extra_params))
+            ])
+
     else:
-        pipeline = Pipeline([
-            ("regressor", xgb.XGBRegressor(**params, **extra_params))
-        ])
+        if kwargs['classify']:
+            pipeline = Pipeline([
+                ("regressor", xgb.XGBClassifier(**params, **extra_params))
+            ])
+        else:
+            pipeline = Pipeline([
+                ("regressor", xgb.XGBRegressor(**params, **extra_params))
+            ])
         num_features = None
 
     # Cross-validated scoring with RepeatedKFold
@@ -6826,14 +6892,14 @@ def xgb_objective(trial, X, y, **kwargs):
 def xgb_auto(X, y, **kwargs):
 
     """
-    Autocalibration of XGBoost XGBRegressor hyper-parameters
+    Autocalibration of XGBoost XGBRegressor or XGBClassifier hyper-parameters
     Preprocess with OneHotEncoder and StandardScaler
     Pipeline for feature selector and regressor
 
     by
     Greg Pelletier
     gjpelletier@gmail.com
-    18-June-2025
+    13-Aug-2025
 
     REQUIRED INPUTS (X and y should have same number of rows and 
     only contain real numbers)
@@ -6844,6 +6910,7 @@ def xgb_auto(X, y, **kwargs):
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
         verbose= 'on' (default) or 'off'
+        classify= False (default) or True to use XGBClassifier
         preprocess= True,           # Apply OneHotEncoder and StandardScaler
         preprocess_result= None,    # dict of the following result from 
                                     # preprocess_train if available:         
@@ -6874,7 +6941,6 @@ def xgb_auto(X, y, **kwargs):
         random_state= 42,           # Random seed for reproducibility.
         verbosity= 1,               # Verbosity of output 
                                     # (0 = silent, 1 = warnings, 2 = info).
-        objective= "reg:squarederror",    # Loss function for regression.
         booster= "gbtree",          # Type of booster ('gbtree', 'gblinear', or 'dart').
         tree_method= "auto",        # Tree construction algorithm.
         nthread= -1,                # Number of parallel threads.
@@ -6939,6 +7005,8 @@ def xgb_auto(X, y, **kwargs):
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
     from PyMLR import preprocess_train, preprocess_test, fitness_metrics, check_X_y
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
     import time
     import pandas as pd
     import numpy as np
@@ -6954,12 +7022,13 @@ def xgb_auto(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     import xgboost as xgb
-    from xgboost import XGBRegressor
+    from xgboost import XGBRegressor, XGBClassifier
     import optuna
 
     # Define default values of input data arguments
     defaults = {
         'n_trials': 50,                     # number of optuna trials
+        'classify': False,                  # Use XGBClassifier if True
         'preprocess': True,                 # Apply OneHotEncoder and StandardScaler
         'preprocess_result': None,          # dict of  the following result from 
                                             # preprocess_train if available:         
@@ -6999,7 +7068,7 @@ def xgb_auto(X, y, **kwargs):
         # extra_params that are optional user-specified
         'random_state': 42,           # Random seed for reproducibility.
         'verbosity': 1,               # Verbosity of output (0 = silent, 1 = warnings, 2 = info).
-        'objective': "reg:squarederror",  # Loss function for regression.
+        # 'objective': "reg:squarederror",  # Loss function for regression.
         'booster': "gbtree",          # Type of booster ('gbtree', 'gblinear', or 'dart').
         'tree_method': "auto",        # Tree construction algorithm.
         'nthread': -1,                # Number of parallel threads.
@@ -7038,6 +7107,21 @@ def xgb_auto(X, y, **kwargs):
     
     X, y = check_X_y(X,y)
 
+    # assign objective depending on type of model
+    if data['classify']:
+        # objective for XGBClassifier
+        num_class = y.nunique()
+        if num_class == 2:
+            # binomial response variable
+            data['objective'] = 'binary:logistic'
+        else:
+            # multinomial response variable
+            data['objective'] = 'multi:softmax'
+            data['num_class'] = num_class
+    else:
+        # objective for XGBRegressor
+        data['objective'] = 'reg:squarederror'
+    
     # Suppress warnings
     warnings.filterwarnings('ignore')
 
@@ -7128,14 +7212,22 @@ def xgb_auto(X, y, **kwargs):
     model_outputs['best_params'] = best_params
     model_outputs['extra_params'] = extra_params
 
-    print('Fitting XGBRegressor model with best parameters, please wait ...')
+    # Final fit wit best_params and selected_features
     if 'num_features' in best_params:
         del best_params['num_features']
     if 'selector_type' in best_params:
         del best_params['selector_type']
-    fitted_model = XGBRegressor(
-        **best_params, **extra_params).fit(
-        X[model_outputs['selected_features']],y)
+
+    if data['classify']:
+        print('Fitting XGBClassifier model with best parameters, please wait ...')
+        fitted_model = XGBClassifier(
+            **best_params, **extra_params).fit(
+            X[model_outputs['selected_features']],y)
+    else:
+        print('Fitting XGBRegressor model with best parameters, please wait ...')
+        fitted_model = XGBRegressor(
+            **best_params, **extra_params).fit(
+            X[model_outputs['selected_features']],y)
        
     # check to see of the model has intercept and coefficients
     if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
@@ -7161,53 +7253,80 @@ def xgb_auto(X, y, **kwargs):
             })
         popt_table.set_index('Feature',inplace=True)
         model_outputs['popt_table'] = popt_table
+
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X[selected_features], y)
+            hfig.savefig("XGBClassifier_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X[selected_features], y)
+            hfig.savefig("XGBClassifier_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X[model_outputs['selected_features']], y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['XGBClassifier']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])    
+        if data['verbose'] == 'on':
+            print('')
+            print("XGBClassifier goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:        
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X[model_outputs['selected_features']], y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['XGBRegressor']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
     
-    # Goodness of fit statistics
-    metrics = fitness_metrics(
-        fitted_model, 
-        X[model_outputs['selected_features']], y)
-    stats = pd.DataFrame([metrics]).T
-    stats.index.name = 'Statistic'
-    stats.columns = ['XGBRegressor']
-    model_outputs['metrics'] = metrics
-    model_outputs['stats'] = stats
-    model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
-
-    if data['verbose'] == 'on':
-        print('')
-        print("XGBRegressor goodness of fit to training data in model_outputs['stats']:")
-        print('')
-        print(model_outputs['stats'].to_markdown(index=True))
-        print('')
-
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
-        print("Parameters of fitted model in model_outputs['popt']:")
-        print('')
-        print(model_outputs['popt_table'].to_markdown(index=True))
-        print('')
-
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("XGBRegressor_predictions.png", dpi=300)
+        if data['verbose'] == 'on':
+            print('')
+            print("XGBRegressor goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
+    
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
+    
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("XGBRegressor_predictions.png", dpi=300)
 
     # Print the run time
     fit_time = time.time() - start_time
