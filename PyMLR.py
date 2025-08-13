@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.78"
+__version__ = "1.2.79"
 
 def check_X_y(X,y):
 
@@ -6859,11 +6859,20 @@ def xgb_objective(trial, X, y, **kwargs):
 
     # Cross-validated scoring with RepeatedKFold
     cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
-    scores = cross_val_score(
-        pipeline, X, y,
-        cv=cv,
-        scoring="neg_root_mean_squared_error"
-    )
+
+    if kwargs['classify']:
+        scores = cross_val_score(
+            pipeline, X, y,
+            cv=cv,
+            scoring="accuracy"
+        )
+    else:
+        scores = cross_val_score(
+            pipeline, X, y,
+            cv=cv,
+            scoring="neg_root_mean_squared_error"
+        )
+
     score_mean = np.mean(scores)
 
     # Fit on full data to extract feature info
