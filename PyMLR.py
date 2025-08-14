@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.82"
+__version__ = "1.2.83"
 
 def check_X_y(X,y):
 
@@ -5237,6 +5237,11 @@ def svr_auto(X, y, **kwargs):
             # plt.show()
             plt.savefig("SVR_predictions.png", dpi=300)
 
+    # Best score of CV test data
+    print('')
+    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print('')
+
     # Print the run time
     fit_time = time.time() - start_time
     print('Done')
@@ -6456,6 +6461,11 @@ def gbr_auto(X, y, **kwargs):
         # plt.show()
         plt.savefig("GradientBoostingRegressor_predictions.png", dpi=300)
 
+    # Best score of CV test data
+    print('')
+    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print('')
+
     # Print the run time
     fit_time = time.time() - start_time
     print('Done')
@@ -7452,6 +7462,11 @@ def xgb_auto(X, y, **kwargs):
             plt.tight_layout()
             # plt.show()
             plt.savefig("XGBRegressor_predictions.png", dpi=300)
+
+    # Best score of CV test data
+    print('')
+    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print('')
 
     # Print the run time
     fit_time = time.time() - start_time
@@ -8579,6 +8594,11 @@ def catboost_auto(X, y, **kwargs):
         # plt.show()
         plt.savefig("CatBoostRegressor_predictions.png", dpi=300)
 
+    # Best score of CV test data
+    print('')
+    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print('')
+
     # Print the run time
     fit_time = time.time() - start_time
     print('Done')
@@ -9432,6 +9452,11 @@ def forest_auto(X, y, **kwargs):
         plt.tight_layout()
         # plt.show()
         plt.savefig("RandomForestRegressor_predictions.png", dpi=300)
+
+    # Best score of CV test data
+    print('')
+    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print('')
 
     # Print the run time
     fit_time = time.time() - start_time
@@ -10390,6 +10415,11 @@ def knn_auto(X, y, **kwargs):
             # plt.show()
             plt.savefig("KNeighborsRegressor_predictions.png", dpi=300)
 
+    # Best score of CV test data
+    print('')
+    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print('')
+
     # Print the run time
     fit_time = time.time() - start_time
     print('Done')
@@ -11227,10 +11257,9 @@ def logistic_auto(X, y, **kwargs):
     # Print the run time
     fit_time = time.time() - start_time
 
-    # Best parameters
-    # print(f"Best parameters: {study.best_params}")
+    # Best score of CV test data
     print('')
-    print(f"Best-fit accuracy of CV test data: {study.best_value:.4f}")
+    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
     print('')
         
     print('Done')
@@ -12304,6 +12333,11 @@ def linear_auto(X, y, **kwargs):
         plt.tight_layout()
         # plt.show()
         plt.savefig("LinearRegression_predictions.png", dpi=300)
+
+    # Best score of CV test data
+    print('')
+    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print('')
 
     # Print the run time
     fit_time = time.time() - start_time
