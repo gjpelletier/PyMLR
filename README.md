@@ -4,9 +4,6 @@ The PyMLR module includes the following main Python functions to facilitate the 
  
  - **logistic_auto** - LogisticRegression with automatic cross-validated optimization of the hyperparameters
  - **logistic** - LogisticRegression with user-specified hyperparameters
- - **lasso** - LassoCV, LassoLarsCV, and LassoLarsIC using AIC/BIC
- - **ridge** - RidgeCV and Ridge using VIF
- - **elastic** - ElasticNetCV
  - **xgb_auto** - XGBoost XGBRegressor (default) or XGBClassifier (if optional keyword argument classify=True) with automatic cross-validated optimization of the hyperparameters
  - **xgb** - XGBoost XGBRegressor (default) or XGBClassifier (if optional kwarg classify=True) with user-specified hyperparameters
  - **svr_auto** - SVR (default) or SVC (if optional keyword argument classify=True)  with automatic cross-validated optimization of the hyperparameters
@@ -21,9 +18,12 @@ The PyMLR module includes the following main Python functions to facilitate the 
  - **forest** - RandomForestRegressor with user-specified hyperparameters
  - **lgbm** - LGBMRegressor with user-specified hyperparameters
  - **stacking** - StackingRegressor
- - **stepwise** - Stepwise statsmodels linear regression to minimize MSE, AIC, or BIC
  - **linear_auto** - sklearn LinearRegression with optimization of selected features by optuna to minimize MSE
  - **linear** - sklearn LinearRegression using all features to minimize MSE
+ - **lasso** - LassoCV, LassoLarsCV, and LassoLarsIC using AIC/BIC
+ - **ridge** - RidgeCV and Ridge using VIF
+ - **elastic** - ElasticNetCV
+ - **stepwise** - Stepwise statsmodels linear regression to minimize MSE, AIC, or BIC
  - **model_agnostic** - Model-agnostic analysis (e.g. Shapley Additive Explantions (SHAP), Beeswarm and Bar plots, PDB-ICE plots, Permutation Importance plots)
  - **show_optuna** - Display the results of the hyperparameter optimization using optuna
  
@@ -173,6 +173,7 @@ Ridge regression reduces the Variance Inflation Factors of the features by addin
 Cross-validated ridge regression (e.g. using RidgeCV) does not always result in acceptable multicollinearity as indicated by VIF. While cross-validation helps in fine-tuning the regression coefficients, it does not always result in VIF values close to 1. Ideally the VIF of all features should be as close as possibe to VIF=1. This can be achieved using a trial and error method of evaluating the VIF values of the model features over a range of alpha values. 
 
 The **ridge** function in PyMLR includes an algorithm (RidgeVIF) to find the model with the optimum value of alpha that will result in VIF values as close as possible to a user-specified target VIF (default target VIF=1.0). This assures that there will be acceptable multicollinearity for all features. The trade-off is that this algorithm reduces the model coefficients such that the target VIF will be achieved. The user has the option to specify any target for VIF to explore the balance between VIF and coefficient values.  
+
 
 
 
