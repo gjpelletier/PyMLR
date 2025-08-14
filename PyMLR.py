@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.83"
+__version__ = "1.2.84"
 
 def check_X_y(X,y):
 
@@ -5239,7 +5239,7 @@ def svr_auto(X, y, **kwargs):
 
     # Best score of CV test data
     print('')
-    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print(f"Best-fit score of CV test data: {study.best_value:.6f}")
     print('')
 
     # Print the run time
@@ -6463,7 +6463,7 @@ def gbr_auto(X, y, **kwargs):
 
     # Best score of CV test data
     print('')
-    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print(f"Best-fit score of CV test data: {study.best_value:.6f}")
     print('')
 
     # Print the run time
@@ -7465,7 +7465,7 @@ def xgb_auto(X, y, **kwargs):
 
     # Best score of CV test data
     print('')
-    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print(f"Best-fit score of CV test data: {study.best_value:.6f}")
     print('')
 
     # Print the run time
@@ -8596,7 +8596,7 @@ def catboost_auto(X, y, **kwargs):
 
     # Best score of CV test data
     print('')
-    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print(f"Best-fit score of CV test data: {study.best_value:.6f}")
     print('')
 
     # Print the run time
@@ -9455,7 +9455,7 @@ def forest_auto(X, y, **kwargs):
 
     # Best score of CV test data
     print('')
-    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print(f"Best-fit score of CV test data: {study.best_value:.6f}")
     print('')
 
     # Print the run time
@@ -10417,7 +10417,7 @@ def knn_auto(X, y, **kwargs):
 
     # Best score of CV test data
     print('')
-    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print(f"Best-fit score of CV test data: {study.best_value:.6f}")
     print('')
 
     # Print the run time
@@ -11259,7 +11259,7 @@ def logistic_auto(X, y, **kwargs):
 
     # Best score of CV test data
     print('')
-    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print(f"Best-fit score of CV test data: {study.best_value:.6f}")
     print('')
         
     print('Done')
@@ -12336,7 +12336,7 @@ def linear_auto(X, y, **kwargs):
 
     # Best score of CV test data
     print('')
-    print(f"Best-fit score of CV test data: {study.best_value:.4f}")
+    print(f"Best-fit score of CV test data: {study.best_value:.6f}")
     print('')
 
     # Print the run time
