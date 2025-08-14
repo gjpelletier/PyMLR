@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.80"
+__version__ = "1.2.81"
 
 def check_X_y(X,y):
 
@@ -10283,14 +10283,13 @@ def knn_auto(X, y, **kwargs):
     model_outputs['best_params'] = best_params
     model_outputs['extra_params'] = extra_params
 
-    print('Fitting KNeighborsRegressor model with best parameters, please wait ...')
     if 'num_features' in best_params:
         del best_params['num_features']
     if 'selector_type' in best_params:
         del best_params['selector_type']
 
     if data['classify']:
-        print('Fitting XGBClassifier model with best parameters, please wait ...')
+        print('Fitting KNeighborsClassifier model with best parameters, please wait ...')
         fitted_model = KNeighborsClassifier(
             **best_params, **extra_params).fit(
             X[model_outputs['selected_features']],y)
