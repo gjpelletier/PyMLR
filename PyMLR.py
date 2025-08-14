@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.79"
+__version__ = "1.2.80"
 
 def check_X_y(X,y):
 
@@ -4364,13 +4364,12 @@ def stacking(X, y, **kwargs):
 def svr(X, y, **kwargs):
 
     """
-    Python function for SVR linear regression 
-    Beta version
+    Python function for SVR (regression) or SVC (classification) 
 
     by
     Greg Pelletier
     gjpelletier@gmail.com
-    30-May-2025
+    13-Aug-2025
 
     REQUIRED INPUTS (X and y should have same number of rows and 
     only contain real numbers)
@@ -4380,6 +4379,7 @@ def svr(X, y, **kwargs):
 
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
+        classify= False,            # True for SVC
         preprocess= True,           # Apply OneHotEncoder and StandardScaler
         preprocess_result= None,    # dict of the following result from 
                                     # preprocess_train if available:         
@@ -4389,8 +4389,6 @@ def svr(X, y, **kwargs):
                                     # - non_numeric_cats (non-num cat cols)
                                     # - continuous_cols  (continuous cols)
         verbose= 'on' (default) or 'off' 
-        kernel= 'rbf'      # ‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’} 
-                           # or callable, default=’rbf’
         degree= 3          # int, default 3, deg of polynomial, used only if kernel='poly'
         gamma= 'scale'     # 'scale' (default), 'auto', or float (if float, must be non-negative)
         coef0= 0.0         # term in kernel function, only significant in ‘poly’ and ‘sigmoid’
@@ -4398,7 +4396,7 @@ def svr(X, y, **kwargs):
         C= 1.0             # Regularization parameter. The strength of the regularization 
                            # is inversely proportional to C. Must be strictly positive
                            # The penalty is a squared L2. 
-        epsilon= 0.1       # float, default 0.1, the epsilon-SVR model, must be non-negative
+        epsilon= 0.1       # float, default 0.1, for the epsilon-SVR model, must be non-negative
         shrinking= True    # Whether to use the shrinking heuristic
         cache_size= 200    # Specify the size of the kernel cache (in MB)
         max_iter= -1       # Hard limit on iterations within solver, or -1 for no limit.
@@ -4446,19 +4444,12 @@ def svr(X, y, **kwargs):
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
     from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
     import time
     import pandas as pd
     import numpy as np
-    from sklearn.ensemble import StackingRegressor
-    from sklearn.linear_model import LinearRegression
-    from sklearn.linear_model import ElasticNetCV, LassoCV, RidgeCV
-    from sklearn.linear_model import SGDRegressor
-    from sklearn.tree import DecisionTreeRegressor
-    from sklearn.svm import SVR
-    from sklearn.ensemble import RandomForestRegressor
-    from sklearn.ensemble import GradientBoostingRegressor
-    from sklearn.neighbors import KNeighborsRegressor
-    from sklearn.neural_network import MLPRegressor
+    from sklearn.svm import SVR, SVC
     from sklearn.preprocessing import StandardScaler
     from sklearn.metrics import PredictionErrorDisplay
     import matplotlib.pyplot as plt
@@ -4470,6 +4461,7 @@ def svr(X, y, **kwargs):
 
     # Define default values of input data arguments
     defaults = {
+        'classify': False,            # True for SVC
         'preprocess': True,           # True for OneHotEncoder and StandardScaler
         'preprocess_result': None,    # dict of  the following result from 
                                       # preprocess_train if available:         
@@ -4490,7 +4482,7 @@ def svr(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
-        'kernel': 'rbf',
+        # 'kernel': 'rbf',
         'degree': 3,
         'gamma': 'scale',
         'coef0': 0.0,
@@ -4518,6 +4510,10 @@ def svr(X, y, **kwargs):
     # QC check X and y
     X, y = check_X_y(X,y)
 
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+    
     # Set start time for calculating run time
     start_time = time.time()
 
@@ -4569,94 +4565,137 @@ def svr(X, y, **kwargs):
 
     # Suppress warnings
     warnings.filterwarnings('ignore')
-    print('Fitting SVR model, please wait ...')
-    if data['verbose'] == 'on':
-        print('')
+
+    if data['classify']:
+        print('Fitting SVC model, please wait ...')
+        data['kernel'] = 'rbf'                                  
+        data['probability'] = True                                  
+        fitted_model = SVC(
+            gamma= data['gamma'],
+            kernel= data['kernel'],                                  
+            probability= data['probability'],                                  
+            degree= data['degree'],    
+            coef0= data['coef0'],    
+            tol= data['tol'],         
+            C= data['C'],                                                                   
+            shrinking= data['shrinking'],    
+            cache_size= data['cache_size'],    
+            max_iter= data['max_iter']      
+            ).fit(X,y)
+    else:
+        print('Fitting SVR model, please wait ...')
+        data['kernel'] = 'rbf'                                  
+        fitted_model = SVR(
+            gamma= data['gamma'],
+            epsilon= data['epsilon'],
+            kernel= data['kernel'],                                  
+            degree= data['degree'],    
+            coef0= data['coef0'],    
+            tol= data['tol'],         
+            C= data['C'],                                                                   
+            shrinking= data['shrinking'],    
+            cache_size= data['cache_size'],    
+            max_iter= data['max_iter']      
+            ).fit(X,y)
+
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            # selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X, y)
+            hfig.savefig("SVC_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X, y)
+            hfig.savefig("SVC_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X, y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['SVC']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)    
+        if data['verbose'] == 'on':
+            print('')
+            print("SVC goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:        
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X.columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X.columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table
+
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X, y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['SVR']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)
     
-    fitted_model = SVR(
-        gamma= data['gamma'],
-        epsilon= data['epsilon'],
-        kernel= data['kernel'],                                  
-        degree= data['degree'],    
-        coef0= data['coef0'],    
-        tol= data['tol'],         
-        C= data['C'],                                                                   
-        shrinking= data['shrinking'],    
-        cache_size= data['cache_size'],    
-        max_iter= data['max_iter']      
-        ).fit(X,y)
-
-    # check to see of the model has intercept and coefficients
-    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-            and fitted_model.coef_.size==len(X.columns)):
-        intercept = fitted_model.intercept_
-        coefficients = fitted_model.coef_
-        # dataframe of model parameters, intercept and coefficients, including zero coefs
-        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
-        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
-        for i in range(n_param):
-            if i == 0:
-                popt[0][i] = 'Intercept'
-                popt[1][i] = fitted_model.intercept_
-            else:
-                popt[0][i] = X.columns[i-1]
-                popt[1][i] = fitted_model.coef_[i-1]
-        popt = pd.DataFrame(popt).T
-        popt.columns = ['Feature', 'Parameter']
-        # Table of intercept and coef
-        popt_table = pd.DataFrame({
-                "Feature": popt['Feature'],
-                "Parameter": popt['Parameter']
-            })
-        popt_table.set_index('Feature',inplace=True)
-        model_outputs['popt_table'] = popt_table
+        if data['verbose'] == 'on':
+            print('')
+            print("SVR goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
     
-    # Goodness of fit statistics
-    metrics = fitness_metrics(
-        fitted_model, 
-        X, y)
-    stats = pd.DataFrame([metrics]).T
-    stats.index.name = 'Statistic'
-    stats.columns = ['SVR']
-    model_outputs['metrics'] = metrics
-    model_outputs['stats'] = stats
-    model_outputs['y_pred'] = fitted_model.predict(X)
-
-    if data['verbose'] == 'on':
-        print('')
-        print("SVR goodness of fit to training data in model_outputs['stats']:")
-        print('')
-        print(model_outputs['stats'].to_markdown(index=True))
-        print('')
-
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
-        print("Parameters of fitted model in model_outputs['popt']:")
-        print('')
-        print(model_outputs['popt_table'].to_markdown(index=True))
-        print('')
-
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("SVR_predictions.png", dpi=300)
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
+    
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("SVR_predictions.png", dpi=300)
     
     # Print the run time
     fit_time = time.time() - start_time
@@ -4680,7 +4719,7 @@ def svr_objective(trial, X, y, **kwargs):
     from sklearn.pipeline import Pipeline
     from sklearn.model_selection import cross_val_score, RepeatedKFold
     from PyMLR import detect_gpu
-    from sklearn.svm import SVR
+    from sklearn.svm import SVR, SVC
 
     # Detect if the computer has an nvidia gpu, and if so use the gpu
     use_gpu = detect_gpu()
@@ -4695,9 +4734,13 @@ def svr_objective(trial, X, y, **kwargs):
     params = {
         "C": trial.suggest_float("C",
             *kwargs['C'], log=True),
-        "epsilon": trial.suggest_float("epsilon",
-            *kwargs['epsilon'], log=True),
+        # "epsilon": trial.suggest_float("epsilon",
+        #     *kwargs['epsilon'], log=True),
     }
+
+    if not kwargs['classify']:
+        params['epsilon'] = trial.suggest_float("epsilon",
+            *kwargs['epsilon'], log=True),
     
     if kwargs["gamma"] == "scale" or kwargs["gamma"] == "auto":
         params["gamma"] = kwargs["gamma"]
@@ -4726,23 +4769,45 @@ def svr_objective(trial, X, y, **kwargs):
 
         selector = SelectKBest(score_func=score_func, k=num_features)
 
-        pipeline = Pipeline([
-            ("feature_selector", selector),
-            ("regressor", SVR(**params, **extra_params))
-        ])
+        if kwargs['classify']:
+            pipeline = Pipeline([
+                ("feature_selector", selector),
+                ("regressor", SVC(**params, **extra_params))
+            ])
+        else:        
+            pipeline = Pipeline([
+                ("feature_selector", selector),
+                ("regressor", SVR(**params, **extra_params))
+            ])
+
     else:
-        pipeline = Pipeline([
-            ("regressor", SVR(**params, **extra_params))
-        ])
+
+        if kwargs['classify']:
+            pipeline = Pipeline([
+                ("regressor", SVC(**params, **extra_params))
+            ])
+        else:        
+            pipeline = Pipeline([
+                ("regressor", SVR(**params, **extra_params))
+            ])
+
         num_features = None
 
     # Cross-validated scoring with RepeatedKFold
     cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
-    scores = cross_val_score(
-        pipeline, X, y,
-        cv=cv,
-        scoring="neg_root_mean_squared_error"
-    )
+
+    if kwargs['classify']:
+        scores = cross_val_score(
+            pipeline, X, y,
+            cv=cv,
+            scoring="accuracy"
+        )
+    else:
+        scores = cross_val_score(
+            pipeline, X, y,
+            cv=cv,
+            scoring="neg_root_mean_squared_error"
+        )
     score_mean = np.mean(scores)
 
     # Fit on full data to extract feature info
@@ -4771,13 +4836,13 @@ def svr_objective(trial, X, y, **kwargs):
 def svr_auto(X, y, **kwargs):
 
     """
-    Autocalibration of SVR hyper-parameters
+    Autocalibration of SVR or SVC hyper-parameters
     Beta version
 
     by
     Greg Pelletier
     gjpelletier@gmail.com
-    04-June-2025
+    13-Aug-2025
 
     REQUIRED INPUTS (X and y should have same number of rows and 
     only contain real numbers)
@@ -4788,6 +4853,7 @@ def svr_auto(X, y, **kwargs):
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
         verbose= 'on' (default) or 'off'
+        classify= False (default) or True to use XGBClassifier
         preprocess= True,           # Apply OneHotEncoder and StandardScaler
         preprocess_result= None,    # dict of the following result from 
                                     # preprocess_train if available:         
@@ -4815,8 +4881,6 @@ def svr_auto(X, y, **kwargs):
         gamma= 'scale',           # {'scale', 'auto'}, default='scale'
 
         # extra_params that are optional user-specified
-        kernel= 'rbf',            # {‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, 
-                                  # ‘precomputed’}, default=’rbf’
         degree= 3,                # Degree of the polynomial kernel function (‘poly’). 
                                   # Must be non-negative. Ignored by all other kernels.
         coef0= 0.0,               # Independent term in kernel function. 
@@ -4872,6 +4936,8 @@ def svr_auto(X, y, **kwargs):
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
     from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
     import time
     import pandas as pd
     import numpy as np
@@ -4889,14 +4955,15 @@ def svr_auto(X, y, **kwargs):
     # import xgboost as xgb
     # from xgboost import XGBRegressor
     import optuna
-    from sklearn.svm import SVR
+    from sklearn.svm import SVR, SVC
 
     # Define default values of input data arguments
     defaults = {
         'random_state': 42,                 # Random seed for reproducibility.
-        'n_trials': 50,                     # number of optuna trials
+        'n_trials': 5,                     # number of optuna trials
         'n_splits': 5,          # number of splits for KFold CV
         'gpu': True,                        # Autodetect to use gpu if present
+        'classify': False,            # Use SVC if True
         'preprocess': True,           # True for OneHotEncoder and StandardScaler
         'preprocess_result': None,    # dict of  the following result from 
                                       # preprocess_train if available:         
@@ -4928,7 +4995,7 @@ def svr_auto(X, y, **kwargs):
         'gamma': 'scale',           # {'scale', 'auto'}, default='scale'
 
         # extra_params for model that are optional user-specified
-        'kernel': 'rbf',            # {‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’}, default=’rbf’
+        # 'kernel': 'rbf',            # {‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’}, default=’rbf’
         'degree': 3,                # Degree of the polynomial kernel function (‘poly’). Must be non-negative. Ignored by all other kernels.
         'coef0': 0.0,               # Independent term in kernel function. It is only significant in ‘poly’ and ‘sigmoid’
         'tol': 0.001,               # Tolerance for stopping criterion
@@ -4963,6 +5030,10 @@ def svr_auto(X, y, **kwargs):
     
     X, y = check_X_y(X,y)
 
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+    
     # Suppress warnings
     warnings.filterwarnings('ignore')
 
@@ -5002,7 +5073,7 @@ def svr_auto(X, y, **kwargs):
 
     # extra params in addition to those being optimized by optuna
     extra_params = {
-        'kernel': data['kernel'],                                  
+        # 'kernel': data['kernel'],                                  
         'degree': data['degree'],    
         'coef0': data['coef0'],    
         'tol': data['tol'],         
@@ -5010,6 +5081,16 @@ def svr_auto(X, y, **kwargs):
         'cache_size': data['cache_size'],    
         'max_iter': data['max_iter']      
     }
+
+    if data['classify']:
+        # these settings needed for SVC model.predict_proba
+        data['kernel'] = 'rbf'                                  
+        data['probability'] = True                                  
+        extra_params['kernel'] = data['kernel']                                  
+        extra_params['probability'] = data['probability']                                 
+    else:
+        data['kernel'] = 'rbf'                                  
+        extra_params['kernel'] = data['kernel']                                  
 
     print('Running optuna to find best parameters, could take a few minutes, please wait...')
     optuna.logging.set_verbosity(optuna.logging.ERROR)
@@ -5046,88 +5127,122 @@ def svr_auto(X, y, **kwargs):
     model_outputs['best_params'] = best_params
     model_outputs['extra_params'] = extra_params
 
-    print('Fitting SVR model with best parameters, please wait ...')
     if 'num_features' in best_params:
         del best_params['num_features']
     if 'selector_type' in best_params:
         del best_params['selector_type']
-    fitted_model = SVR(
-        **best_params, **extra_params).fit(
-        X[model_outputs['selected_features']],y)
+
+    if data['classify']:
+        print('Fitting SVC model with best parameters, please wait ...')        
+        fitted_model = SVC(
+            **best_params, **extra_params).fit(
+            X[model_outputs['selected_features']],y)
+    else:
+        print('Fitting SVR model with best parameters, please wait ...')        
+        fitted_model = SVR(
+            **best_params, **extra_params).fit(
+            X[model_outputs['selected_features']],y)
        
-    # check to see of the model has intercept and coefficients
-    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-            and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
-        intercept = fitted_model.intercept_
-        coefficients = fitted_model.coef_
-        # dataframe of model parameters, intercept and coefficients, including zero coefs
-        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
-        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
-        for i in range(n_param):
-            if i == 0:
-                popt[0][i] = 'Intercept'
-                popt[1][i] = fitted_model.intercept_
-            else:
-                popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
-                popt[1][i] = fitted_model.coef_[i-1]
-        popt = pd.DataFrame(popt).T
-        popt.columns = ['Feature', 'Parameter']
-        # Table of intercept and coef
-        popt_table = pd.DataFrame({
-                "Feature": popt['Feature'],
-                "Parameter": popt['Parameter']
-            })
-        popt_table.set_index('Feature',inplace=True)
-        model_outputs['popt_table'] = popt_table
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X[selected_features], y)
+            hfig.savefig("SVC_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X[selected_features], y)
+            hfig.savefig("SVC_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X[model_outputs['selected_features']], y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['SVC']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])    
+        if data['verbose'] == 'on':
+            print('')
+            print("SVC goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:            
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table        
+
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X[model_outputs['selected_features']], y)
+        # metrics = stats_given_model(
+        #     X[model_outputs['selected_features']], y, fitted_model)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['SVR']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
     
-    # Goodness of fit statistics
-    metrics = fitness_metrics(
-        fitted_model, 
-        X[model_outputs['selected_features']], y)
-    # metrics = stats_given_model(
-    #     X[model_outputs['selected_features']], y, fitted_model)
-    stats = pd.DataFrame([metrics]).T
-    stats.index.name = 'Statistic'
-    stats.columns = ['SVR']
-    model_outputs['metrics'] = metrics
-    model_outputs['stats'] = stats
-    model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
-
-    if data['verbose'] == 'on':
-        print('')
-        print("SVR goodness of fit to training data in model_outputs['stats']:")
-        print('')
-        print(model_outputs['stats'].to_markdown(index=True))
-        print('')
-
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
-        print("Parameters of fitted model in model_outputs['popt']:")
-        print('')
-        print(model_outputs['popt_table'].to_markdown(index=True))
-        print('')
-
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("SVR_predictions.png", dpi=300)
+        if data['verbose'] == 'on':
+            print('')
+            print("SVR goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
+    
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
+    
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("SVR_predictions.png", dpi=300)
 
     # Print the run time
     fit_time = time.time() - start_time
@@ -6568,6 +6683,10 @@ def xgb(X, y, **kwargs):
     # QC check X and y
     X, y = check_X_y(X,y)
 
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
     # assign objective depending on type of model
     if data['classify']:
         # objective for XGBClassifier
@@ -6663,31 +6782,6 @@ def xgb(X, y, **kwargs):
         print('Fitting XGBRegressor model, please wait ...')    
         fitted_model = XGBRegressor(**params, **extra_params).fit(X,y)
         
-    # check to see of the model has intercept and coefficients
-    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-            and fitted_model.coef_.size==len(X.columns)):
-        intercept = fitted_model.intercept_
-        coefficients = fitted_model.coef_
-        # dataframe of model parameters, intercept and coefficients, including zero coefs
-        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
-        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
-        for i in range(n_param):
-            if i == 0:
-                popt[0][i] = 'Intercept'
-                popt[1][i] = fitted_model.intercept_
-            else:
-                popt[0][i] = X.columns[i-1]
-                popt[1][i] = fitted_model.coef_[i-1]
-        popt = pd.DataFrame(popt).T
-        popt.columns = ['Feature', 'Parameter']
-        # Table of intercept and coef
-        popt_table = pd.DataFrame({
-                "Feature": popt['Feature'],
-                "Parameter": popt['Parameter']
-            })
-        popt_table.set_index('Feature',inplace=True)
-        model_outputs['popt_table'] = popt_table
-
     if data['classify']:
         if data['verbose'] == 'on':    
             # confusion matrix
@@ -6715,6 +6809,31 @@ def xgb(X, y, **kwargs):
             print(model_outputs['stats'].to_markdown(index=True))
             print('')    
     else:            
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X.columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X.columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table
+
         # Goodness of fit statistics
         metrics = fitness_metrics(
             fitted_model, 
@@ -7116,6 +7235,10 @@ def xgb_auto(X, y, **kwargs):
     
     X, y = check_X_y(X,y)
 
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+        
     # assign objective depending on type of model
     if data['classify']:
         # objective for XGBClassifier
@@ -7238,31 +7361,6 @@ def xgb_auto(X, y, **kwargs):
             **best_params, **extra_params).fit(
             X[model_outputs['selected_features']],y)
        
-    # check to see of the model has intercept and coefficients
-    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-            and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
-        intercept = fitted_model.intercept_
-        coefficients = fitted_model.coef_
-        # dataframe of model parameters, intercept and coefficients, including zero coefs
-        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
-        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
-        for i in range(n_param):
-            if i == 0:
-                popt[0][i] = 'Intercept'
-                popt[1][i] = fitted_model.intercept_
-            else:
-                popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
-                popt[1][i] = fitted_model.coef_[i-1]
-        popt = pd.DataFrame(popt).T
-        popt.columns = ['Feature', 'Parameter']
-        # Table of intercept and coef
-        popt_table = pd.DataFrame({
-                "Feature": popt['Feature'],
-                "Parameter": popt['Parameter']
-            })
-        popt_table.set_index('Feature',inplace=True)
-        model_outputs['popt_table'] = popt_table
-
     if data['classify']:
         if data['verbose'] == 'on':    
             # confusion matrix
@@ -7290,6 +7388,31 @@ def xgb_auto(X, y, **kwargs):
             print(model_outputs['stats'].to_markdown(index=True))
             print('')    
     else:        
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table
+
         # Goodness of fit statistics
         metrics = fitness_metrics(
             fitted_model, 
@@ -9331,12 +9454,14 @@ def forest_auto(X, y, **kwargs):
 def knn(X, y, **kwargs):
 
     """
-    Linear regression with sklearn KNeighborsRegressor
+    Regression with sklearn KNeighborsRegressor
+    or
+    Classiciation with KNeighborsClassifier
 
     by
     Greg Pelletier
     gjpelletier@gmail.com
-    01-July-2025
+    13-Aug-2025
 
     REQUIRED INPUTS (X and y should have same number of rows and 
     only contain real numbers)
@@ -9349,6 +9474,7 @@ def knn(X, y, **kwargs):
         # general params that are user-specified
         random_state= 42,           # random seed for reproducibility
         n_trials= 50,               # number of optuna trials
+        classify= False,            # True for KNeighborsClassifier
         preprocess= True,           # Apply OneHotEncoder and StandardScaler
         preprocess_result= None,    # dict of the following result from 
                                     # preprocess_train if available:         
@@ -9415,6 +9541,8 @@ def knn(X, y, **kwargs):
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
     from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
     import time
     import pandas as pd
     import numpy as np
@@ -9430,7 +9558,7 @@ def knn(X, y, **kwargs):
     import warnings
     import sys
     import statsmodels.api as sm
-    from sklearn.neighbors import KNeighborsRegressor
+    from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 
     # Define default values of input data arguments
     defaults = {
@@ -9438,6 +9566,7 @@ def knn(X, y, **kwargs):
         # general params that are user-specified
         'random_state': 42,                 # random seed for reproducibility
         'n_trials': 50,                     # number of optuna trials
+        'classify': False,            # True for KNeighborsClassifier
         'preprocess': True,           # True for OneHotEncoder and StandardScaler
         'preprocess_result': None,    # dict of  the following result from 
                                       # preprocess_train if available:         
@@ -9507,6 +9636,10 @@ def knn(X, y, **kwargs):
     # QC check X and y
     X, y = check_X_y(X,y)
 
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+    
     # Set start time for calculating run time
     start_time = time.time()
 
@@ -9549,9 +9682,6 @@ def knn(X, y, **kwargs):
 
     # Suppress warnings
     warnings.filterwarnings('ignore')
-    print('Fitting KNeighborsRegressor model, please wait ...')
-    if data['verbose'] == 'on':
-        print('')
 
     '''
     if data['pca_transform'] and data['pca'] == None:
@@ -9596,79 +9726,111 @@ def knn(X, y, **kwargs):
         'metric_params': data['metric_params']               # for user-specified metrics
     }
     
-    fitted_model = KNeighborsRegressor(**params, **extra_params).fit(X,y)
+    if data['classify']:
+        print('Fitting KNeighborsClassifier model, please wait ...')
+        fitted_model = KNeighborsClassifier(**params, **extra_params).fit(X,y)
+    else:
+        print('Fitting KNeighborsRegressor model, please wait ...')
+        fitted_model = KNeighborsRegressor(**params, **extra_params).fit(X,y)
         
-    # check to see of the model has intercept and coefficients
-    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-            and fitted_model.coef_.size==len(X.columns)):
-        intercept = fitted_model.intercept_
-        coefficients = fitted_model.coef_
-        # dataframe of model parameters, intercept and coefficients, including zero coefs
-        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
-        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
-        for i in range(n_param):
-            if i == 0:
-                popt[0][i] = 'Intercept'
-                popt[1][i] = fitted_model.intercept_
-            else:
-                popt[0][i] = X.columns[i-1]
-                popt[1][i] = fitted_model.coef_[i-1]
-        popt = pd.DataFrame(popt).T
-        popt.columns = ['Feature', 'Parameter']
-        # Table of intercept and coef
-        popt_table = pd.DataFrame({
-                "Feature": popt['Feature'],
-                "Parameter": popt['Parameter']
-            })
-        popt_table.set_index('Feature',inplace=True)
-        model_outputs['popt_table'] = popt_table
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            # selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X, y)
+            hfig.savefig("KNeighborsClassifier_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X, y)
+            hfig.savefig("KNeighborsClassifier_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X, y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['KNeighborsClassifier']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)    
+        if data['verbose'] == 'on':
+            print('')
+            print("KNeighborsClassifier goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:                
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X.columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X.columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table
     
-    # Goodness of fit statistics
-    metrics = fitness_metrics(
-        fitted_model, 
-        X, y)
-    stats = pd.DataFrame([metrics]).T
-    stats.index.name = 'Statistic'
-    stats.columns = ['KNeighborsRegressor']
-    model_outputs['metrics'] = metrics
-    model_outputs['stats'] = stats
-    model_outputs['y_pred'] = fitted_model.predict(X)
-
-    if data['verbose'] == 'on':
-        print('')
-        print("KNeighborsRegressor goodness of fit to training data in model_outputs['stats']:")
-        print('')
-        print(model_outputs['stats'].to_markdown(index=True))
-        print('')
-
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
-        print("Parameters of fitted model in model_outputs['popt']:")
-        print('')
-        print(model_outputs['popt_table'].to_markdown(index=True))
-        print('')
-
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("KNeighborsRegressor_predictions.png", dpi=300)
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X, y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['KNeighborsRegressor']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)
+    
+        if data['verbose'] == 'on':
+            print('')
+            print("KNeighborsRegressor goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
+    
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
+    
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("KNeighborsRegressor_predictions.png", dpi=300)
     
     # Print the run time
     fit_time = time.time() - start_time
@@ -9685,7 +9847,7 @@ def knn_objective(trial, X, y, **kwargs):
     '''
     Objective function used by optuna 
     to find the optimum hyper-parameters for 
-    sklearn KNeighborsRegressor
+    sklearn KNeighborsRegressor or KNeighborsClassifier
     '''
     import numpy as np
     import pandas as pd
@@ -9694,8 +9856,8 @@ def knn_objective(trial, X, y, **kwargs):
     from sklearn.pipeline import Pipeline
     from sklearn.model_selection import cross_val_score, RepeatedKFold    
     from PyMLR import detect_gpu
-    from sklearn.neighbors import KNeighborsRegressor
-    from sklearn.metrics import mean_squared_error
+    from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
+    from sklearn.metrics import mean_squared_error, accuracy_score
     import optuna
     # from sklearn.decomposition import PCA
     
@@ -9756,23 +9918,46 @@ def knn_objective(trial, X, y, **kwargs):
 
         selector = SelectKBest(score_func=score_func, k=num_features)
 
-        pipeline = Pipeline([
-            ("feature_selector", selector),
-            ("regressor", KNeighborsRegressor(**params, **extra_params))
-        ])
+        if kwargs['classify']:
+            pipeline = Pipeline([
+                ("feature_selector", selector),
+                ("regressor", KNeighborsClassifier(**params, **extra_params))
+            ])
+        else:
+            pipeline = Pipeline([
+                ("feature_selector", selector),
+                ("regressor", KNeighborsRegressor(**params, **extra_params))
+            ])
+
     else:
-        pipeline = Pipeline([
-            ("regressor", KNeighborsRegressor(**params, **extra_params))
-        ])
+
+        if kwargs['classify']:
+            pipeline = Pipeline([
+                ("regressor", KNeighborsClassifier(**params, **extra_params))
+            ])
+        else:
+            pipeline = Pipeline([
+                ("regressor", KNeighborsRegressor(**params, **extra_params))
+            ])
+
         num_features = None
 
     # Cross-validated scoring with RepeatedKFold
     cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
-    scores = cross_val_score(
-        pipeline, X, y,
-        cv=cv,
-        scoring="neg_root_mean_squared_error"
-    )
+
+    if kwargs['classify']:
+        scores = cross_val_score(
+            pipeline, X, y,
+            cv=cv,
+            scoring="accuracy"
+        )
+    else:
+        scores = cross_val_score(
+            pipeline, X, y,
+            cv=cv,
+            scoring="neg_root_mean_squared_error"
+        )
+
     score_mean = np.mean(scores)
 
     # Fit on full data to extract feature info
@@ -9782,11 +9967,18 @@ def knn_objective(trial, X, y, **kwargs):
     if not kwargs['allow_overfit']:
         # pipeline.fit(X, y)
         train_pred = pipeline.predict(X)
-        train_mse = mean_squared_error(y, train_pred)    
-        if train_mse <= kwargs['tol']:
-            raise optuna.exceptions.TrialPruned(
-                "Training MSE is zero — likely overfitting")
-        
+
+        if not kwargs['classify']:
+            train_mse = mean_squared_error(y, train_pred)    
+            if train_mse <= kwargs['tol']:
+                raise optuna.exceptions.TrialPruned(
+                    "Training MSE is zero — likely overfitting")
+        else:
+            train_accuracy = accuracy_score(y, train_pred)    
+            if train_accuracy >= 1.0 - kwargs['tol']:
+                raise optuna.exceptions.TrialPruned(
+                    "Training Accuracy is 1.0 — likely overfitting")
+    
     if kwargs.get("feature_selection", True):
         selector_step = pipeline.named_steps["feature_selector"]
         selected_indices = selector_step.get_support(indices=True)
@@ -9806,17 +9998,16 @@ def knn_objective(trial, X, y, **kwargs):
     trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
 
     return score_mean
-   
+     
 def knn_auto(X, y, **kwargs):
 
     """
-    Autocalibration of KNeighborsRegressor hyperparameters
-    Beta version
+    Autocalibration of KNeighborsRegressor or KNeighborsClassifier hyperparameters
 
     by
     Greg Pelletier
     gjpelletier@gmail.com
-    01-July-2025
+    13-Aug-2025
 
     REQUIRED INPUTS (X and y should have same number of rows and 
     only contain real numbers)
@@ -9829,6 +10020,7 @@ def knn_auto(X, y, **kwargs):
         # general params that are user-specified
         random_state= 42,                 # random seed for reproducibility
         n_trials= 50,                     # number of optuna trials
+        classify= False,                  # True for KNeighborsClassifier
         preprocess= True,                 # Apply OneHotEncoder and StandardScaler
         preprocess_result= None,          # dict of the following result from 
                                           # preprocess_train if available:         
@@ -9841,10 +10033,11 @@ def knn_auto(X, y, **kwargs):
         gpu= True,                        # Autodetect to use gpu if present
         n_splits= 5,                      # number of splits for KFold CV
         pruning= False,                   # prune poor optuna trials
-        allow_overfit= False,             # allow optuna to overfit train data
+        allow_overfit= True,              # allow optuna to overfit train data
         tol= 1e-6,                        # tolerance for overfit
                                           # used if allow_overfit=False
                                           # as min allowable MSE
+                                          # or max closeness to 1.0 accuracy
 
         pruning= False,                   # prune poor optuna trials
         feature_selection= True,          # optuna feature selection
@@ -9909,10 +10102,12 @@ def knn_auto(X, y, **kwargs):
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
     from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
     import time
     import pandas as pd
     import numpy as np
-    from sklearn.neighbors import KNeighborsRegressor
+    from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier 
     from sklearn.preprocessing import StandardScaler
     from sklearn.decomposition import PCA
     from sklearn.model_selection import cross_val_score, train_test_split
@@ -9932,6 +10127,7 @@ def knn_auto(X, y, **kwargs):
         # general params that are user-specified
         'random_state': 42,                 # random seed for reproducibility
         'n_trials': 50,                     # number of optuna trials
+        'classify': False,            # True for KNeighborsClassifier
         'preprocess': True,           # True for OneHotEncoder and StandardScaler
         'preprocess_result': None,    # dict of  the following result from 
                                       # preprocess_train if available:         
@@ -9954,7 +10150,7 @@ def knn_auto(X, y, **kwargs):
         'verbose': 'on',
         'gpu': True,                        # Autodetect to use gpu if present
         'n_splits': 5,                      # number of splits for KFold CV
-        'allow_overfit': False,             # allow optuna to overfit train data
+        'allow_overfit': True,              # allow optuna to overfit train data
         'tol': 1e-6,                        # tolerance for overfit
                                             # used if allow_overfit=False
                                             # as min allowable MSE
@@ -10005,6 +10201,10 @@ def knn_auto(X, y, **kwargs):
     
     X, y = check_X_y(X,y)
 
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+    
     # Suppress warnings
     warnings.filterwarnings('ignore')
 
@@ -10088,81 +10288,115 @@ def knn_auto(X, y, **kwargs):
         del best_params['num_features']
     if 'selector_type' in best_params:
         del best_params['selector_type']
-    fitted_model = KNeighborsRegressor(
-        **best_params, **extra_params).fit(
-        X[model_outputs['selected_features']],y)
-        
-    # check to see of the model has intercept and coefficients
-    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-            and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
-        intercept = fitted_model.intercept_
-        coefficients = fitted_model.coef_
-        # dataframe of model parameters, intercept and coefficients, including zero coefs
-        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
-        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
-        for i in range(n_param):
-            if i == 0:
-                popt[0][i] = 'Intercept'
-                popt[1][i] = fitted_model.intercept_
-            else:
-                popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
-                popt[1][i] = fitted_model.coef_[i-1]
-        popt = pd.DataFrame(popt).T
-        popt.columns = ['Feature', 'Parameter']
-        # Table of intercept and coef
-        popt_table = pd.DataFrame({
-                "Feature": popt['Feature'],
-                "Parameter": popt['Parameter']
-            })
-        popt_table.set_index('Feature',inplace=True)
-        model_outputs['popt_table'] = popt_table
+
+    if data['classify']:
+        print('Fitting XGBClassifier model with best parameters, please wait ...')
+        fitted_model = KNeighborsClassifier(
+            **best_params, **extra_params).fit(
+            X[model_outputs['selected_features']],y)
+    else:    
+        fitted_model = KNeighborsRegressor(
+            **best_params, **extra_params).fit(
+            X[model_outputs['selected_features']],y)
+            
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X[selected_features], y)
+            hfig.savefig("KNeighborsClassifier_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X[selected_features], y)
+            hfig.savefig("KNeighborsClassifier_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X[model_outputs['selected_features']], y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['KNeighborsClassifier']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])    
+        if data['verbose'] == 'on':
+            print('')
+            print("KNeighborsClassifier goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table
+
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X[model_outputs['selected_features']], y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['KNeighborsRegressor']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
     
-    # Goodness of fit statistics
-    metrics = fitness_metrics(
-        fitted_model, 
-        X[model_outputs['selected_features']], y)
-    stats = pd.DataFrame([metrics]).T
-    stats.index.name = 'Statistic'
-    stats.columns = ['KNeighborsRegressor']
-    model_outputs['metrics'] = metrics
-    model_outputs['stats'] = stats
-    model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
-
-    if data['verbose'] == 'on':
-        print('')
-        print("KNeighborsRegressor goodness of fit to training data in model_outputs['stats']:")
-        print('')
-        print(model_outputs['stats'].to_markdown(index=True))
-        print('')
-
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
-        print("Parameters of fitted model in model_outputs['popt']:")
-        print('')
-        print(model_outputs['popt_table'].to_markdown(index=True))
-        print('')
-
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("KNeighborsRegressor_predictions.png", dpi=300)
+        if data['verbose'] == 'on':
+            print('')
+            print("KNeighborsRegressor goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
+    
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
+    
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("KNeighborsRegressor_predictions.png", dpi=300)
 
     # Print the run time
     fit_time = time.time() - start_time
