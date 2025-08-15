@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.89"
+__version__ = "1.2.90"
 
 def check_X_y(X,y):
 
@@ -622,14 +622,16 @@ def show_optuna(study):
 
     # Generate contour plot (shows parameter interactions)
     param_importances = get_param_importances(study)
-    keys = list(param_importances.keys())
-    first_key = keys[0]
-    second_key = keys[1]
-    optuna.visualization.matplotlib.plot_contour(study, params=[first_key, second_key])
-    plt.title(f"{first_key} vs. {second_key}")
-    plt.savefig(f"optuna_{first_key}_vs_{second_key}.png", 
-                dpi=300, bbox_inches='tight') 
-    plt.show()
+    # keys = list(param_importances.keys())
+    keys = [str(key) for key, value in param_importances.items() if isinstance(value, (int, float))]    
+    if len(keys) >= 2:
+        first_key = keys[0]
+        second_key = keys[1]
+        optuna.visualization.matplotlib.plot_contour(study, params=[first_key, second_key])
+        plt.title(f"{first_key} vs. {second_key}")
+        plt.savefig(f"optuna_{first_key}_vs_{second_key}.png", 
+                    dpi=300, bbox_inches='tight') 
+        plt.show()
     
     # Restore warnings to normal
     warnings.filterwarnings("default")
