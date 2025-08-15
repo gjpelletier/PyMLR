@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.85"
+__version__ = "1.2.86"
 
 def check_X_y(X,y):
 
@@ -6768,11 +6768,11 @@ def xgb(X, y, **kwargs):
         'nthread': data['nthread'],                  
         'colsample_bylevel': data['colsample_bylevel'],       
         'colsample_bynode': data['colsample_bynode'],        
-        'scale_pos_weight': data['scale_pos_weight'],        
+        # 'scale_pos_weight': data['scale_pos_weight'],        
         'base_score': data['base_score'],            
         'missing': data['missing'],           
         'importance_type': data['importance_type'],    
-        'predictor': data['predictor'],          
+        # 'predictor': data['predictor'],          
         'enable_categorical': data['enable_categorical']  
     }
     
@@ -6783,6 +6783,8 @@ def xgb(X, y, **kwargs):
         fitted_model = XGBClassifier(**params, **extra_params).fit(X,y)
     else:
         print('Fitting XGBRegressor model, please wait ...')    
+        extra_params['predictor'] = data['predictor']
+        extra_params['scale_pos_weight'] = data['scale_pos_weight']
         fitted_model = XGBRegressor(**params, **extra_params).fit(X,y)
         
     if data['classify']:
@@ -6934,13 +6936,17 @@ def xgb_objective(trial, X, y, **kwargs):
         "nthread": kwargs["nthread"],
         "colsample_bylevel": kwargs["colsample_bylevel"],
         "colsample_bynode": kwargs["colsample_bynode"],
-        "scale_pos_weight": kwargs["scale_pos_weight"],
+        # "scale_pos_weight": kwargs["scale_pos_weight"],
         "base_score": kwargs["base_score"],
         "missing": kwargs["missing"],
         "importance_type": kwargs["importance_type"],
-        "predictor": kwargs["predictor"],
+        # "predictor": kwargs["predictor"],
         "enable_categorical": kwargs["enable_categorical"],
     }
+
+    if not kwargs['classify']:
+        extra_params['predictor'] = kwargs['predictor']
+        extra_params['scale_pos_weight'] = kwargs['scale_pos_weight']
 
     if kwargs['objective'] == 'multi:softmax':
         extra_params['num_class'] = kwargs['num_class']
@@ -7304,11 +7310,11 @@ def xgb_auto(X, y, **kwargs):
         'nthread': data['nthread'],                  
         'colsample_bylevel': data['colsample_bylevel'],       
         'colsample_bynode': data['colsample_bynode'],        
-        'scale_pos_weight': data['scale_pos_weight'],        
+        # 'scale_pos_weight': data['scale_pos_weight'],        
         'base_score': data['base_score'],            
         'missing': data['missing'],           
         'importance_type': data['importance_type'],    
-        'predictor': data['predictor'],          
+        # 'predictor': data['predictor'],          
         'enable_categorical': data['enable_categorical']  
     }
 
@@ -7360,6 +7366,8 @@ def xgb_auto(X, y, **kwargs):
             X[model_outputs['selected_features']],y)
     else:
         print('Fitting XGBRegressor model with best parameters, please wait ...')
+        extra_params['predictor'] = data['predictor']
+        extra_params['scale_pos_weight'] = data['scale_pos_weight']
         fitted_model = XGBRegressor(
             **best_params, **extra_params).fit(
             X[model_outputs['selected_features']],y)
