@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.84"
+__version__ = "1.2.85"
 
 def check_X_y(X,y):
 
@@ -10574,6 +10574,64 @@ def test_model_logistic(
     
     hfig_roc = plot_roc_auc(model, X[selected_features],y)    
     hfig_roc.savefig("LogisticRegression_ROC_curve_test.png", dpi=300)
+    results['hfig_roc'] = hfig_roc
+
+    results['y_pred'] = model.predict(X[selected_features])
+    
+    return results
+
+def test_model_classifier(
+        model, X, y, preprocess_result=None, selected_features=None):
+    '''
+    plot the confusion matrix and ROC curve and fitness metrics
+    for test data sets for LogisticRegression
+    using the preprocess_result and selected_features 
+    from the fitted model using training data
+    previously saved by using logistic_auto, logistic, 
+    or preprocess_train
+    '''
+
+    import numpy as np
+    import pandas as pd
+    from PyMLR import (preprocess_test, plot_confusion_matrix, 
+        plot_roc_auc, fitness_metrics_logistic, check_X_y)
+
+    # copy X and y to avoid altering originals
+    X = X.copy()
+    y = y.copy()
+
+    # check X and y and put into dataframe if needed
+    X, y = check_X_y(X, y)
+    
+    if preprocess_result!=None:
+        X = X.copy()    # copy X to avoid changing the original
+        X = preprocess_test(X, preprocess_result)
+
+    if selected_features==None:
+        selected_features = X.columns.to_list()
+
+    # Goodness of fit statistics
+    metrics = fitness_metrics_logistic(
+        model, 
+        X[selected_features], y, brier=False)
+    stats = pd.DataFrame([metrics]).T
+    stats.index.name = 'Statistic'
+    stats.columns = ['Classifier']
+    results = {}
+    results['metrics'] = metrics
+    results['stats'] = stats
+    print('')
+    print("Classifier model goodness of fit to testing data in results['stats']:")
+    print('')
+    print(results['stats'].to_markdown(index=True))
+    print('')
+        
+    hfig_cm = plot_confusion_matrix(model, X[selected_features],y)    
+    hfig_cm.savefig("Classifier_confusion_matrix_test.png", dpi=300)
+    results['hfig_cm'] = hfig_cm
+    
+    hfig_roc = plot_roc_auc(model, X[selected_features],y)    
+    hfig_roc.savefig("Classifier_ROC_curve_test.png", dpi=300)
     results['hfig_roc'] = hfig_roc
 
     results['y_pred'] = model.predict(X[selected_features])
