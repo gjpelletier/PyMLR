@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.88"
+__version__ = "1.2.89"
 
 def check_X_y(X,y):
 
@@ -581,6 +581,7 @@ def show_optuna(study):
     '''
     
     import optuna
+    from optuna.importance import get_param_importances
     import matplotlib.pyplot as plt
     import warnings
     warnings.filterwarnings('ignore')
@@ -620,59 +621,16 @@ def show_optuna(study):
     plt.show()
 
     # Generate contour plot (shows parameter interactions)
-    if ('learning_rate' in study.best_params 
-        and 'n_estimators' in study.best_params):
-        optuna.visualization.matplotlib.plot_contour(study, params=["learning_rate", "n_estimators"])
-        plt.title("learning_rate vs. n_estimators")
-        plt.savefig('optuna_learning_rate_vs_n_estimators.png', 
-                    dpi=300, bbox_inches='tight') 
-        plt.show()
-    elif ('learning_rate' in study.best_params 
-        and 'depth' in study.best_params):
-        optuna.visualization.matplotlib.plot_contour(study, params=["learning_rate", "depth"])
-        plt.title("Learning Rate vs. Depth")
-        plt.savefig('optuna_learning_rate_vs_depth.png', 
-                    dpi=300, bbox_inches='tight') 
-        plt.show()
-    elif ('C' in study.best_params 
-        and 'epsilon' in study.best_params):
-        optuna.visualization.matplotlib.plot_contour(study, params=["C", "epsilon"])
-        plt.title("C vs. epsilon")
-        plt.savefig('optuna_C_vs_epsilon.png', 
-                    dpi=300, bbox_inches='tight') 
-        plt.show()
-    elif ('min_samples_leaf' in study.best_params 
-        and 'max_features' in study.best_params):
-        optuna.visualization.matplotlib.plot_contour(study, params=["min_samples_leaf", "max_features"])
-        plt.title("min_samples_leaf vs. max_features")
-        plt.savefig('optuna_min_samples_leaf_vs_max_features.png', 
-                    dpi=300, bbox_inches='tight') 
-        plt.show()
-    elif ('n_neighbors' in study.best_params 
-        and 'leaf_size' in study.best_params):
-        optuna.visualization.matplotlib.plot_contour(study, params=["n_neighbors", "leaf_size"])
-        plt.title("n_neighbors vs. leaf_size")
-        plt.savefig('optuna_n_neighbors_vs_leaf_size.png', 
-                    dpi=300, bbox_inches='tight') 
-        plt.show()
-    elif model_name == 'LogisticRegression':
-        optuna.visualization.matplotlib.plot_contour(study, params=["C", "num_features"])
-        plt.title("C vs. num_features")
-        plt.savefig('optuna_C_vs_num_features.png', 
-                    dpi=300, bbox_inches='tight') 
-        plt.show()
+    param_importances = get_param_importances(study)
+    keys = list(param_importances.keys())
+    first_key = keys[0]
+    second_key = keys[1]
+    optuna.visualization.matplotlib.plot_contour(study, params=[first_key, second_key])
+    plt.title(f"{first_key} vs. {second_key}")
+    plt.savefig(f"optuna_{first_key}_vs_{second_key}.png", 
+                dpi=300, bbox_inches='tight') 
+    plt.show()
     
-    '''
-    # Generate slice plot (hyperparameter relationship)
-    optuna.visualization.matplotlib.plot_slice(study)
-    plt.title("Hyperparameter Relationship")
-    plt.show()
-        
-    # Generate parameter interaction heatmap
-    optuna.visualization.matplotlib.plot_parallel_coordinate(study)
-    plt.title("Hyperparameter Interaction Heatmap")
-    plt.show()
-    '''
     # Restore warnings to normal
     warnings.filterwarnings("default")
 
