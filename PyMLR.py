@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.87"
+__version__ = "1.2.88"
 
 def check_X_y(X,y):
 
@@ -8621,13 +8621,14 @@ def catboost_auto(X, y, **kwargs):
 def forest(X, y, **kwargs):
 
     """
-    Linear regression with sklearn RandomForestRegressor
-    Beta version
+    Regression with sklearn RandomForestRegressor
+    or
+    Classification with sklearn RandomForestClassifier
 
     by
     Greg Pelletier
     gjpelletier@gmail.com
-    10-June-2025
+    15-Aug-2025
 
     REQUIRED INPUTS (X and y should have same number of rows and 
     only contain real numbers)
@@ -8638,6 +8639,7 @@ def forest(X, y, **kwargs):
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
         n_trials= 50,                     # number of optuna trials
+        classify= False,            # True to use RandomForestClassifier
         preprocess= True,           # Apply OneHotEncoder and StandardScaler
         preprocess_result= None,    # dict of the following result from 
                                     # preprocess_train if available:         
@@ -8725,6 +8727,8 @@ def forest(X, y, **kwargs):
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
     from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
     import time
     import pandas as pd
     import numpy as np
@@ -8739,11 +8743,12 @@ def forest(X, y, **kwargs):
     import warnings
     import sys
     import statsmodels.api as sm
-    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 
     # Define default values of input data arguments
     defaults = {
         'n_trials': 50,                     # number of optuna trials
+        'classify': False,            # Use RandomForestClassifier if True
         'preprocess': True,           # True for OneHotEncoder and StandardScaler
         'preprocess_result': None,    # dict of  the following result from 
                                       # preprocess_train if available:         
@@ -8825,6 +8830,16 @@ def forest(X, y, **kwargs):
     # QC check X and y
     X, y = check_X_y(X,y)
 
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
+    # assign criterion depending on type of model
+    if data['classify']:
+        data['criterion'] = 'gini'
+    else:
+        data['criterion'] = 'squared_error'
+    
     # Set start time for calculating run time
     start_time = time.time()
 
@@ -8867,9 +8882,6 @@ def forest(X, y, **kwargs):
 
     # Suppress warnings
     warnings.filterwarnings('ignore')
-    print('Fitting RandomForestRegressor model, please wait ...')
-    if data['verbose'] == 'on':
-        print('')
 
     params = {
         'n_estimators': data['n_estimators'],               
@@ -8894,80 +8906,113 @@ def forest(X, y, **kwargs):
         'max_samples': data['max_samples'],                
         'monotonic_cst': data['monotonic_cst']             
     }
+
+    if data['classify']:
+        print('Fitting RandomForestClassifier model, please wait ...')
+        fitted_model = RandomForestClassifier(**params, **extra_params).fit(X,y)
+    else:
+        print('Fitting RandomForestRegressor model, please wait ...')
+        fitted_model = RandomForestRegressor(**params, **extra_params).fit(X,y)
+
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            # selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X, y)
+            hfig.savefig("RandomForestClassifier_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X, y)
+            hfig.savefig("RandomForestlassifier_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X, y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['RandomForestClassifier']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)    
+        if data['verbose'] == 'on':
+            print('')
+            print("RandomForestClassifier goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:            
     
-    fitted_model = RandomForestRegressor(**params, **extra_params).fit(X,y)
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X.columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X.columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table
         
-    # check to see of the model has intercept and coefficients
-    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-            and fitted_model.coef_.size==len(X.columns)):
-        intercept = fitted_model.intercept_
-        coefficients = fitted_model.coef_
-        # dataframe of model parameters, intercept and coefficients, including zero coefs
-        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
-        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
-        for i in range(n_param):
-            if i == 0:
-                popt[0][i] = 'Intercept'
-                popt[1][i] = fitted_model.intercept_
-            else:
-                popt[0][i] = X.columns[i-1]
-                popt[1][i] = fitted_model.coef_[i-1]
-        popt = pd.DataFrame(popt).T
-        popt.columns = ['Feature', 'Parameter']
-        # Table of intercept and coef
-        popt_table = pd.DataFrame({
-                "Feature": popt['Feature'],
-                "Parameter": popt['Parameter']
-            })
-        popt_table.set_index('Feature',inplace=True)
-        model_outputs['popt_table'] = popt_table
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X, y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['RandomForestRegressor']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)
     
-    # Goodness of fit statistics
-    metrics = fitness_metrics(
-        fitted_model, 
-        X, y)
-    stats = pd.DataFrame([metrics]).T
-    stats.index.name = 'Statistic'
-    stats.columns = ['RandomForestRegressor']
-    model_outputs['metrics'] = metrics
-    model_outputs['stats'] = stats
-    model_outputs['y_pred'] = fitted_model.predict(X)
-
-    if data['verbose'] == 'on':
-        print('')
-        print("RandomForestRegressor goodness of fit to training data in model_outputs['stats']:")
-        print('')
-        print(model_outputs['stats'].to_markdown(index=True))
-        print('')
-
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
-        print("Parameters of fitted model in model_outputs['popt']:")
-        print('')
-        print(model_outputs['popt_table'].to_markdown(index=True))
-        print('')
-
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("RandomForestRegressor_predictions.png", dpi=300)
+        if data['verbose'] == 'on':
+            print('')
+            print("RandomForestRegressor goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
+    
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
+    
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("RandomForestRegressor_predictions.png", dpi=300)
     
     # Print the run time
     fit_time = time.time() - start_time
@@ -8984,7 +9029,7 @@ def forest_objective(trial, X, y, **kwargs):
     '''
     Objective function used by optuna 
     to find the optimum hyper-parameters for 
-    sklearn RandomForestRegressor
+    sklearn RandomForestRegressor or RandomForestClassifier
     '''
     import numpy as np
     import pandas as pd
@@ -8992,7 +9037,7 @@ def forest_objective(trial, X, y, **kwargs):
     from sklearn.pipeline import Pipeline
     from sklearn.model_selection import cross_val_score, RepeatedKFold
     from PyMLR import detect_gpu
-    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 
     seed = kwargs.get("random_state", 42)
     rng = np.random.default_rng(seed)
@@ -9042,23 +9087,46 @@ def forest_objective(trial, X, y, **kwargs):
 
         selector = SelectKBest(score_func=score_func, k=num_features)
 
-        pipeline = Pipeline([
-            ("feature_selector", selector),
-            ("regressor", RandomForestRegressor(**params, **extra_params))
-        ])
+        if kwargs['classify']:
+            pipeline = Pipeline([
+                ("feature_selector", selector),
+                ("regressor", RandomForestClassifier(**params, **extra_params))
+            ])
+        else:        
+            pipeline = Pipeline([
+                ("feature_selector", selector),
+                ("regressor", RandomForestRegressor(**params, **extra_params))
+            ])
+
     else:
-        pipeline = Pipeline([
-            ("regressor", RandomForestRegressor(**params, **extra_params))
-        ])
+
+        if kwargs['classify']:
+            pipeline = Pipeline([
+                ("regressor", RandomForestClassifier(**params, **extra_params))
+            ])
+        else:        
+
+            pipeline = Pipeline([
+                ("regressor", RandomForestRegressor(**params, **extra_params))
+            ])
+
         num_features = None
 
     # Cross-validated scoring with RepeatedKFold
     cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
-    scores = cross_val_score(
-        pipeline, X, y,
-        cv=cv,
-        scoring="neg_root_mean_squared_error"
-    )
+
+    if kwargs['classify']:
+        scores = cross_val_score(
+            pipeline, X, y,
+            cv=cv,
+            scoring="accuracy"
+        )
+    else:
+        scores = cross_val_score(
+            pipeline, X, y,
+            cv=cv,
+            scoring="neg_root_mean_squared_error"
+        )
     score_mean = np.mean(scores)
 
     # Fit on full data to extract feature info
@@ -9083,16 +9151,17 @@ def forest_objective(trial, X, y, **kwargs):
     trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
 
     return score_mean
-    
+      
 def forest_auto(X, y, **kwargs):
 
     """
-    Autocalibration of RandomForestRegressor hyper-parameters
+    Autocalibration of hyperparameters for 
+    sklearn RandomForestRegressor or RandomForestClassifier
 
     by
     Greg Pelletier
     gjpelletier@gmail.com
-    30-June-2025
+    15-Aug-2025
 
     REQUIRED INPUTS (X and y should have same number of rows and 
     only contain real numbers)
@@ -9103,6 +9172,7 @@ def forest_auto(X, y, **kwargs):
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
         n_trials= 50,                     # number of optuna trials
+        classify= False,            # True for RandomForestClassifier
         preprocess= True,           # Apply OneHotEncoder and StandardScaler
         preprocess_result= None,    # dict of the following result from 
                                     # preprocess_train if available:         
@@ -9133,7 +9203,6 @@ def forest_auto(X, y, **kwargs):
 
         # extra_params that are optional user-specified
         random_state= 42,                 # random seed for reproducibility
-        criterion= 'squared_error',       # function to measure quality of split
         min_weight_fraction_leaf= 0.0,    # min weighted fraction of the 
                                           # sum total of weights 
                                           # (of all the input samples) 
@@ -9194,10 +9263,12 @@ def forest_auto(X, y, **kwargs):
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
     from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
     import time
     import pandas as pd
     import numpy as np
-    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
     from sklearn.preprocessing import StandardScaler
     from sklearn.model_selection import cross_val_score, train_test_split
     from sklearn.metrics import mean_squared_error
@@ -9213,6 +9284,7 @@ def forest_auto(X, y, **kwargs):
     # Define default values of input data arguments
     defaults = {
         'n_trials': 50,                     # number of optuna trials
+        'classify': False,            # True for RandomForestClassifier
         'preprocess': True,           # True for OneHotEncoder and StandardScaler
         'preprocess_result': None,    # dict of  the following result from 
                                       # preprocess_train if available:         
@@ -9256,7 +9328,7 @@ def forest_auto(X, y, **kwargs):
 
         # extra_params that are optional user-specified
         'random_state': 42,                 # random seed for reproducibility
-        'criterion': 'squared_error',       # function to measure quality of split
+        # 'criterion': 'squared_error',       # function to measure quality of split
         'min_weight_fraction_leaf': 0.0,    # min weighted fraction of the 
                                             # sum total of weights 
                                             # (of all the input samples) 
@@ -9297,6 +9369,16 @@ def forest_auto(X, y, **kwargs):
     
     X, y = check_X_y(X,y)
 
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
+    # assign criterion depending on type of model
+    if data['classify']:
+        data['criterion'] = 'gini'
+    else:
+        data['criterion'] = 'squared_error'
+    
     # Suppress warnings
     warnings.filterwarnings('ignore')
 
@@ -9381,85 +9463,119 @@ def forest_auto(X, y, **kwargs):
     model_outputs['best_params'] = best_params
     model_outputs['extra_params'] = extra_params
 
-    print('Fitting RandomForestRegressor model with best parameters, please wait ...')
     if 'num_features' in best_params:
         del best_params['num_features']
     if 'selector_type' in best_params:
         del best_params['selector_type']
-    fitted_model = RandomForestRegressor(**best_params, **extra_params).fit(
-        X[model_outputs['selected_features']],y)
     
-    # check to see of the model has intercept and coefficients
-    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-            and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
-        intercept = fitted_model.intercept_
-        coefficients = fitted_model.coef_
-        # dataframe of model parameters, intercept and coefficients, including zero coefs
-        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
-        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
-        for i in range(n_param):
-            if i == 0:
-                popt[0][i] = 'Intercept'
-                popt[1][i] = fitted_model.intercept_
-            else:
-                popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
-                popt[1][i] = fitted_model.coef_[i-1]
-        popt = pd.DataFrame(popt).T
-        popt.columns = ['Feature', 'Parameter']
-        # Table of intercept and coef
-        popt_table = pd.DataFrame({
-                "Feature": popt['Feature'],
-                "Parameter": popt['Parameter']
-            })
-        popt_table.set_index('Feature',inplace=True)
-        model_outputs['popt_table'] = popt_table
+    if data['classify']:
+        print('Fitting RandomForestClassifier model with best parameters, please wait ...')    
+        fitted_model = RandomForestClassifier(**best_params, **extra_params).fit(
+            X[model_outputs['selected_features']],y)
+    else:    
+        print('Fitting RandomForestRegressor model with best parameters, please wait ...')    
+        fitted_model = RandomForestRegressor(**best_params, **extra_params).fit(
+            X[model_outputs['selected_features']],y)
+
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X[selected_features], y)
+            hfig.savefig("RandomForestClassifier_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X[selected_features], y)
+            hfig.savefig("RandomForestClassifier_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X[model_outputs['selected_features']], y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['RandomForestClassifier']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])    
+        if data['verbose'] == 'on':
+            print('')
+            print("RandomForestClassifier goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:
     
-    # Goodness of fit statistics
-    metrics = fitness_metrics(
-        fitted_model, 
-        X[model_outputs['selected_features']], y)
-    stats = pd.DataFrame([metrics]).T
-    stats.index.name = 'Statistic'
-    stats.columns = ['RandomForestRegressor']
-    model_outputs['metrics'] = metrics
-    model_outputs['stats'] = stats
-    model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
-
-    if data['verbose'] == 'on':
-        print('')
-        print("RandomForestRegressor goodness of fit to training data in model_outputs['stats']:")
-        print('')
-        print(model_outputs['stats'].to_markdown(index=True))
-        print('')
-
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
-        print("Parameters of fitted model in model_outputs['popt']:")
-        print('')
-        print(model_outputs['popt_table'].to_markdown(index=True))
-        print('')
-
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("RandomForestRegressor_predictions.png", dpi=300)
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table
+        
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X[model_outputs['selected_features']], y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['RandomForestRegressor']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
+    
+        if data['verbose'] == 'on':
+            print('')
+            print("RandomForestRegressor goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
+    
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
+    
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("RandomForestRegressor_predictions.png", dpi=300)
 
     # Best score of CV test data
     print('')
