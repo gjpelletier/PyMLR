@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.92"
+__version__ = "1.2.93"
 
 def check_X_y(X,y):
 
@@ -12583,8 +12583,8 @@ def mlp_objective(trial, X, y, **kwargs):
         'learning_rate_init': learning_rate_init,
         'early_stopping': early_stopping,
         'batch_size': (batch_size if solver in ["sgd", "adam"] else "auto"),
-        'momentum': (momentum if solver == "sgd" else 0.0),
-        'nesterovs_momentum': (nesterov if solver == "sgd" else False),
+        'momentum': (momentum if solver == "sgd" else 0.9),
+        'nesterovs_momentum': (nesterov if solver == "sgd" else True),
         'power_t': (power_t if solver == "sgd" else 0.5),
         'beta_1': (beta_1 if solver == "adam" else 0.9),
         'beta_2': (beta_2 if solver == "adam" else 0.999),
