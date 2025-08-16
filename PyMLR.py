@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.94"
+__version__ = "1.2.95"
 
 def check_X_y(X,y):
 
@@ -605,7 +605,7 @@ def show_optuna(study):
     trials = study.trials
     trial_values = [trial.value for trial in trials]
     best_values = [max(trial_values[: i + 1]) for i in range(len(trial_values))]  # type: ignore
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(8, 6))
     ax.set_title("Optimization History")
     ax.plot(trial_values, marker="o", linestyle='none', label='Trial Value')
     ax.plot(best_values, label='Best Value')
