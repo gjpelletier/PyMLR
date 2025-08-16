@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.91"
+__version__ = "1.2.92"
 
 def check_X_y(X,y):
 
@@ -12550,6 +12550,7 @@ def mlp_objective(trial, X, y, **kwargs):
     early_stopping = trial.suggest_categorical("early_stopping", kwargs['early_stopping'])
 
     # 3. Solver-specific knobs
+    '''
     if solver == "sgd":
         batch_size = trial.suggest_int("batch_size", *kwargs['batch_size'], log=True)
         momentum = trial.suggest_float("momentum", *kwargs['momentum'])
@@ -12563,6 +12564,15 @@ def mlp_objective(trial, X, y, **kwargs):
         max_fun = trial.suggest_int("max_fun", *kwargs['max_fun'])
     else:  # lbfgs
         max_fun = trial.suggest_int("max_fun", *kwargs['max_fun'])
+    '''
+    batch_size = trial.suggest_int("batch_size", *kwargs['batch_size'], log=True)
+    momentum = trial.suggest_float("momentum", *kwargs['momentum'])
+    nesterov = trial.suggest_categorical("nesterovs_momentum", kwargs['nesterov'])
+    power_t = trial.suggest_float("power_t", *kwargs['power_t'])
+    beta_1 = trial.suggest_float("beta_1", *kwargs['beta_1'])
+    beta_2 = trial.suggest_float("beta_2", *kwargs['beta_2'])
+    epsilon = trial.suggest_loguniform("epsilon", *kwargs['epsilon'])
+    max_fun = trial.suggest_int("max_fun", *kwargs['max_fun'])
     
     params = {
         'hidden_layer_sizes': hidden_layer_sizes,
