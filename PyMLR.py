@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.93"
+__version__ = "1.2.94"
 
 def check_X_y(X,y):
 
@@ -578,14 +578,20 @@ def show_optuna(study):
 
     output:
     display and save plots of optuna study results
+    result dictionary of the following:
+    'best_params': dictionary of final best optimized hyperparameter values
+    'trial_scores': list of score for each trial iteration
+    'best_scores': list of best score as of each trial iteration
+    'param_importances': dictionary of hyperparameters and normalized importances values (sum to 1)
     '''
     
     import optuna
     from optuna.importance import get_param_importances
+    from optuna.importance import FanovaImportanceEvaluator
     import matplotlib.pyplot as plt
     import warnings
     warnings.filterwarnings('ignore')
-    
+
     print("Best parameters:")
     print('')
     for key, value in study.best_params.items():
@@ -595,34 +601,44 @@ def show_optuna(study):
     print("Best score:", study.best_value)
     print('')
 
-    # name of model object in the study
-    model_name = type(study.best_trial.user_attrs['model']).__name__
-    if model_name == 'Pipeline':
-        model_name = study.best_trial.user_attrs['model'].steps[-1][1].__class__.__name__
- 
     # Generate optimization history plot
-    optuna.visualization.matplotlib.plot_optimization_history(study)
-    plt.title("Optimization History")
-    plt.xlabel("Trial Number")
-    plt.ylabel("Score")
+    trials = study.trials
+    trial_values = [trial.value for trial in trials]
+    best_values = [max(trial_values[: i + 1]) for i in range(len(trial_values))]  # type: ignore
+    fig, ax = plt.subplots()
+    ax.set_title("Optimization History")
+    ax.plot(trial_values, marker="o", linestyle='none', label='Trial Value')
+    ax.plot(best_values, label='Best Value')
+    plt.xlabel('Trial Number')
+    plt.ylabel('Score')
+    plt.legend()
     plt.savefig('optuna_optimization_history.png', 
                 dpi=300, bbox_inches='tight') 
-    plt.show()
+    plt.show() 
     
     # Generate hyperparameter importance plot
-    optuna.visualization.matplotlib.plot_param_importances(study)
-    # plt.title("Hyperparameter Importance")
-    plt.xlabel("Relative Importance")
-    plt.ylabel("Hyperparameters")
-    # plt.savefig('optuna_parameter_importance.png', 
-    #             dpi=plt.gcf().dpi, bbox_inches='tight') 
+    # # Note: get_param_importances without evaluator argument are not deterministic and differ at each call
+    # param_importances = get_param_importances(study)
+    # # Note: evaluator from FanovaImportanceEvaluator with specifed seed provides reproducible get_param_importances
+    evaluator = FanovaImportanceEvaluator(seed=42)
+    param_importances = optuna.importance.get_param_importances(study, evaluator=evaluator)
+    data = param_importances
+    data = dict(sorted(data.items(), key=lambda item: item[1], reverse=False))
+    categories = list(data.keys())
+    values = list(data.values())
+    fig, axs = plt.subplots(figsize=(8, 6))
+    plt.barh(categories, values, color='skyblue')
+    for index, value in enumerate(values):
+        plt.text(value + .001, index, (str(round(value,2)) if value > 0.01 else '<0.01'), va='center', fontsize=10)  # Adjust position with `+2`
+    plt.xlabel('Relative Importance')
+    plt.ylabel('Hyperparameters')
+    plt.title('Hyperparameter Importances')
+    plt.tight_layout()
     plt.savefig('optuna_parameter_importance.png', 
                 dpi=300, bbox_inches='tight') 
     plt.show()
 
     # Generate contour plot of the two most important parameters (shows parameter interactions)
-    param_importances = get_param_importances(study)
-    # keys = list(param_importances.keys())
     keys = [str(key) for key, value in param_importances.items() if isinstance(value, (int, float))]    
     if len(keys) >= 2:
         first_key = keys[0]
@@ -636,7 +652,14 @@ def show_optuna(study):
     # Restore warnings to normal
     warnings.filterwarnings("default")
 
-    return
+    result = {
+        'best_params': study.best_params.items(),
+        'trial_scores': trial_values,
+        'best_scores': best_values,
+        'param_importances': param_importances
+    }
+    
+    return result
 
 def show_coef(fitted_model, X):
     '''
