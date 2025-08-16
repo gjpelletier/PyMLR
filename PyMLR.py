@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.95"
+__version__ = "1.2.96"
 
 def check_X_y(X,y):
 
@@ -606,6 +606,8 @@ def show_optuna(study):
     trial_values = [trial.value for trial in trials]
     best_values = [max(trial_values[: i + 1]) for i in range(len(trial_values))]  # type: ignore
     fig, ax = plt.subplots(figsize=(8, 6))
+    ax.set_facecolor('gainsboro')  # Set the background color to gray
+    ax.grid(color='white', linestyle='-', linewidth=0.5)  # White grid lines
     ax.set_title("Optimization History")
     ax.plot(trial_values, marker="o", linestyle='none', label='Trial Value')
     ax.plot(best_values, label='Best Value')
@@ -627,6 +629,8 @@ def show_optuna(study):
     categories = list(data.keys())
     values = list(data.values())
     fig, axs = plt.subplots(figsize=(8, 6))
+    axs.set_facecolor('gainsboro')  # Set the background color to gray
+    axs.grid(color='white', linestyle='-', linewidth=0.5)  # White grid lines
     plt.barh(categories, values, color='skyblue')
     for index, value in enumerate(values):
         plt.text(value + .001, index, (str(round(value,2)) if value > 0.01 else '<0.01'), va='center', fontsize=10)  # Adjust position with `+2`
