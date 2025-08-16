@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.97"
+__version__ = "1.2.98"
 
 def check_X_y(X,y):
 
@@ -605,7 +605,7 @@ def show_optuna(study):
     trials = study.trials
     trial_values = [trial.value for trial in trials]
     best_values = [max(trial_values[: i + 1]) for i in range(len(trial_values))]  # type: ignore
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(7, 5))
     for spine in ax.spines.values():
         spine.set_visible(False)
     ax.set_facecolor('gainsboro')  # Set the background color to gray
@@ -630,7 +630,7 @@ def show_optuna(study):
     data = dict(sorted(data.items(), key=lambda item: item[1], reverse=False))
     categories = list(data.keys())
     values = list(data.values())
-    fig, axs = plt.subplots(figsize=(8, 6))
+    fig, axs = plt.subplots(figsize=(7, 5))
     for spine in axs.spines.values():
         spine.set_visible(False)
     axs.set_facecolor('gainsboro')  # Set the background color to gray
