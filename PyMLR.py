@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.106"
+__version__ = "1.2.107"
 
 def check_X_y(X,y):
 
@@ -4711,7 +4711,7 @@ def svr_objective(trial, X, y, **kwargs):
     import pandas as pd
     from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
     from sklearn.pipeline import Pipeline
-    from sklearn.model_selection import cross_val_score, RepeatedKFold
+    from sklearn.model_selection import cross_val_score, RepeatedKFold, StratifiedKFold
     from PyMLR import detect_gpu
     from sklearn.svm import SVR, SVC
 
@@ -4787,16 +4787,16 @@ def svr_objective(trial, X, y, **kwargs):
 
         num_features = None
 
-    # Cross-validated scoring with RepeatedKFold
-    cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
-
+    # Cross-validated scoring
     if kwargs['classify']:
+        cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
             scoring="accuracy"
         )
     else:
+        cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
@@ -6909,7 +6909,7 @@ def xgb_objective(trial, X, y, **kwargs):
     import xgboost as xgb
     from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
     from sklearn.pipeline import Pipeline
-    from sklearn.model_selection import cross_val_score, RepeatedKFold
+    from sklearn.model_selection import cross_val_score, RepeatedKFold, StratifiedKFold
 
     seed = kwargs.get("random_state", 42)
     rng = np.random.default_rng(seed)
@@ -6986,16 +6986,16 @@ def xgb_objective(trial, X, y, **kwargs):
             ])
         num_features = None
 
-    # Cross-validated scoring with RepeatedKFold
-    cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
-
+    # Cross-validated scoring
     if kwargs['classify']:
+        cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
             scoring="accuracy"
         )
     else:
+        cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
@@ -9036,7 +9036,7 @@ def forest_objective(trial, X, y, **kwargs):
     import pandas as pd
     from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
     from sklearn.pipeline import Pipeline
-    from sklearn.model_selection import cross_val_score, RepeatedKFold
+    from sklearn.model_selection import cross_val_score, RepeatedKFold, StratifiedKFold
     from PyMLR import detect_gpu
     from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 
@@ -9113,16 +9113,16 @@ def forest_objective(trial, X, y, **kwargs):
 
         num_features = None
 
-    # Cross-validated scoring with RepeatedKFold
-    cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
-
+    # Cross-validated scoring
     if kwargs['classify']:
+        cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
             scoring="accuracy"
         )
     else:
+        cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
@@ -9997,7 +9997,7 @@ def knn_objective(trial, X, y, **kwargs):
     import xgboost as xgb
     from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
     from sklearn.pipeline import Pipeline
-    from sklearn.model_selection import cross_val_score, RepeatedKFold    
+    from sklearn.model_selection import cross_val_score, RepeatedKFold, StratifiedKFold
     from PyMLR import detect_gpu
     from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
     from sklearn.metrics import mean_squared_error, accuracy_score
@@ -10085,16 +10085,16 @@ def knn_objective(trial, X, y, **kwargs):
 
         num_features = None
 
-    # Cross-validated scoring with RepeatedKFold
-    cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
-
+    # Cross-validated scoring
     if kwargs['classify']:
+        cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
             scoring="accuracy"
         )
     else:
+        cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
@@ -12963,7 +12963,7 @@ def mlp_objective(trial, X, y, **kwargs):
     import pandas as pd
     from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
     from sklearn.pipeline import Pipeline
-    from sklearn.model_selection import cross_val_score, RepeatedKFold
+    from sklearn.model_selection import cross_val_score, RepeatedKFold, StratifiedKFold
     from PyMLR import detect_gpu
     from sklearn.neural_network import MLPRegressor, MLPClassifier
 
@@ -13058,16 +13058,16 @@ def mlp_objective(trial, X, y, **kwargs):
 
         num_features = None
 
-    # Cross-validated scoring with RepeatedKFold
-    cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
-
+    # Cross-validated scoring
     if kwargs['classify']:
+        cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
             scoring="accuracy"
         )
     else:
+        cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
