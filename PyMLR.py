@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.98"
+__version__ = "1.2.99"
 
 def check_X_y(X,y):
 
@@ -8914,7 +8914,7 @@ def forest(X, y, **kwargs):
             # ROC curve with AUC
             selected_features = model_outputs['selected_features']
             hfig = plot_roc_auc(fitted_model, X, y)
-            hfig.savefig("RandomForestlassifier_ROC_curve.png", dpi=300)            
+            hfig.savefig("RandomForestClassifier_ROC_curve.png", dpi=300)            
         # Goodness of fit statistics
         metrics = fitness_metrics_logistic(
             fitted_model, 
@@ -12547,6 +12547,408 @@ def linear_auto(X, y, **kwargs):
 
     return fitted_model, model_outputs
 
+def mlp(X, y, **kwargs):
+
+    """
+    Regression with sklearn MLPRegressor
+    or
+    Classification with sklearn MLPClassifier
+
+    by
+    Greg Pelletier
+    gjpelletier@gmail.com
+    15-Aug-2025
+
+    REQUIRED INPUTS (X and y should have same number of rows and 
+    only contain real numbers)
+    X = dataframe of the candidate independent variables 
+        (as many columns of data as needed)
+    y = dataframe of the dependent variable (one column of data)
+
+    OPTIONAL KEYWORD ARGUMENTS
+    **kwargs (optional keyword arguments):
+        n_trials= 50,                     # number of optuna trials
+        classify= False,            # True to use RandomForestClassifier
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
+        verbose= 'on',                    # 'on' to display all 
+        gpu= True,                        # Autodetect to use gpu if present
+        n_splits= 5,                      # number of splits for KFold CV
+
+        # numerical core hyperparameters
+        'hidden_layer_sizes': (100,),   # list of numbers of neurons in ith hidden layers
+        'alpha': 0.0001,                # L2 regularization term
+        'learning_rate_init': 0.001,    # initial learning rate
+
+        # numerical solver-specific hyperparameters
+        'batch_size': 'auto',         # batch size for stochastic optimizers
+        'momentum': 0.9,              # for gradient descent update
+        'power_t': 0.5,               # L2 regularization term
+        'beta_1': 0.9,                # decay for first moment adam
+        'beta_2': 0.999,              # decay rate for second moment adam
+        'epsilon': 1e-8,              # numerical stability in adam
+        'max_fun': 15000,             # used for solver lbfgs max number function calls
+
+        # categorical hyperparameters optimized
+        'activation': 'relu',         # hidden layer activation method
+        'solver': 'adam',             # for weight optimization
+        'learning_rate': 'constant',  # for weight updates
+        'early_stopping': False,      # terminate when score not improving
+        'nesterov': True,             # used for nesterovs_momentum if solver is sgd
+
+        # extra_params 
+        'random_state': 42,           # random seed for reproducibility
+        'tol': 1e-4,
+        'max_iter': 200,
+
+                preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 12)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
+
+    RETURNS
+        fitted_model, model_outputs
+            model_objects is the fitted model object
+            model_outputs is a dictionary of the following outputs: 
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
+                - 'y_pred': Predicted y values
+                - 'residuals': Residuals (y-y_pred) for each of the four methods
+                - 'stats': Regression statistics for each model
+
+    NOTE
+    Do any necessary/optional cleaning of the data before 
+    passing the data to this function. X and y should have the same number of rows
+    and contain only real numbers with no missing values. X can contain as many
+    columns as needed, but y should only be one column. X should have unique
+    column names for for each column
+
+    EXAMPLE 
+    model, outputs = mlp(X, y)
+
+    """
+
+    from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
+    import time
+    import pandas as pd
+    import numpy as np
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.model_selection import cross_val_score, train_test_split
+    from sklearn.metrics import mean_squared_error
+    from sklearn.base import clone
+    from sklearn.metrics import PredictionErrorDisplay
+    from sklearn.model_selection import train_test_split
+    import matplotlib.pyplot as plt
+    import warnings
+    import sys
+    import statsmodels.api as sm
+    from sklearn.neural_network import MLPRegressor, MLPClassifier
+
+    # Define default values of input data arguments
+    defaults = {
+        'n_trials': 50,                     # number of optuna trials
+        'classify': False,            # Use RandomForestClassifier if True
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
+        'scale': 'standard', 
+        'unskew_pos': False, 
+        'threshold_skew_pos': 0.5,
+        'unskew_neg': False, 
+        'threshold_skew_neg': -0.5,        
+        # ------------------------
+        'selected_features': None,    # pre-optimized selected features
+        'verbose': False,
+        'gpu': True,                        # Autodetect to use gpu if present
+
+        # numerical core hyperparameters
+        'hidden_layer_sizes': (100,), # list of numbers of neurons in ith hidden layers
+        'alpha': 0.0001,              # L2 regularization term
+        'learning_rate_init': 0.001,  # initial learning rate
+
+        # numerical solver-specific hyperparameters
+        'batch_size': 'auto',         # batch size for stochastic optimizers
+        'momentum': 0.9,              # for gradient descent update
+        'power_t': 0.5,               # L2 regularization term
+        'beta_1': 0.9,                # decay for first moment adam
+        'beta_2': 0.999,              # decay rate for second moment adam
+        'epsilon': 1e-8,              # numerical stability in adam
+        'max_fun': 15000,             # used for solver lbfgs max number function calls
+
+        # categorical hyperparameters optimized
+        'activation': 'relu',         # hidden layer activation method
+        'solver': 'adam',             # for weight optimization
+        'learning_rate': 'constant',  # for weight updates
+        'early_stopping': False,      # terminate when score not improving
+        'nesterov': True,             # used for nesterovs_momentum if solver is sgd
+
+        # extra_params 
+        'random_state': 42,           # random seed for reproducibility
+        'tol': 1e-4,
+        'max_iter': 200,
+
+    }
+
+    # Update input data argumements with any provided keyword arguments in kwargs
+    data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
+
+    if data['gpu']:
+        use_gpu = detect_gpu()
+        if use_gpu:
+            data['device'] = 'gpu'
+        else:
+            data['device'] = 'cpu'
+    else:
+        data['device'] = 'cpu'
+
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
+    X, y = check_X_y(X,y)
+
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
+    # assign criterion depending on type of model
+    if data['classify']:
+        data['criterion'] = 'gini'
+    else:
+        data['criterion'] = 'squared_error'
+    
+    # Set start time for calculating run time
+    start_time = time.time()
+
+    # check if X contains dummy variables
+    X_has_dummies = detect_dummy_variables(X)
+
+    # Initialize output dictionaries
+    model_objects = {}
+    model_outputs = {}
+
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
+                'threshold_cat': data['threshold_cat'],
+                'scale': data['scale'], 
+                'unskew_pos': data['unskew_pos'], 
+                'threshold_skew_pos': data['threshold_skew_pos'],
+                'unskew_neg': data['unskew_neg'], 
+                'threshold_skew_neg': data['threshold_skew_neg']        
+            }
+            data['preprocess_result'] = preprocess_train(X, **kwargs_pre)
+            X = data['preprocess_result']['df_processed']
+
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
+    else:
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
+
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
+
+    # Calculate hidden_layer_sizes
+    layer_units = []
+    for i in range(data['n_layers']):
+        layer_units.append(data['units'][i])
+    hidden_layer_sizes = tuple(layer_units)
+    
+    params = {
+        'hidden_layer_sizes': data['hidden_layer_sizes'],
+        'activation': data['activation'],
+        'solver': data['solver'],
+        'alpha': data['alpha'],
+        'learning_rate': data['learning_rate'],
+        'learning_rate_init': data['learning_rate_init'],
+        'early_stopping': data['early_stopping'],
+        'batch_size': data['batch_size'],
+        'momentum': data['momentum'],
+        'nesterovs_momentum': data['nesterov'],
+        'power_t': data['power_t'],
+        'beta_1': data['beta_1'],
+        'beta_2': data['beta_2'],
+        'epsilon': data['epsilon']'],
+        'tol': data['tol'],
+        'max_iter': data['max_iter'],
+        'max_fun': data['max_fun']
+    }    
+
+    extra_params = {
+        'verbose': False,                 
+        'random_state': kwargs['random_state'],                
+    }
+
+    if data['classify']:
+        print('Fitting MLPClassifier model, please wait ...')
+        fitted_model = MLPClassifier(**params, **extra_params).fit(X,y)
+    else:
+        print('Fitting MLPRegressor model, please wait ...')
+        fitted_model = MLPRegressor(**params, **extra_params).fit(X,y)
+
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            # selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X, y)
+            hfig.savefig("MLPClassifier_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X, y)
+            hfig.savefig("MLPClassifier_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X, y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['MLPClassifier']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)    
+        if data['verbose'] == 'on':
+            print('')
+            print("MLPClassifier goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:            
+    
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X.columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X.columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table
+        
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X, y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['MLPRegressor']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)
+    
+        if data['verbose'] == 'on':
+            print('')
+            print("MLPRegressor goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
+    
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
+    
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("MLPRegressor_predictions.png", dpi=300)
+    
+    # Print the run time
+    fit_time = time.time() - start_time
+    print('Done')
+    print(f"Time elapsed: {fit_time:.2f} sec")
+    print('')
+
+    # Restore warnings to normal
+    warnings.filterwarnings("default")
+
+    return fitted_model, model_outputs
+
 def mlp_objective(trial, X, y, **kwargs):
     '''
     Objective function used by optuna 
@@ -12581,21 +12983,6 @@ def mlp_objective(trial, X, y, **kwargs):
     early_stopping = trial.suggest_categorical("early_stopping", kwargs['early_stopping'])
 
     # 3. Solver-specific knobs
-    '''
-    if solver == "sgd":
-        batch_size = trial.suggest_int("batch_size", *kwargs['batch_size'], log=True)
-        momentum = trial.suggest_float("momentum", *kwargs['momentum'])
-        nesterov = trial.suggest_categorical("nesterovs_momentum", kwargs['nesterov'])
-        power_t = trial.suggest_float("power_t", *kwargs['power_t'])
-        max_fun = trial.suggest_int("max_fun", *kwargs['max_fun'])
-    elif solver == "adam":
-        beta_1 = trial.suggest_float("beta_1", *kwargs['beta_1'])
-        beta_2 = trial.suggest_float("beta_2", *kwargs['beta_2'])
-        epsilon = trial.suggest_loguniform("epsilon", *kwargs['epsilon'])
-        max_fun = trial.suggest_int("max_fun", *kwargs['max_fun'])
-    else:  # lbfgs
-        max_fun = trial.suggest_int("max_fun", *kwargs['max_fun'])
-    '''
     batch_size = trial.suggest_int("batch_size", *kwargs['batch_size'], log=True)
     momentum = trial.suggest_float("momentum", *kwargs['momentum'])
     nesterov = trial.suggest_categorical("nesterovs_momentum", kwargs['nesterov'])
@@ -12620,7 +13007,6 @@ def mlp_objective(trial, X, y, **kwargs):
         'beta_1': (beta_1 if solver == "adam" else 0.9),
         'beta_2': (beta_2 if solver == "adam" else 0.999),
         'epsilon': (epsilon if solver == "adam" else 1e-8),
-        # 'max_fun': (max_fun if solver == "lbfgs" else None),
         'tol': kwargs['tol'],
         'max_iter': kwargs['max_iter'],
         'max_fun': max_fun
@@ -12700,6 +13086,11 @@ def mlp_objective(trial, X, y, **kwargs):
     importances = getattr(model_step, "feature_importances_", None)
     if importances is not None:
         trial.set_user_attr("feature_importances", importances.tolist())
+
+    trial.set_user_attr("params", params)
+    # trial.set_user_attr("hidden_layer_sizes", hidden_layer_sizes)
+    # trial.set_user_attr("nesterovs_momentum", nesterov)
+    # trial.set_user_attr("layer_units", layer_units)
 
     trial.set_user_attr("model", pipeline)
     trial.set_user_attr("score", score_mean)
@@ -12994,8 +13385,16 @@ def mlp_auto(X, y, **kwargs):
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
     model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
     model_outputs['best_trial'] = study.best_trial
-        
+
+    # get best_params from the optuna study
+    '''
     best_params = study.best_params
+    # add calculated optuna params to best_params
+    best_params['hidden_layer_sizes'] = study.best_trial.user_attrs.get('hidden_layer_sizes')
+    best_params['nesterovs_momentum'] = study.best_trial.user_attrs.get('nesterovs_momentum')
+    '''
+    best_params = study.best_trial.user_attrs.get('params')
+
     model_outputs['best_params'] = best_params
     model_outputs['extra_params'] = extra_params
 
