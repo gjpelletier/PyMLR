@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.101"
+__version__ = "1.2.102"
 
 def check_X_y(X,y):
 
@@ -611,8 +611,8 @@ def show_optuna(study):
     ax.set_facecolor('gainsboro')  # Set the background color to gray
     ax.grid(color='white', linestyle='-', linewidth=0.5, zorder=0)  # White grid lines
     ax.set_title("Optimization History")
-    ax.plot(trial_values, marker="o", linestyle='none', label='Trial Value')
-    ax.plot(best_values, label='Best Value')
+    ax.plot(trial_values, marker="o", linestyle='none', label='Trial Value', zorder=1)
+    ax.plot(best_values, label='Best Value', zorder=2)
     plt.xlabel('Trial Number')
     plt.ylabel('Score')
     plt.legend()
