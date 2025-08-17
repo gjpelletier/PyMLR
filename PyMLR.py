@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.99"
+__version__ = "1.2.100"
 
 def check_X_y(X,y):
 
@@ -609,7 +609,7 @@ def show_optuna(study):
     for spine in ax.spines.values():
         spine.set_visible(False)
     ax.set_facecolor('gainsboro')  # Set the background color to gray
-    ax.grid(color='white', linestyle='-', linewidth=0.5)  # White grid lines
+    ax.grid(color='white', linestyle='-', linewidth=0.5, zorder=0)  # White grid lines
     ax.set_title("Optimization History")
     ax.plot(trial_values, marker="o", linestyle='none', label='Trial Value')
     ax.plot(best_values, label='Best Value')
@@ -634,7 +634,7 @@ def show_optuna(study):
     for spine in axs.spines.values():
         spine.set_visible(False)
     axs.set_facecolor('gainsboro')  # Set the background color to gray
-    axs.grid(color='white', linestyle='-', linewidth=0.5)  # White grid lines
+    axs.grid(color='white', linestyle='-', linewidth=0.5, zorder=0)  # White grid lines
     plt.barh(categories, values, color='skyblue')
     for index, value in enumerate(values):
         plt.text(value + .001, index, (str(round(value,2)) if value > 0.01 else '<0.01'), va='center', fontsize=10)  # Adjust position with `+2`
@@ -12691,7 +12691,7 @@ def mlp(X, y, **kwargs):
         'threshold_skew_neg': -0.5,        
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
-        'verbose': False,
+        'verbose': 'on',
         'gpu': True,                        # Autodetect to use gpu if present
 
         # numerical core hyperparameters
@@ -12800,12 +12800,6 @@ def mlp(X, y, **kwargs):
     # Suppress warnings
     warnings.filterwarnings('ignore')
 
-    # Calculate hidden_layer_sizes
-    layer_units = []
-    for i in range(data['n_layers']):
-        layer_units.append(data['units'][i])
-    hidden_layer_sizes = tuple(layer_units)
-    
     params = {
         'hidden_layer_sizes': data['hidden_layer_sizes'],
         'activation': data['activation'],
@@ -12816,7 +12810,7 @@ def mlp(X, y, **kwargs):
         'early_stopping': data['early_stopping'],
         'batch_size': data['batch_size'],
         'momentum': data['momentum'],
-        'nesterovs_momentum': data['nesterov'],
+        'nesterovs_momentum': data['nesterovs_momentum'],
         'power_t': data['power_t'],
         'beta_1': data['beta_1'],
         'beta_2': data['beta_2'],
@@ -12828,7 +12822,7 @@ def mlp(X, y, **kwargs):
 
     extra_params = {
         'verbose': False,                 
-        'random_state': kwargs['random_state'],                
+        'random_state': data['random_state'],                
     }
 
     if data['classify']:
