@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.103"
+__version__ = "1.2.104"
 
 def check_X_y(X,y):
 
@@ -620,7 +620,7 @@ def show_optuna(study, random_state=42):
     plt.legend()
     plt.savefig('optuna_optimization_history.png', 
                 dpi=300, bbox_inches='tight') 
-    plt.show() 
+    plt.show();
     
     # Generate hyperparameter importance plot
     # # Note: get_param_importances without evaluator argument are not deterministic and differ at each call
@@ -647,7 +647,7 @@ def show_optuna(study, random_state=42):
     plt.tight_layout()
     plt.savefig('optuna_parameter_importance.png', 
                 dpi=300, bbox_inches='tight') 
-    plt.show()
+    plt.show();
 
     # Generate contour plot of the two most important parameters (shows parameter interactions)
     keys = [str(key) for key, value in param_importances.items() if isinstance(value, (int, float))]    
