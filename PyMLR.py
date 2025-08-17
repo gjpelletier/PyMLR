@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.102"
+__version__ = "1.2.103"
 
 def check_X_y(X,y):
 
@@ -568,13 +568,14 @@ def show_dtypes(df):
 
     return result.T
  
-def show_optuna(study):
+def show_optuna(study, random_state=42):
 
     '''
     Show the results of the optimized optuna study
 
     input:
     study= optimized optuna study
+    random_state= optional seed for reproducibility of param_importances
 
     output:
     display and save plots of optuna study results
@@ -605,14 +606,15 @@ def show_optuna(study):
     trials = study.trials
     trial_values = [trial.value for trial in trials]
     best_values = [max(trial_values[: i + 1]) for i in range(len(trial_values))]  # type: ignore
+    plt.figure()
     fig, ax = plt.subplots(figsize=(7, 5))
     for spine in ax.spines.values():
         spine.set_visible(False)
     ax.set_facecolor('gainsboro')  # Set the background color to gray
-    ax.grid(color='white', linestyle='-', linewidth=0.5, zorder=0)  # White grid lines
     ax.set_title("Optimization History")
-    ax.plot(trial_values, marker="o", linestyle='none', label='Trial Value', zorder=1)
-    ax.plot(best_values, label='Best Value', zorder=2)
+    ax.plot(best_values, label='Best Value', color='tab:red', zorder=3)
+    ax.plot(trial_values, marker="o", linestyle='none', label='Trial Value', color='tab:blue', zorder=2)
+    ax.grid(color='white', linestyle='-', linewidth=0.5, zorder=0)  # White grid lines
     plt.xlabel('Trial Number')
     plt.ylabel('Score')
     plt.legend()
@@ -624,18 +626,19 @@ def show_optuna(study):
     # # Note: get_param_importances without evaluator argument are not deterministic and differ at each call
     # param_importances = get_param_importances(study)
     # # Note: evaluator from FanovaImportanceEvaluator with specifed seed provides reproducible get_param_importances
-    evaluator = FanovaImportanceEvaluator(seed=42)
+    evaluator = FanovaImportanceEvaluator(seed=random_state)
     param_importances = optuna.importance.get_param_importances(study, evaluator=evaluator)
     data = param_importances
     data = dict(sorted(data.items(), key=lambda item: item[1], reverse=False))
     categories = list(data.keys())
     values = list(data.values())
+    plt.figure()
     fig, axs = plt.subplots(figsize=(7, 5))
     for spine in axs.spines.values():
         spine.set_visible(False)
     axs.set_facecolor('gainsboro')  # Set the background color to gray
+    plt.barh(categories, values, color='tab:blue', zorder=3)
     axs.grid(color='white', linestyle='-', linewidth=0.5, zorder=0)  # White grid lines
-    plt.barh(categories, values)
     for index, value in enumerate(values):
         plt.text(value + .001, index, (str(round(value,2)) if value > 0.01 else '<0.01'), va='center', fontsize=10)  # Adjust position with `+2`
     plt.xlabel('Relative Importance')
