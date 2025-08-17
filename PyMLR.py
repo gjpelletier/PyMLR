@@ -12820,7 +12820,7 @@ def mlp(X, y, **kwargs):
         'power_t': data['power_t'],
         'beta_1': data['beta_1'],
         'beta_2': data['beta_2'],
-        'epsilon': data['epsilon']'],
+        'epsilon': data['epsilon'],
         'tol': data['tol'],
         'max_iter': data['max_iter'],
         'max_fun': data['max_fun']
