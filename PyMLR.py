@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.100"
+__version__ = "1.2.101"
 
 def check_X_y(X,y):
 
@@ -635,7 +635,7 @@ def show_optuna(study):
         spine.set_visible(False)
     axs.set_facecolor('gainsboro')  # Set the background color to gray
     axs.grid(color='white', linestyle='-', linewidth=0.5, zorder=0)  # White grid lines
-    plt.barh(categories, values, color='skyblue')
+    plt.barh(categories, values)
     for index, value in enumerate(values):
         plt.text(value + .001, index, (str(round(value,2)) if value > 0.01 else '<0.01'), va='center', fontsize=10)  # Adjust position with `+2`
     plt.xlabel('Relative Importance')
