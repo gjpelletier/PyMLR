@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.104"
+__version__ = "1.2.105"
 
 def check_X_y(X,y):
 
@@ -606,7 +606,7 @@ def show_optuna(study, random_state=42):
     trials = study.trials
     trial_values = [trial.value for trial in trials]
     best_values = [max(trial_values[: i + 1]) for i in range(len(trial_values))]  # type: ignore
-    plt.figure()
+    plt.figure();
     fig, ax = plt.subplots(figsize=(7, 5))
     for spine in ax.spines.values():
         spine.set_visible(False)
@@ -632,7 +632,7 @@ def show_optuna(study, random_state=42):
     data = dict(sorted(data.items(), key=lambda item: item[1], reverse=False))
     categories = list(data.keys())
     values = list(data.values())
-    plt.figure()
+    plt.figure();
     fig, axs = plt.subplots(figsize=(7, 5))
     for spine in axs.spines.values():
         spine.set_visible(False)
