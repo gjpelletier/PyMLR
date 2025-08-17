@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.105"
+__version__ = "1.2.106"
 
 def check_X_y(X,y):
 
@@ -593,6 +593,7 @@ def show_optuna(study, random_state=42):
     import warnings
     warnings.filterwarnings('ignore')
 
+    # Show the best parameters
     print("Best parameters:")
     print('')
     for key, value in study.best_params.items():
@@ -606,21 +607,23 @@ def show_optuna(study, random_state=42):
     trials = study.trials
     trial_values = [trial.value for trial in trials]
     best_values = [max(trial_values[: i + 1]) for i in range(len(trial_values))]  # type: ignore
-    plt.figure();
-    fig, ax = plt.subplots(figsize=(7, 5))
+    # fig, ax = plt.subplots(figsize=(7, 5))
+    plt.close('all')  # Clear any previous figures
+    fig = plt.figure(figsize=(7, 5))
+    ax = fig.add_subplot(1, 1, 1)    
     for spine in ax.spines.values():
         spine.set_visible(False)
-    ax.set_facecolor('gainsboro')  # Set the background color to gray
+    ax.set_facecolor('gainsboro')
     ax.set_title("Optimization History")
     ax.plot(best_values, label='Best Value', color='tab:red', zorder=3)
     ax.plot(trial_values, marker="o", linestyle='none', label='Trial Value', color='tab:blue', zorder=2)
-    ax.grid(color='white', linestyle='-', linewidth=0.5, zorder=0)  # White grid lines
-    plt.xlabel('Trial Number')
-    plt.ylabel('Score')
-    plt.legend()
-    plt.savefig('optuna_optimization_history.png', 
-                dpi=300, bbox_inches='tight') 
-    plt.show();
+    ax.grid(color='white', linestyle='-', linewidth=0.5, zorder=0)
+    ax.set_xlabel('Trial Number')
+    ax.set_ylabel('Score')
+    ax.legend()    
+    plt.savefig('optuna_optimization_history.png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close(fig)
     
     # Generate hyperparameter importance plot
     # # Note: get_param_importances without evaluator argument are not deterministic and differ at each call
@@ -632,13 +635,16 @@ def show_optuna(study, random_state=42):
     data = dict(sorted(data.items(), key=lambda item: item[1], reverse=False))
     categories = list(data.keys())
     values = list(data.values())
-    plt.figure();
-    fig, axs = plt.subplots(figsize=(7, 5))
-    for spine in axs.spines.values():
+    # fig = plt.figure();
+    # fig, axs = plt.subplots(figsize=(7, 5))
+    plt.close('all')  # Clear any previous figures
+    fig = plt.figure(figsize=(7, 5))
+    ax = fig.add_subplot(1, 1, 1)
+    for spine in ax.spines.values():
         spine.set_visible(False)
-    axs.set_facecolor('gainsboro')  # Set the background color to gray
+    ax.set_facecolor('gainsboro')  # Set the background color to gray
     plt.barh(categories, values, color='tab:blue', zorder=3)
-    axs.grid(color='white', linestyle='-', linewidth=0.5, zorder=0)  # White grid lines
+    ax.grid(color='white', linestyle='-', linewidth=0.5, zorder=0)  # White grid lines
     for index, value in enumerate(values):
         plt.text(value + .001, index, (str(round(value,2)) if value > 0.01 else '<0.01'), va='center', fontsize=10)  # Adjust position with `+2`
     plt.xlabel('Relative Importance')
@@ -647,8 +653,9 @@ def show_optuna(study, random_state=42):
     plt.tight_layout()
     plt.savefig('optuna_parameter_importance.png', 
                 dpi=300, bbox_inches='tight') 
-    plt.show();
-
+    plt.show()
+    plt.close(fig)
+    
     # Generate contour plot of the two most important parameters (shows parameter interactions)
     keys = [str(key) for key, value in param_importances.items() if isinstance(value, (int, float))]    
     if len(keys) >= 2:
