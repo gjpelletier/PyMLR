@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.108"
+__version__ = "1.2.109"
 
 def check_X_y(X,y):
 
@@ -8773,7 +8773,7 @@ def forest(X, y, **kwargs):
         'gpu': True,                        # Autodetect to use gpu if present
         'n_splits': 5,                      # number of splits for KFold CV
 
-        # params that are optimized by optuna
+        # params 
         'n_estimators': 100,                # number of trees in the forest
         'max_depth': None,                  # max depth of a tree
         'min_samples_split': 2,             # min samples to split internal node
@@ -13531,6 +13531,384 @@ def mlp_auto(X, y, **kwargs):
     print(f"Best-fit score of CV test data: {study.best_value:.6f}")
     print('')
 
+    # Print the run time
+    fit_time = time.time() - start_time
+    print('Done')
+    print(f"Time elapsed: {fit_time:.2f} sec")
+    print('')
+
+    # Restore warnings to normal
+    warnings.filterwarnings("default")
+
+    return fitted_model, model_outputs
+
+def tree(X, y, **kwargs):
+
+    """
+    Regression with sklearn DecisionTreeRegressor
+    or
+    Classification with sklearn DecisionTreeClassifier
+
+    by
+    Greg Pelletier
+    gjpelletier@gmail.com
+    15-Aug-2025
+
+    REQUIRED INPUTS (X and y should have same number of rows and 
+    only contain real numbers)
+    X = dataframe of the candidate independent variables 
+        (as many columns of data as needed)
+    y = dataframe of the dependent variable (one column of data)
+
+    OPTIONAL KEYWORD ARGUMENTS
+    **kwargs (optional keyword arguments):
+        n_trials= 50,               # number of optuna trials
+        classify= False,            # True to use RandomForestClassifier
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
+        verbose= 'on',                    # 'on' to display all 
+        gpu= True,                        # Autodetect to use gpu if present
+        n_splits= 5,                      # number of splits for KFold CV
+
+        # params 
+        'criterion': 'squared_error', # default if classify=False
+        'criterion': 'gini',          # default if classify=True
+        'max_depth': None,            # max depth of a tree
+        'min_samples_split': 2,       # min samples to split internal node
+        'min_samples_leaf': 1,        # min samples to be at a leaf node
+        'max_features': None,         # number of features to consider 
+                                      # when looking for the best split
+        'splitter': "best",           # strategy to split at each node
+        'ccp_alpha': 0.0,             # parameter for 
+                                      # Minimum Cost-Complexity Pruning
+        'max_leaf_nodes': None,       # max number of leaf nodes
+
+        # extra_params that are optional user-specified
+        'random_state': 42,           # random seed for reproducibility
+
+        preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 12)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
+
+    RETURNS
+        fitted_model, model_outputs
+            model_objects is the fitted model object
+            model_outputs is a dictionary of the following outputs: 
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
+                - 'y_pred': Predicted y values
+                - 'residuals': Residuals (y-y_pred) for each of the four methods
+                - 'stats': Regression statistics for each model
+
+    NOTE
+    Do any necessary/optional cleaning of the data before 
+    passing the data to this function. X and y should have the same number of rows
+    and contain only real numbers with no missing values. X can contain as many
+    columns as needed, but y should only be one column. X should have unique
+    column names for for each column
+
+    EXAMPLE 
+    model, outputs = tree(X, y)
+
+    """
+
+    from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
+    import time
+    import pandas as pd
+    import numpy as np
+    from sklearn.ensemble import GradientBoostingRegressor
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.model_selection import cross_val_score, train_test_split
+    from sklearn.metrics import mean_squared_error
+    from sklearn.base import clone
+    from sklearn.metrics import PredictionErrorDisplay
+    from sklearn.model_selection import train_test_split
+    import matplotlib.pyplot as plt
+    import warnings
+    import sys
+    import statsmodels.api as sm
+    from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier 
+
+    # Define default values of input data arguments
+    defaults = {
+        'n_trials': 50,                     # number of optuna trials
+        'classify': False,            # Use RandomForestClassifier if True
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
+        'scale': 'standard', 
+        'unskew_pos': False, 
+        'threshold_skew_pos': 0.5,
+        'unskew_neg': False, 
+        'threshold_skew_neg': -0.5,        
+        # ------------------------
+        'selected_features': None,    # pre-optimized selected features
+        'verbose': 'on',
+        'gpu': True,                  # Autodetect to use gpu if present
+        'n_splits': 5,                # number of splits for KFold CV
+
+        # params 
+        'criterion': 'squared_error', # default if classify=False
+        'max_depth': None,            # max depth of a tree
+        'min_samples_split': 2,       # min samples to split internal node
+        'min_samples_leaf': 1,        # min samples to be at a leaf node
+        'max_features': None,         # number of features to consider 
+                                      # when looking for the best split
+        'splitter': "best",           # strategy to split at each node
+        'ccp_alpha': 0.0,             # parameter for 
+                                      # Minimum Cost-Complexity Pruning
+        'max_leaf_nodes': None,       # max number of leaf nodes
+
+        # extra_params that are optional user-specified
+        'random_state': 42,           # random seed for reproducibility
+
+    }
+
+    # change default criterion to 'gini' if input of classify=True and no input of criterion
+    if 'classify' in kwargs and kwargs['classify'] and not 'criterion' in kwargs:
+        defaults['criterion'] = 'gini'
+        
+    # Update input data argumements with any provided keyword arguments in kwargs
+    data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
+
+    # check for valid input of criterion
+    if data['classify']:
+        valid_strings = {"gini", "entropy", "log_loss"}
+        if not data.get("criterion") in valid_strings:
+            invalid = data['criterion']
+            data['criterion'] = 'gini'
+            print(f"Warning: Invalid input of criterion {invalid} was changed to {data['criterion']}")
+    else:
+        valid_strings = {"squared_error", "absolute_error", "friedman_mse", "poisson"}
+        if not data.get("criterion") in valid_strings:
+            invalid = data['criterion']
+            data['criterion'] = 'squared_error'
+            print(f"Warning: Invalid input of criterion {invalid} was changed to {data['criterion']}")
+            
+    if data['gpu']:
+        use_gpu = detect_gpu()
+        if use_gpu:
+            data['device'] = 'gpu'
+        else:
+            data['device'] = 'cpu'
+    else:
+        data['device'] = 'cpu'
+
+    # copy X and y to prevent altering original
+    X = X.copy()
+    y = y.copy()
+    
+    # QC check X and y
+    X, y = check_X_y(X,y)
+
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
+    # Set start time for calculating run time
+    start_time = time.time()
+
+    # check if X contains dummy variables
+    X_has_dummies = detect_dummy_variables(X)
+
+    # Initialize output dictionaries
+    model_objects = {}
+    model_outputs = {}
+
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
+                'threshold_cat': data['threshold_cat'],
+                'scale': data['scale'], 
+                'unskew_pos': data['unskew_pos'], 
+                'threshold_skew_pos': data['threshold_skew_pos'],
+                'unskew_neg': data['unskew_neg'], 
+                'threshold_skew_neg': data['threshold_skew_neg']        
+            }
+            data['preprocess_result'] = preprocess_train(X, **kwargs_pre)
+            X = data['preprocess_result']['df_processed']
+
+    if data['selected_features'] == None:
+        data['selected_features'] = X.columns.to_list()
+    else:
+        X = X[data['selected_features']]
+
+    # save preprocess outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['selected_features'] = data['selected_features']
+    model_outputs['X_processed'] = X.copy()
+
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
+
+    params = {
+        'max_depth': data['max_depth'],                 
+        'min_samples_split': data['min_samples_split'],            
+        'min_samples_leaf': data['min_samples_leaf'],             
+        'max_features': data['max_features'],             
+        'splitter': data['splitter'],             
+        'ccp_alpha': data['ccp_alpha'],                 
+        'max_leaf_nodes': data['max_leaf_nodes'],           
+    }
+
+    extra_params = {
+        'random_state': data['random_state'],                
+    }
+
+    if data['classify']:
+        print('Fitting DecisionTreeClassifier model, please wait ...')
+        fitted_model = DecisionTreeClassifier(**params, **extra_params).fit(X,y)
+    else:
+        print('Fitting DecisionTreeRegressor model, please wait ...')
+        fitted_model = DecisionTreeRegressor(**params, **extra_params).fit(X,y)
+
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            # selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X, y)
+            hfig.savefig("DecisionTreeClassifier_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X, y)
+            hfig.savefig("DecisionTreeClassifier_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X, y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['DecisionTreeClassifier']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)    
+        if data['verbose'] == 'on':
+            print('')
+            print("DecisionTreeClassifier goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:            
+    
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X.columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X.columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table
+        
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X, y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['DecisionTreeRegressor']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)
+    
+        if data['verbose'] == 'on':
+            print('')
+            print("DecisionTreeRegressor goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
+    
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
+    
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("DecisionTreeRegressor_predictions.png", dpi=300)
+    
     # Print the run time
     fit_time = time.time() - start_time
     print('Done')
