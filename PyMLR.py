@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.111"
+__version__ = "1.2.112"
 
 def check_X_y(X,y):
 
@@ -270,6 +270,16 @@ def preprocess_train(df, **kwargs):
 
     # identify boolean columns and covert to int
     bool_cols = df.select_dtypes(include='bool').columns.tolist()
+
+    # Identify columns that are not boolean but contain only 0 and 1
+    columns_with_0_and_1 = [
+        col for col in df.columns 
+        if not pd.api.types.is_bool_dtype(df[col]) and set(df[col].unique()) == {0, 1}
+    ]
+
+    # combine columns_with_0_and_1 into bool_cols so they will be treated the same 
+    bool_cols = bool_cols + columns_with_0_and_1
+
     df[bool_cols] = df[bool_cols].astype(int)
 
     # identify numeric columns
