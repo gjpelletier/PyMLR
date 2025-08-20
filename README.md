@@ -19,33 +19,33 @@ PyMLR is a Python module designed to simplify the use of various machine learnin
 
 The PyMLR module includes the following main Python functions to facilitate the use of sklearn, XGBoost, CatBoost, LightGBM, statsmodels, shap, and optuna solvers for regression and classification: 
  
- - **logistic_auto** - LogisticRegression with automatic cross-validated optimization of the hyperparameters
- - **logistic** - LogisticRegression with user-specified hyperparameters
+ - **logistic_auto** - sklearn LogisticRegression with automatic cross-validated optimization of the hyperparameters
+ - **logistic** - sklearn LogisticRegression with user-specified hyperparameters
  - **xgb_auto** - XGBoost XGBRegressor (default) or XGBClassifier (if optional keyword argument classify=True) with automatic cross-validated optimization of the hyperparameters
  - **xgb** - XGBoost XGBRegressor (default) or XGBClassifier (if optional kwarg classify=True) with user-specified hyperparameters
- - **svr_auto** - SVR (default) or SVC (if optional keyword argument classify=True)  with automatic cross-validated optimization of the hyperparameters
- - **svr** - SVR (default) or SVC (if optional keyword argument classify=True) with user-specified hyperparameters
- - **knn_auto** - KNeighborsRegressor (default) or KNeighborsClassifier (if optional keyword argument classify=True) with automatic cross-validated optimization of the hyperparameters
- - **knn** - KNeighborsRegressor (default) or KNeighborsClassifier (if optional keyword argument classify=True) with user-specified hyperparameters
- - **forest_auto** - RandomForestRegressor (default) or RandomForestClassifier (if optional keyword argument classify=True) with automatic cross-validated optimization of the hyperparameters
- - **forest** - RandomForestRegressor (default) or RandomForestClassifier (if optional keyword argument classify=True) with user-specified hyperparameters
- - **tree_auto** - DecisionTreeRegressor (default) or DecisionTreeClassifier (if optional keyword argument classify=True) with automatic cross-validated optimization of the hyperparameters
- - **tree** - DecisionTreeRegressor (default) or DecisionTreeClassifier (if optional keyword argument classify=True) with user-specified hyperparameters
- - **ada_auto** - AdaBoostRegressor (default) or AdaBoostClassifier (if optional keyword argument classify=True) with automatic cross-validated optimization of the hyperparameters
- - **ada** - AdaBoostRegressor (default) or AdaBoostClassifier (if optional keyword argument classify=True) with user-specified hyperparameters
- - **mlp_auto** - MLPRegressor (default) or MLPClassifier (if optional keyword argument classify=True) with automatic cross-validated optimization of the hyperparameters
- - **mlp** - MLPRegressor (default) or MLPClassifier (if optional keyword argument classify=True) with user-specified hyperparameters
+ - **svr_auto** - sklearn SVR (default) or SVC (if optional keyword argument classify=True)  with automatic cross-validated optimization of the hyperparameters
+ - **svr** - sklearn SVR (default) or SVC (if optional keyword argument classify=True) with user-specified hyperparameters
+ - **knn_auto** - sklearn KNeighborsRegressor (default) or KNeighborsClassifier (if optional keyword argument classify=True) with automatic cross-validated optimization of the hyperparameters
+ - **knn** - sklearn KNeighborsRegressor (default) or KNeighborsClassifier (if optional keyword argument classify=True) with user-specified hyperparameters
+ - **forest_auto** - sklearn RandomForestRegressor (default) or RandomForestClassifier (if optional keyword argument classify=True) with automatic cross-validated optimization of the hyperparameters
+ - **forest** - sklearn RandomForestRegressor (default) or RandomForestClassifier (if optional keyword argument classify=True) with user-specified hyperparameters
+ - **tree_auto** - sklearn DecisionTreeRegressor (default) or DecisionTreeClassifier (if optional keyword argument classify=True) with automatic cross-validated optimization of the hyperparameters
+ - **tree** - sklearn DecisionTreeRegressor (default) or DecisionTreeClassifier (if optional keyword argument classify=True) with user-specified hyperparameters
+ - **ada_auto** - sklearn AdaBoostRegressor (default) or AdaBoostClassifier (if optional keyword argument classify=True) with automatic cross-validated optimization of the hyperparameters
+ - **ada** - sklearn AdaBoostRegressor (default) or AdaBoostClassifier (if optional keyword argument classify=True) with user-specified hyperparameters
+ - **mlp_auto** - sklearn MLPRegressor (default) or MLPClassifier (if optional keyword argument classify=True) with automatic cross-validated optimization of the hyperparameters
+ - **mlp** - sklearn MLPRegressor (default) or MLPClassifier (if optional keyword argument classify=True) with user-specified hyperparameters
  - **catboost_auto** - CatBoostRegressor with automatic cross-validated optimization of the hyperparameters
  - **catboost** - CatBoostRegressor with user-specified hyperparameters
- - **gbr_auto** - GradientBoostingRegressor with automatic cross-validated optimization of the hyperparameters
- - **gbr** - GradientBoostingRegressor with user-specified hyperparameters
- - **lgbm** - LGBMRegressor with user-specified hyperparameters
- - **stacking** - StackingRegressor
+ - **gbr_auto** - sklearn GradientBoostingRegressor with automatic cross-validated optimization of the hyperparameters
+ - **gbr** - sklearn GradientBoostingRegressor with user-specified hyperparameters
+ - **lgbm** - LightGBM LGBMRegressor with user-specified hyperparameters
+ - **stacking** - sklearn StackingRegressor
  - **linear_auto** - sklearn LinearRegression with optimization of selected features by optuna to minimize MSE
  - **linear** - sklearn LinearRegression using all features to minimize MSE
- - **lasso** - LassoCV, LassoLarsCV, and LassoLarsIC using AIC/BIC
- - **ridge** - RidgeCV and Ridge using VIF
- - **elastic** - ElasticNetCV
+ - **lasso** - sklearn LassoCV, LassoLarsCV, and LassoLarsIC using AIC/BIC
+ - **ridge** - sklearn RidgeCV and Ridge using VIF
+ - **elastic** - sklearn ElasticNetCV
  - **stepwise** - Stepwise statsmodels linear regression to minimize MSE, AIC, or BIC
  - **model_agnostic** - Model-agnostic analysis (e.g. Shapley Additive Explantions (SHAP), Beeswarm and Bar plots, PDB-ICE plots, Permutation Importance plots)
  - **show_optuna** - Display the results of the hyperparameter optimization using optuna
@@ -197,6 +197,7 @@ Ridge regression reduces the Variance Inflation Factors of the features by addin
 Cross-validated ridge regression (e.g. using RidgeCV) does not always result in acceptable multicollinearity as indicated by VIF. While cross-validation helps in fine-tuning the regression coefficients, it does not always result in VIF values close to 1. Ideally the VIF of all features should be as close as possibe to VIF=1. This can be achieved using a trial and error method of evaluating the VIF values of the model features over a range of alpha values. 
 
 The **ridge** function in PyMLR includes an algorithm (RidgeVIF) to find the model with the optimum value of alpha that will result in VIF values as close as possible to a user-specified target VIF (default target VIF=1.0). This assures that there will be acceptable multicollinearity for all features. The trade-off is that this algorithm reduces the model coefficients such that the target VIF will be achieved. The user has the option to specify any target for VIF to explore the balance between VIF and coefficient values.  
+
 
 
 
