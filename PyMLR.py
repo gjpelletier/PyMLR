@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.113"
+__version__ = "1.2.114"
 
 def check_X_y(X,y):
 
@@ -5124,7 +5124,7 @@ def svr_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
-    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
     best_params = study.best_params
@@ -6315,7 +6315,7 @@ def gbr_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
-    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
     best_params = study.best_params
@@ -7357,7 +7357,7 @@ def xgb_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
-    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
     best_params = study.best_params
@@ -8524,7 +8524,7 @@ def catboost_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
-    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
 
     best_params = study.best_params
@@ -9467,7 +9467,7 @@ def forest_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
-    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
     best_params = study.best_params
@@ -10429,7 +10429,7 @@ def knn_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
-    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
     best_params = study.best_params
@@ -11114,8 +11114,8 @@ def logistic_objective(trial, X, y, **kwargs):
 
     # Stratified cross-validation
     cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
-    scores = cross_val_score(pipeline, X, y, cv=cv, scoring="accuracy")
-    accuracy = scores.mean()
+    scores = cross_val_score(pipeline, X, y, cv=cv, scoring="f1_weighted")
+    score_mean = scores.mean()
 
     # Optional full pipeline fit to log selected features
     pipeline.fit(X, y)
@@ -11128,11 +11128,11 @@ def logistic_objective(trial, X, y, **kwargs):
         selected_features = kwargs["feature_names"]
 
     # Save outputs to trial
-    trial.set_user_attr("accuracy", accuracy)
+    trial.set_user_attr("score_mean", score_mean)
     trial.set_user_attr("selected_features", selected_features)
     trial.set_user_attr("model", pipeline)
 
-    return accuracy
+    return score_mean
   
 def logistic_auto(X, y, **kwargs):
 
@@ -11398,7 +11398,7 @@ def logistic_auto(X, y, **kwargs):
     # user attributes for optuna
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
-    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
 
     print('Fitting LogisticRegression model with best parameters, please wait ...')
 
@@ -12433,7 +12433,7 @@ def linear_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
-    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
     best_params = study.best_params
@@ -13406,7 +13406,7 @@ def mlp_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
-    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
 
     # get best_params from the optuna study
@@ -14325,7 +14325,7 @@ def tree_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
-    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
     best_params = study.best_params
@@ -14956,7 +14956,7 @@ def ada_objective(trial, X, y, **kwargs):
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="accuracy",
+            scoring="f1_weighted",
             n_jobs=kwargs['n_jobs']
         )
     else:
@@ -15258,7 +15258,7 @@ def ada_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
-    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
     best_params = study.best_trial.user_attrs.get('params')
@@ -15895,7 +15895,7 @@ def xgbmlp_auto(X, y, **kwargs):
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
     model_outputs['selected_features_with_importances'] = study.best_trial.user_attrs.get(
         'selected_features_with_importances')
-    model_outputs['accuracy'] = study.best_trial.user_attrs.get('accuracy')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
 
     # get best_params from the optuna study
