@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.116"
+__version__ = "1.2.117"
 
 def check_X_y(X,y):
 
@@ -16120,7 +16120,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     # Stage 2: Fit XGBoost for classification or regression using selected_features
     # print(f'Trial {trial.number+1} stage 2 ...')
     if kwargs['classify']:
-        xgb_model_stage2 = XGBClassifier(**mlp_params)
+        xgb_model_stage2 = XGBClassifier(**xgb_params)
         # Cross-validated scoring
         cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
         scores = cross_val_score(
@@ -16129,7 +16129,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
             scoring="f1_weighted"
         )
     else:
-        xgb_model_stage2 = XGBRegressor(**mlp_params)
+        xgb_model_stage2 = XGBRegressor(**xgb_params)
         # Cross-validated scoring
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
@@ -16444,7 +16444,7 @@ def xgbrfe_auto(X, y, **kwargs):
     model_outputs['best_trial'] = study.best_trial
 
     # get best_params from the optuna study
-    best_params = study.best_trial.user_attrs.get('mlp_params')
+    best_params = study.best_trial.user_attrs.get('xgb_params')
 
     model_outputs['best_params'] = best_params
 
