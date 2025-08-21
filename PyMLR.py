@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.114"
+__version__ = "1.2.115"
 
 def check_X_y(X,y):
 
@@ -15743,7 +15743,7 @@ def xgbmlp_auto(X, y, **kwargs):
         'random_state': 42,                 # random seed for reproducibility
 
         # xgb params that are optimized by optuna
-        'feature_threshold': [0.01, 0.1],   # threshold for feature_importance
+        'feature_threshold': [0.001, 0.1],   # threshold for feature_importance
         'xgb_learning_rate': [1e-4, 1.0],   # Step size shrinkage (also called eta).
         'max_depth': [3, 12],               # Maximum depth of a tree.
         'min_child_weight': [1, 10],        # Minimum sum of instance weight (hessian) needed in a child.
