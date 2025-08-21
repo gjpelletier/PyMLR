@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.117"
+__version__ = "1.2.118"
 
 def check_X_y(X,y):
 
@@ -16267,7 +16267,6 @@ def xgbrfe_auto(X, y, **kwargs):
     import time
     import pandas as pd
     import numpy as np
-    from sklearn.neural_network import MLPRegressor, MLPClassifier
     from sklearn.preprocessing import StandardScaler
     from sklearn.model_selection import cross_val_score, train_test_split
     from sklearn.metrics import mean_squared_error
@@ -16279,6 +16278,7 @@ def xgbrfe_auto(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     import optuna
+    from xgboost import XGBRegressor, XGBClassifier
 
     # Define default values of input data arguments
     defaults = {
