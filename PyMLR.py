@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.115"
+__version__ = "1.2.116"
 
 def check_X_y(X,y):
 
@@ -15591,7 +15591,7 @@ def xgbmlp_auto(X, y, **kwargs):
         'show_trial_progress': True,        # print each trial number and best cv score
 
         # xgb params that are optimized by optuna
-        'feature_threshold': [0.01, 0.1],   # threshold for feature_importance
+        'feature_threshold': [0.001, 0.1],   # threshold for feature_importance
         'xgb_learning_rate': [1e-4, 1.0],       # Step size shrinkage (also called eta).
         'max_depth': [3, 12],               # Max depth of a tree.
         'min_child_weight': [1, 10],        # Min sum of instance weight (hessian) in a child.
@@ -15729,7 +15729,6 @@ def xgbmlp_auto(X, y, **kwargs):
         'unskew_neg': False, 
         'threshold_skew_neg': -0.5,        
         # ------------------------
-        'selected_features': None,           # pre-optimized selected features
         'verbose': 'on',
         'gpu': True,                         # Autodetect to use gpu if present
         'n_splits': 5,                       # number of splits for KFold CV
@@ -15919,11 +15918,11 @@ def xgbmlp_auto(X, y, **kwargs):
         del best_params[key]
     
     if data['classify']:
-        print('Fitting XGBMLPClassifier model with best parameters, please wait ...')    
+        print('Fitting MLPClassifier model with best parameters, please wait ...')    
         fitted_model = MLPClassifier(**best_params).fit(
             X[model_outputs['selected_features']],y)
     else:    
-        print('Fitting XGBMLPRegressor model with best parameters, please wait ...')    
+        print('Fitting MLPRegressor model with best parameters, please wait ...')    
         fitted_model = MLPRegressor(**best_params).fit(
             X[model_outputs['selected_features']],y)
 
@@ -15932,24 +15931,24 @@ def xgbmlp_auto(X, y, **kwargs):
             # confusion matrix
             selected_features = model_outputs['selected_features']
             hfig = plot_confusion_matrix(fitted_model, X[selected_features], y)
-            hfig.savefig("XGBMLPClassifier_confusion_matrix.png", dpi=300)            
+            hfig.savefig("MLPClassifier_confusion_matrix.png", dpi=300)            
             # ROC curve with AUC
             selected_features = model_outputs['selected_features']
             hfig = plot_roc_auc(fitted_model, X[selected_features], y)
-            hfig.savefig("XGBMLPClassifier_ROC_curve.png", dpi=300)            
+            hfig.savefig("MLPClassifier_ROC_curve.png", dpi=300)            
         # Goodness of fit statistics
         metrics = fitness_metrics_logistic(
             fitted_model, 
             X[model_outputs['selected_features']], y, brier=False)
         stats = pd.DataFrame([metrics]).T
         stats.index.name = 'Statistic'
-        stats.columns = ['XGBMLPClassifier']
+        stats.columns = ['MLPClassifier']
         model_outputs['metrics'] = metrics
         model_outputs['stats'] = stats
         model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])    
         if data['verbose'] == 'on':
             print('')
-            print("XGBMLPClassifier goodness of fit to training data in model_outputs['stats']:")
+            print("MLPClassifier goodness of fit to training data in model_outputs['stats']:")
             print('')
             print(model_outputs['stats'].to_markdown(index=True))
             print('')    
@@ -15986,14 +15985,14 @@ def xgbmlp_auto(X, y, **kwargs):
             X[model_outputs['selected_features']], y)
         stats = pd.DataFrame([metrics]).T
         stats.index.name = 'Statistic'
-        stats.columns = ['XGBMLPRegressor']
+        stats.columns = ['MLPRegressor']
         model_outputs['metrics'] = metrics
         model_outputs['stats'] = stats
         model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
     
         if data['verbose'] == 'on':
             print('')
-            print("XGBMLPRegressor goodness of fit to training data in model_outputs['stats']:")
+            print("MLPRegressor goodness of fit to training data in model_outputs['stats']:")
             print('')
             print(model_outputs['stats'].to_markdown(index=True))
             print('')
@@ -16025,7 +16024,7 @@ def xgbmlp_auto(X, y, **kwargs):
                 f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
             plt.tight_layout()
             # plt.show()
-            plt.savefig("XGBMLPRegressor_predictions.png", dpi=300)
+            plt.savefig("MLPRegressor_predictions.png", dpi=300)
 
     # Best score of CV test data
     print('')
@@ -16043,5 +16042,548 @@ def xgbmlp_auto(X, y, **kwargs):
 
     return fitted_model, model_outputs
     
+def xgbrfe_objective(trial, X, y, study, **kwargs):
+    '''
+    Objective function used by optuna 
+    to find the optimum hyper-parameters for XGBoost
+    XGBRegressor or XGBClassifier with Recursive Feature Elimination
+    using a threshold of feature_importance in two stages:
+    Stage 1: XGBoost for feature selection using threshold of feature_importance
+    Stage 2: XGBoost using the selected features from Stage 1 
+    for classification or regression
+    '''
+    import numpy as np
+    import pandas as pd
+    from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
+    from sklearn.pipeline import Pipeline
+    from sklearn.model_selection import cross_val_score, RepeatedKFold, StratifiedKFold
+    from PyMLR import detect_gpu
+    from xgboost import XGBClassifier, XGBRegressor
+
+    if kwargs['show_trial_progress'] and trial.number > 0:
+        print(f'Trial {trial.number} best cv test score so far: {study.best_value:.6f} ...')
     
+    seed = kwargs.get("random_state", 42)
+    rng = np.random.default_rng(seed)
     
+    # XGBoost params
+    xgb_params = {
+        "learning_rate": trial.suggest_float("xgb_learning_rate", *kwargs["xgb_learning_rate"], log=True),
+        "max_depth": trial.suggest_int("max_depth", *kwargs["max_depth"]),
+        "min_child_weight": trial.suggest_int("min_child_weight", *kwargs["min_child_weight"]),
+        "subsample": trial.suggest_float("subsample", *kwargs["subsample"]),
+        "colsample_bytree": trial.suggest_float("colsample_bytree", *kwargs["colsample_bytree"]),
+        "gamma": trial.suggest_float("gamma", *kwargs["gamma"], log=True),
+        "reg_lambda": trial.suggest_float("reg_lambda", *kwargs["reg_lambda"], log=True),
+        "alpha": trial.suggest_float("alpha", *kwargs["alpha"], log=True),
+        "n_estimators": trial.suggest_int("n_estimators", *kwargs["n_estimators"]),
+        'random_state': kwargs['random_state'],                
+        'device': kwargs['device'],                 
+    }
+
+    # Stage 1: Fit XGBoost for feature selection
+    # print(f'Trial {trial.number+1} stage 1 ...')
+    if kwargs['classify']:
+        xgb_model_stage1 = XGBClassifier(**xgb_params)
+    else:
+        xgb_model_stage1 = XGBRegressor(**xgb_params)
+    xgb_model_stage1.fit(X, y)
+    
+    # log feature importances
+    importances = xgb_model_stage1.feature_importances_
+    trial.set_user_attr("feature_importances", importances)
+
+    # Feature selection
+    threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True)  # [0.01 ,0.1]
+    selected_idx = np.where(importances > threshold)[0]
+
+    # heavily penalize trials with no selected features
+    if len(selected_idx) == 0:
+        trial.set_user_attr("selected_features", [])
+        return 0.0
+
+    # log selected_features
+    feature_names = kwargs['feature_names']
+    selected_features = [feature_names[i] for i in selected_idx]
+    trial.set_user_attr("selected_features", selected_features)
+
+    # log selected_features_with_importances
+    selected_features_with_importances = {
+        feature_names[i]: float(importances[i]) for i in selected_idx
+    }
+    trial.set_user_attr("selected_features_with_importances", selected_features_with_importances)
+
+    # Subset data
+    # X_selected = X[:, selected_idx]
+    X_selected = X[selected_features]
+    
+    # Stage 2: Fit XGBoost for classification or regression using selected_features
+    # print(f'Trial {trial.number+1} stage 2 ...')
+    if kwargs['classify']:
+        xgb_model_stage2 = XGBClassifier(**mlp_params)
+        # Cross-validated scoring
+        cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
+        scores = cross_val_score(
+            xgb_model_stage2, X_selected, y,
+            cv=cv,
+            scoring="f1_weighted"
+        )
+    else:
+        xgb_model_stage2 = XGBRegressor(**mlp_params)
+        # Cross-validated scoring
+        cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
+        scores = cross_val_score(
+            mp_model, X_selected, y,
+            cv=cv,
+            scoring="neg_root_mean_squared_error"
+        )
+    score_mean = np.mean(scores)
+
+    # log params, models, and score
+    trial.set_user_attr("xgb_params", xgb_params)
+    trial.set_user_attr("xgb_model_stage1", xgb_model_stage1)
+    trial.set_user_attr("xgb_model_stage2", xgb_model_stage2)
+    trial.set_user_attr("score", score_mean)
+        
+    return score_mean
+      
+def xgbrfe_auto(X, y, **kwargs):
+
+    """
+    Autocalibration of hyperparameters for a hybrid model 
+    of XGBoost with Recursive Feature Elimination
+    Stage 1: XGBoost for feature selection using threshold of feature importance
+    Stage 2: XGBoost for classification or regression using selected features 
+
+    by
+    Greg Pelletier
+    gjpelletier@gmail.com
+    20-Aug-2025
+
+    REQUIRED INPUTS (X and y should have same number of rows and 
+    only contain real numbers)
+    X = dataframe of the candidate independent variables 
+        (as many columns of data as needed)
+    y = dataframe of the dependent variable (one column of data)
+
+    OPTIONAL KEYWORD ARGUMENTS
+    **kwargs (optional keyword arguments):
+        n_trials= 50,               # number of optuna trials
+        classify= False,            # True for MLPClassifier
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
+        verbose= 'on',                    # 'on' to display all 
+        gpu= True,                        # Autodetect to use gpu if present
+        n_splits= 5,                      # number of splits for KFold CV
+        pruning= False,                   # prune poor optuna trials
+
+        # random seed for all functions 
+        'random_state': 42,                 # random seed for reproducibility
+
+        # print trial progress
+        'show_trial_progress': True,        # print each trial number and best cv score
+
+        # xgb params that are optimized by optuna
+        'feature_threshold': [0.001, 0.1],   # threshold for feature_importance
+        'xgb_learning_rate': [1e-4, 1.0],       # Step size shrinkage (also called eta).
+        'max_depth': [3, 12],               # Max depth of a tree.
+        'min_child_weight': [1, 10],        # Min sum of instance weight (hessian) in a child.
+        'subsample': [0.5, 1],              # Fraction of samples used for training each tree.
+        'colsample_bytree': [0.5, 1],       # Fraction of features used for each tree.
+        'gamma': [1e-8, 10.0],              # Minimum loss reduction to make a split.
+        'reg_lambda': [1e-8, 10.0],         # L2 regularization term on weights.
+        'alpha': [1e-8, 10.0],              # L1 regularization term on weights.
+        'n_estimators': [50, 500],        # Number of boosting rounds (trees).
+
+        # xgb extra_params that are optional user-specified
+        'verbosity': 1,               # Verbosity of output (0=silent, 1=warnings, 2=info).
+        'booster': "gbtree",          # Type of booster ('gbtree','gblinear','dart').
+        'tree_method': "auto",        # Tree construction algorithm.
+        'nthread': -1,                # Number of parallel threads.
+        'colsample_bylevel': 1,       # Fraction of features used per tree level.
+        'colsample_bynode': 1,        # Fraction of features used per tree node.
+        'scale_pos_weight': 1,        # Balancing of positive and negative weights.
+        'base_score': 0.5,            # Initial prediction score (global bias).
+        'missing': np.nan,            # Value in the data to be treated as missing.
+        'importance_type': "gain",    # Feature importance type 
+                                      # ('weight','gain','cover','total_gain','total_cover').
+        'predictor': "auto",          # Type of predictor ('cpu_predictor', 'gpu_predictor').
+        'enable_categorical': False,  # Whether to enable categorical data support.    
+
+        preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 12)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
+
+    RETURNS
+        fitted_model, model_outputs
+            model_objects is the fitted model object
+            model_outputs is a dictionary of the following outputs: 
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
+                - 'optuna_study': optimzed optuna study object
+                - 'best_params': best model hyper-parameters found by optuna
+                - 'y_pred': Predicted y values
+                - 'residuals': Residuals (y-y_pred) for each of the four methods
+                - 'stats': Regression statistics for each model
+
+    NOTE
+    Do any necessary/optional cleaning of the data before 
+    passing the data to this function. X and y should have the same number of rows
+    and contain only real numbers with no missing values. X can contain as many
+    columns as needed, but y should only be one column. X should have unique
+    column names for for each column
+
+    EXAMPLE 
+    model, outputs = xgbrfe_auto(X, y)
+
+    """
+
+    from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
+    import time
+    import pandas as pd
+    import numpy as np
+    from sklearn.neural_network import MLPRegressor, MLPClassifier
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.model_selection import cross_val_score, train_test_split
+    from sklearn.metrics import mean_squared_error
+    from sklearn.base import clone
+    from sklearn.metrics import PredictionErrorDisplay
+    from sklearn.model_selection import train_test_split
+    import matplotlib.pyplot as plt
+    import warnings
+    import sys
+    import statsmodels.api as sm
+    import optuna
+
+    # Define default values of input data arguments
+    defaults = {
+        'n_trials': 50,                     # number of optuna trials
+        'classify': False,            # True for MLPClassifier
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
+        'scale': 'standard', 
+        'unskew_pos': False, 
+        'threshold_skew_pos': 0.5,
+        'unskew_neg': False, 
+        'threshold_skew_neg': -0.5,        
+        # ------------------------
+        'verbose': 'on',
+        'gpu': True,                         # Autodetect to use gpu if present
+        'n_splits': 5,                       # number of splits for KFold CV
+
+        'pruning': False,                    # prune poor optuna trials
+
+        # print trial progress
+        'show_trial_progress': True,        # print trial numbers during execution
+        
+        # random seed for all functions 
+        'random_state': 42,                 # random seed for reproducibility
+
+        # xgb params that are optimized by optuna
+        'feature_threshold': [0.001, 0.1],   # threshold for feature_importance
+        'xgb_learning_rate': [1e-4, 1.0],   # Step size shrinkage (also called eta).
+        'max_depth': [3, 12],               # Maximum depth of a tree.
+        'min_child_weight': [1, 10],        # Minimum sum of instance weight (hessian) needed in a child.
+        'subsample': [0.5, 1],              # Fraction of samples used for training each tree.
+        'colsample_bytree': [0.5, 1],       # Fraction of features used for each tree.
+        'gamma': [1e-8, 10.0],              # Minimum loss reduction to make a split.
+        'reg_lambda': [1e-8, 10.0],         # L2 regularization term on weights.
+        'alpha': [1e-8, 10.0],              # L1 regularization term on weights.
+        'n_estimators': [50, 500],        # Number of boosting rounds (trees).
+
+        # xgb extra_params that are optional user-specified
+        'verbosity': 1,               # Verbosity of output (0 = silent, 1 = warnings, 2 = info).
+        'booster': "gbtree",          # Type of booster ('gbtree', 'gblinear', or 'dart').
+        'tree_method': "auto",        # Tree construction algorithm.
+        'nthread': -1,                # Number of parallel threads.
+        'colsample_bylevel': 1,       # Fraction of features used per tree level.
+        'colsample_bynode': 1,        # Fraction of features used per tree node.
+        'scale_pos_weight': 1,        # Balancing of positive and negative weights.
+        'base_score': 0.5,            # Initial prediction score (global bias).
+        'missing': np.nan,            # Value in the data to be treated as missing.
+        'importance_type': "gain",    # Feature importance type ('weight', 'gain', 'cover', 'total_gain', 'total_cover').
+        'predictor': "auto",          # Type of predictor ('cpu_predictor', 'gpu_predictor').
+        'enable_categorical': False,   # Whether to enable categorical data support.    
+        
+    }
+
+    # Update input data argumements with any provided keyword arguments in kwargs
+    data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
+
+    # Auto-detect if GPU is present and use GPU if present
+    if data['gpu']:
+        use_gpu = detect_gpu()
+        if use_gpu:
+            data['device'] = 'gpu'
+        else:
+            data['device'] = 'cpu'
+    else:
+        data['device'] = 'cpu'
+
+    # copy X and y to avoid altering the originals
+    X = X.copy()
+    y = y.copy()
+    
+    X, y = check_X_y(X,y)
+
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
+
+    # Set start time for calculating run time
+    start_time = time.time()
+
+    # Set global random seed
+    np.random.seed(data['random_state'])
+
+    # check if X contains dummy variables
+    X_has_dummies = detect_dummy_variables(X)
+
+    # Initialize output dictionaries
+    model_objects = {}
+    model_outputs = {}
+
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
+                'threshold_cat': data['threshold_cat'],
+                'scale': data['scale'], 
+                'unskew_pos': data['unskew_pos'], 
+                'threshold_skew_pos': data['threshold_skew_pos'],
+                'unskew_neg': data['unskew_neg'], 
+                'threshold_skew_neg': data['threshold_skew_neg']        
+            }
+            data['preprocess_result'] = preprocess_train(X, **kwargs_pre)
+            X = data['preprocess_result']['df_processed']
+
+    data['feature_names'] = X.columns.to_list()
+
+    print('Running optuna to find best parameters, could take a few minutes, please wait...')
+    optuna.logging.set_verbosity(optuna.logging.ERROR)
+
+    # optional pruning
+    if data['pruning']:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True),
+            pruner=optuna.pruners.MedianPruner())
+    else:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True))
+    
+    X_opt = X.copy()    # copy X to prevent altering the original
+
+    from PyMLR import xgbrfe_objective
+    study.optimize(lambda trial: xgbrfe_objective(trial, X_opt, y, study, **data), n_trials=data['n_trials'])
+
+    # save outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['X_processed'] = X.copy()
+    model_outputs['pruning'] = data['pruning']
+    model_outputs['optuna_study'] = study
+    model_outputs['xgb_params'] = study.best_trial.user_attrs.get('xgb_params')
+    model_outputs['xgb_model_stage1'] = study.best_trial.user_attrs.get('xgb_model_stage1')
+    model_outputs['xgb_model_stage2'] = study.best_trial.user_attrs.get('xgb_model_stage2')
+    model_outputs['feature_importances'] = study.best_trial.user_attrs.get('feature_mportances')
+    model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['selected_features_with_importances'] = study.best_trial.user_attrs.get(
+        'selected_features_with_importances')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
+    model_outputs['best_trial'] = study.best_trial
+
+    # get best_params from the optuna study
+    best_params = study.best_trial.user_attrs.get('mlp_params')
+
+    model_outputs['best_params'] = best_params
+
+    if 'num_features' in best_params:
+        del best_params['num_features']
+    if 'selector_type' in best_params:
+        del best_params['selector_type']
+    if 'n_layers' in best_params:
+        del best_params['n_layers']
+    if 'units' in best_params:
+        del best_params['units']
+    if 'nesterov' in best_params:
+        del best_params['nesterov']
+    prefix = 'n_units_l'
+    matching_keys = [key for key in best_params if key.startswith(prefix)]
+    for key in matching_keys:
+        del best_params[key]
+    
+    if data['classify']:
+        print('Fitting XGBClassifier model with best parameters, please wait ...')    
+        fitted_model = XGBClassifier(**best_params).fit(
+            X[model_outputs['selected_features']],y)
+    else:    
+        print('Fitting XGBRegressor model with best parameters, please wait ...')    
+        fitted_model = XGBRegressor(**best_params).fit(
+            X[model_outputs['selected_features']],y)
+
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X[selected_features], y)
+            hfig.savefig("XGBClassifier_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X[selected_features], y)
+            hfig.savefig("XGBClassifier_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X[model_outputs['selected_features']], y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['XGBClassifier']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])    
+        if data['verbose'] == 'on':
+            print('')
+            print("XGBClassifier goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:
+    
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table
+        
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X[model_outputs['selected_features']], y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['XGBRegressor']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
+    
+        if data['verbose'] == 'on':
+            print('')
+            print("XGBRegressor goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
+    
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
+    
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("XGBRegressor_predictions.png", dpi=300)
+
+    # Best score of CV test data
+    print('')
+    print(f"Best-fit score of CV test data: {study.best_value:.6f}")
+    print('')
+
+    # Print the run time
+    fit_time = time.time() - start_time
+    print('Done')
+    print(f"Time elapsed: {fit_time:.2f} sec")
+    print('')
+
+    # Restore warnings to normal
+    warnings.filterwarnings("default")
+
+    return fitted_model, model_outputs
