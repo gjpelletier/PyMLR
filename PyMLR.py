@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.127"
+__version__ = "1.2.128"
 
 def check_X_y(X,y):
 
@@ -16092,6 +16092,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     from sklearn.model_selection import cross_val_score, RepeatedKFold, StratifiedKFold
     from PyMLR import detect_gpu
     from xgboost import XGBClassifier, XGBRegressor
+    from sklearn.inspection import permutation_importance
 
     if kwargs['show_trial_progress'] and trial.number > 0:
         print(f'Trial {trial.number} best cv test score so far: {study.best_value:.6f} ...')
@@ -16143,13 +16144,19 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
         xgb_model_stage1 = XGBRegressor(**xgb_params)
     xgb_model_stage1.fit(X, y)
     
-    # log feature importances
-    importances = xgb_model_stage1.feature_importances_
-    trial.set_user_attr("feature_importances", importances)
+    # log feature importances (not used for feature selection)
+    feature_importances = xgb_model_stage1.feature_importances_
+    trial.set_user_attr("feature_importances", feature_importances)
 
-    # Feature selection
-    threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True)  # [0.01 ,0.1]
-    selected_idx = np.where(importances > threshold)[0]
+    # log permutation importances and use them for feature selection
+    result = permutation_importance(xgb_model_stage1, X, y, n_repeats=5, random_state=seed)
+    trial.set_user_attr("permutation_importances", result.importances_mean)
+    threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True) 
+    selected_idx = np.where(result.importances_mean > threshold)[0]
+
+    # # Feature selection
+    # threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True) 
+    # selected_idx = np.where(importances > threshold)[0]
 
     # heavily penalize trials with no selected features
     if len(selected_idx) == 0:
@@ -16161,9 +16168,10 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     selected_features = [feature_names[i] for i in selected_idx]
     trial.set_user_attr("selected_features", selected_features)
 
-    # log selected_features_with_importances
+    # log selected_features_with_importances (permutation importances)
     selected_features_with_importances = {
-        feature_names[i]: float(importances[i]) for i in selected_idx
+        # feature_names[i]: float(importances[i]) for i in selected_idx
+        feature_names[i]: float(result.importances_mean[i]) for i in selected_idx
     }
     trial.set_user_attr("selected_features_with_importances", selected_features_with_importances)
 
@@ -16506,6 +16514,7 @@ def xgbrfe_auto(X, y, **kwargs):
     model_outputs['xgb_model_stage1'] = study.best_trial.user_attrs.get('xgb_model_stage1')
     model_outputs['xgb_model_stage2'] = study.best_trial.user_attrs.get('xgb_model_stage2')
     model_outputs['feature_importances'] = study.best_trial.user_attrs.get('feature_mportances')
+    model_outputs['permutation_importances'] = study.best_trial.user_attrs.get('permutation_mportances')
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
     model_outputs['selected_features_with_importances'] = study.best_trial.user_attrs.get(
         'selected_features_with_importances')
