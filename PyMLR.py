@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.120"
+__version__ = "1.2.121"
 
 def check_X_y(X,y):
 
@@ -15430,6 +15430,20 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
         "n_estimators": trial.suggest_int("n_estimators", *kwargs["n_estimators"]),
         'random_state': kwargs['random_state'],                
         'device': kwargs['device'],                 
+
+        # xgb extra specified args
+        "verbosity": kwargs["verbosity"],
+        "objective": kwargs["objective"],
+        "booster": kwargs["booster"],
+        "tree_method": kwargs["tree_method"],
+        "nthread": kwargs["nthread"],
+        "colsample_bylevel": kwargs["colsample_bylevel"],
+        "colsample_bynode": kwargs["colsample_bynode"],
+        "base_score": kwargs["base_score"],
+        "missing": kwargs["missing"],
+        "importance_type": kwargs["importance_type"],
+        "enable_categorical": kwargs["enable_categorical"],
+
     }
 
     # Fit XGBoost for feature selection
@@ -16095,7 +16109,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
         'random_state': kwargs['random_state'],                
         'device': kwargs['device'],                 
 
-        # extra specified args
+        # xgb extra specified args
         "verbosity": kwargs["verbosity"],
         "objective": kwargs["objective"],
         "booster": kwargs["booster"],
