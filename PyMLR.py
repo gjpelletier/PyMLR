@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.129"
+__version__ = "1.2.130"
 
 def check_X_y(X,y):
 
@@ -16148,16 +16148,25 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     feature_importances_raw = xgb_model_stage1.feature_importances_
     feature_importances_norm = feature_importances_raw / feature_importances_raw.sum()
 
-    # permutation importances and use them for feature selection
-    result = permutation_importance(xgb_model_stage1, X, y, n_repeats=5, random_state=seed)
-    permutation_importances_raw = result.importances_mean
-    permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
-    threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True) 
-    if kwargs['use_normalized_importances']:
-        selected_idx = np.where(permutation_importances_norm > threshold)[0]
-    else:
-        selected_idx = np.where(permutation_importances_raw > threshold)[0]
+    # permutation importances
+    if kwargs['use_permutaiton']:
+        result = permutation_importance(xgb_model_stage1, X, y, n_repeats=5, random_state=seed)
+        permutation_importances_raw = result.importances_mean
+        permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
 
+    # feature selection
+    threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True) 
+    if kwargs['use_permutation']:
+        if kwargs['use_normalized']:
+            selected_idx = np.where(permutation_importances_norm > threshold)[0]
+        else:
+            selected_idx = np.where(permutation_importances_raw > threshold)[0]
+    else:
+        if kwargs['use_normalized']:
+            selected_idx = np.where(feature_importances_norm > threshold)[0]
+        else:
+            selected_idx = np.where(feature_importances_raw > threshold)[0]
+        
     # heavily penalize trials with no selected features
     if len(selected_idx) == 0:
         trial.set_user_attr("selected_features", [])
@@ -16167,31 +16176,18 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     feature_names = kwargs['feature_names']
     selected_features = [feature_names[i] for i in selected_idx]
 
-    '''
-    trial.set_user_attr("feature_importances_raw", feature_importances_raw)
-    trial.set_user_attr("feature_importances_norm", feature_importances_norm)
-    trial.set_user_attr("permutation_importances_raw", permutation_importances_raw
-    trial.set_user_attr("permutation_importances_norm", permutation_importances_norm
-    trial.set_user_attr("selected_features", selected_features)
-    # log selected_features_with_importances (permutation importances)
-    selected_features_with_importances = {
-        # feature_names[i]: float(importances[i]) for i in selected_idx
-        feature_names[i]: float(result.importances_mean[i]) for i in selected_idx
-    }
-    trial.set_user_attr("selected_features_with_importances", selected_features_with_importances)
-    '''
-    
     # dictionary to log results of stage 1
     results_of_stage1 = {
+        "selected_features": selected_features,
         'feature_names': feature_names,
         'use_normalized_importances': kwargs['use_normalized_importances'],
         'threshold': threshold,
         "feature_importances_raw": feature_importances_raw.tolist(),
         "feature_importances_norm": feature_importances_norm.tolist(),
-        "permutation_importances_raw": permutation_importances_raw.tolist(),
-        "permutation_importances_norm": permutation_importances_norm.tolist(),
-        "selected_features": selected_features
     }
+    if kwargs['use_permutation']:
+        results_of_stage1["permutation_importances_raw"] = permutation_importances_raw.tolist(),
+        results_of_stage1["permutation_importances_norm"] = permutation_importances_norm.tolist(),
     trial.set_user_attr("results_of_stage1", results_of_stage1)
     
     # Subset data
@@ -16391,7 +16387,8 @@ def xgbrfe_auto(X, y, **kwargs):
 
         # objective function options
         'show_trial_progress': True,         # print trial numbers during execution
-        'use_normalized_importances': False, # use normalized importances for RFE
+        'use_permutation': False,            # use permutation importances for RFE
+        'use_normalized': False,             # normalize the importances for RFE
         
         # random seed for all functions 
         'random_state': 42,                 # random seed for reproducibility
@@ -16537,9 +16534,9 @@ def xgbrfe_auto(X, y, **kwargs):
     # model_outputs['feature_importances'] = study.best_trial.user_attrs.get('feature_mportances')
     # model_outputs['permutation_importances_raw'] = study.best_trial.user_attrs.get('permutation_mportances_raw')
     # model_outputs['permutation_importances_norm'] = study.best_trial.user_attrs.get('permutation_mportances_norm')
-    # model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
     # model_outputs['selected_features_with_importances'] = study.best_trial.user_attrs.get(
     #     'selected_features_with_importances')
+    model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
 
