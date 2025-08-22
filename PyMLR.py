@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.119"
+__version__ = "1.2.120"
 
 def check_X_y(X,y):
 
@@ -6637,6 +6637,8 @@ def xgb(X, y, **kwargs):
         'verbose': 'on',
         'gpu': True,                  # Autodetect if the computer has a gpu, if no gpu is detected then cpu will be used
         'device': None,               # placeholder for device argument 
+        'objective': None,            # placeholder for objective argument 
+        'num_class': None,            # placeholder for num_class argument 
 
         # params that are optimized by optuna
         'learning_rate': 0.05,        # Step size shrinkage (also called eta).
