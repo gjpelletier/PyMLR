@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.138"
+__version__ = "1.2.139"
 
 def check_X_y(X,y):
 
@@ -16165,11 +16165,11 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
             selected_idx = np.where(permutation_importances_raw > threshold)
     else:
         if kwargs['use_normalized']:
-            # selected_idx = np.where(feature_importances_norm > threshold)[0]
-            selected_idx = np.where(feature_importances_norm > threshold)
+            selected_idx = np.where(feature_importances_norm > threshold)[0]
+            # selected_idx = np.where(feature_importances_norm > threshold)
         else:
-            # selected_idx = np.where(feature_importances_raw > threshold)[0]
-            selected_idx = np.where(feature_importances_raw > threshold)
+            selected_idx = np.where(feature_importances_raw > threshold)[0]
+            # selected_idx = np.where(feature_importances_raw > threshold)
         
     # heavily penalize trials with no selected features
     if len(selected_idx) == 0:
