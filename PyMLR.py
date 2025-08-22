@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.132"
+__version__ = "1.2.133"
 
 def check_X_y(X,y):
 
@@ -16178,7 +16178,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     trial.set_user_attr("selected_features", selected_features)
 
     # dictionary to log results of stage 1
-    results_of_stage1 = {
+    stage1_results = {
         "selected_features": selected_features,
         'feature_names': feature_names,
         'use_normalized': kwargs['use_normalized'],
@@ -16188,9 +16188,9 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
         "feature_importances_norm": feature_importances_norm.tolist(),
     }
     if kwargs['use_permutation']:
-        results_of_stage1["permutation_importances_raw"] = permutation_importances_raw.tolist(),
-        results_of_stage1["permutation_importances_norm"] = permutation_importances_norm.tolist(),
-    trial.set_user_attr("results_of_stage1", results_of_stage1)
+        stage1_results["permutation_importances_raw"] = permutation_importances_raw.tolist()[0],
+        stage1_results["permutation_importances_norm"] = permutation_importances_norm.tolist()[0],
+    trial.set_user_attr("stage1_results", stage1_results)
     
     # Subset data
     # X_selected = X[:, selected_idx]
@@ -16534,7 +16534,7 @@ def xgbrfe_auto(X, y, **kwargs):
     model_outputs['xgb_params'] = study.best_trial.user_attrs.get('xgb_params')
     model_outputs['xgb_model_stage1'] = study.best_trial.user_attrs.get('xgb_model_stage1')
     model_outputs['xgb_model_stage2'] = study.best_trial.user_attrs.get('xgb_model_stage2')
-    model_outputs['results_of_stage1'] = study.best_trial.user_attrs.get('results_of_stage1')
+    model_outputs['stage1_results'] = study.best_trial.user_attrs.get('stage1_results')
     # model_outputs['feature_importances'] = study.best_trial.user_attrs.get('feature_mportances')
     # model_outputs['permutation_importances_raw'] = study.best_trial.user_attrs.get('permutation_mportances_raw')
     # model_outputs['permutation_importances_norm'] = study.best_trial.user_attrs.get('permutation_mportances_norm')
