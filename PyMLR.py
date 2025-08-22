@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.139"
+__version__ = "1.2.140"
 
 def check_X_y(X,y):
 
@@ -16151,18 +16151,21 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     # absolute value of mean permutation importances
     if kwargs['use_permutation']:
         result = permutation_importance(xgb_model_stage1, X, y, n_repeats=5, random_state=seed)
-        permutation_importances_raw = np.abs(result.importances_mean[0])
+        # permutation_importances_raw = np.abs(result.importances_mean[0])
+        permutation_importances_raw = np.abs(result.importances_mean)
         permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
+        print('permutation_importances_raw:\n',permutation_importances_raw)
+        print('permutation_importances_norm:\n',permutation_importances_norm)
 
     # feature selection
     threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True) 
     if kwargs['use_permutation']:
         if kwargs['use_normalized']:
-            # selected_idx = np.where(permutation_importances_norm > threshold)[0]
-            selected_idx = np.where(permutation_importances_norm > threshold)
+            selected_idx = np.where(permutation_importances_norm > threshold)[0]
+            # selected_idx = np.where(permutation_importances_norm > threshold)
         else:
-            # selected_idx = np.where(permutation_importances_raw > threshold)[0]
-            selected_idx = np.where(permutation_importances_raw > threshold)
+            selected_idx = np.where(permutation_importances_raw > threshold)[0]
+            # selected_idx = np.where(permutation_importances_raw > threshold)
     else:
         if kwargs['use_normalized']:
             selected_idx = np.where(feature_importances_norm > threshold)[0]
