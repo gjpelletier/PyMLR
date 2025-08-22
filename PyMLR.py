@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.136"
+__version__ = "1.2.137"
 
 def check_X_y(X,y):
 
@@ -16158,14 +16158,18 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True) 
     if kwargs['use_permutation']:
         if kwargs['use_normalized']:
-            selected_idx = np.where(permutation_importances_norm > threshold)[0]
+            # selected_idx = np.where(permutation_importances_norm > threshold)[0]
+            selected_idx = np.where(permutation_importances_norm > threshold)
         else:
-            selected_idx = np.where(permutation_importances_raw > threshold)[0]
+            # selected_idx = np.where(permutation_importances_raw > threshold)[0]
+            selected_idx = np.where(permutation_importances_raw > threshold)
     else:
         if kwargs['use_normalized']:
-            selected_idx = np.where(feature_importances_norm > threshold)[0]
+            # selected_idx = np.where(feature_importances_norm > threshold)[0]
+            selected_idx = np.where(feature_importances_norm > threshold)
         else:
-            selected_idx = np.where(feature_importances_raw > threshold)[0]
+            # selected_idx = np.where(feature_importances_raw > threshold)[0]
+            selected_idx = np.where(feature_importances_raw > threshold)
         
     # heavily penalize trials with no selected features
     if len(selected_idx) == 0:
@@ -16179,6 +16183,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
 
     # dictionary to log results of stage 1
     stage1_results = {
+        "selected_idx": selected_idx,
         "selected_features": selected_features,
         'feature_names': feature_names,
         'use_normalized': kwargs['use_normalized'],
