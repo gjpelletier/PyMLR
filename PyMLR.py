@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.133"
+__version__ = "1.2.134"
 
 def check_X_y(X,y):
 
@@ -16144,14 +16144,14 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
         xgb_model_stage1 = XGBRegressor(**xgb_params)
     xgb_model_stage1.fit(X, y)
     
-    # feature importances (not used for feature selection)
-    feature_importances_raw = xgb_model_stage1.feature_importances_
+    # absolute value of feature importances (not used for feature selection)
+    feature_importances_raw = np.abs(xgb_model_stage1.feature_importances_)
     feature_importances_norm = feature_importances_raw / feature_importances_raw.sum()
 
-    # permutation importances
+    # absolute value of mean permutation importances
     if kwargs['use_permutation']:
         result = permutation_importance(xgb_model_stage1, X, y, n_repeats=5, random_state=seed)
-        permutation_importances_raw = result.importances_mean
+        permutation_importances_raw = np.abs(result.importances_mean)
         permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
 
     # feature selection
