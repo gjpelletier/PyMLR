@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.121"
+__version__ = "1.2.122"
 
 def check_X_y(X,y):
 
@@ -12736,6 +12736,7 @@ def mlp(X, y, **kwargs):
         'learning_rate': 'constant',  # for weight updates
         'early_stopping': False,      # terminate when score not improving
         'nesterov': True,             # used for nesterovs_momentum if solver is sgd
+        'nesterovs_momentum': True,   # placeholder for nesterovs_momentum if solver is sgd
 
         # extra_params 
         'random_state': 42,           # random seed for reproducibility
