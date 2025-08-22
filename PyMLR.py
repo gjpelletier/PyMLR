@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.130"
+__version__ = "1.2.131"
 
 def check_X_y(X,y):
 
@@ -16149,7 +16149,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     feature_importances_norm = feature_importances_raw / feature_importances_raw.sum()
 
     # permutation importances
-    if kwargs['use_permutaiton']:
+    if kwargs['use_permutation']:
         result = permutation_importance(xgb_model_stage1, X, y, n_repeats=5, random_state=seed)
         permutation_importances_raw = result.importances_mean
         permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
@@ -16180,7 +16180,8 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     results_of_stage1 = {
         "selected_features": selected_features,
         'feature_names': feature_names,
-        'use_normalized_importances': kwargs['use_normalized_importances'],
+        'use_normalized': kwargs['use_normalized'],
+        'use_permutation': kwargs['use_permutation'],
         'threshold': threshold,
         "feature_importances_raw": feature_importances_raw.tolist(),
         "feature_importances_norm": feature_importances_norm.tolist(),
@@ -16263,8 +16264,10 @@ def xgbrfe_auto(X, y, **kwargs):
         # random seed for all functions 
         'random_state': 42,                 # random seed for reproducibility
 
-        # print trial progress
+        # objective function options
         'show_trial_progress': True,        # print each trial number and best cv score
+        'use_permutation': False,           # use permutation importances for RFE
+        'use_normalized': False,            # normalize the importances for RFE
 
         # xgb params that are optimized by optuna
         'feature_threshold': [0.001, 0.1],   # threshold for feature_importance
