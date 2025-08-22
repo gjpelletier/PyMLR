@@ -6636,7 +6636,7 @@ def xgb(X, y, **kwargs):
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
         'gpu': True,                  # Autodetect if the computer has a gpu, if no gpu is detected then cpu will be used
-        'device' = None,              # placeholder for device argument 
+        'device': None,               # placeholder for device argument 
 
         # params that are optimized by optuna
         'learning_rate': 0.05,        # Step size shrinkage (also called eta).
