@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.131"
+__version__ = "1.2.132"
 
 def check_X_y(X,y):
 
@@ -16175,6 +16175,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     # selected_features
     feature_names = kwargs['feature_names']
     selected_features = [feature_names[i] for i in selected_idx]
+    trial.set_user_attr("selected_features", selected_features)
 
     # dictionary to log results of stage 1
     results_of_stage1 = {
