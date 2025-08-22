@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.118"
+__version__ = "1.2.119"
 
 def check_X_y(X,y):
 
@@ -6636,6 +6636,7 @@ def xgb(X, y, **kwargs):
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
         'gpu': True,                  # Autodetect if the computer has a gpu, if no gpu is detected then cpu will be used
+        'device' = None,              # placeholder for device argument 
 
         # params that are optimized by optuna
         'learning_rate': 0.05,        # Step size shrinkage (also called eta).
@@ -6651,7 +6652,6 @@ def xgb(X, y, **kwargs):
         # extra_params that are optional user-specified
         'random_state': 42,           # Random seed for reproducibility.
         'verbosity': 1,               # Verbosity of output (0 = silent, 1 = warnings, 2 = info).
-        # 'objective': "reg:squarederror",  # Loss function for regression.
         'booster': "gbtree",          # Type of booster ('gbtree', 'gblinear', or 'dart').
         'tree_method': "auto",        # Tree construction algorithm.
         'nthread': -1,                # Number of parallel threads.
@@ -15431,7 +15431,6 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
     }
 
     # Fit XGBoost for feature selection
-    # print(f'Trial {trial.number+1} stage 1 ...')
     if kwargs['classify']:
         xgb_model = XGBClassifier(**xgb_params)
     else:
@@ -15516,7 +15515,6 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
     }
 
     # Fit MLP for classification or regression
-    # print(f'Trial {trial.number+1} stage 2 ...')
     if kwargs['classify']:
         mlp_model = MLPClassifier(**mlp_params)
         # Cross-validated scoring
@@ -15824,6 +15822,21 @@ def xgbmlp_auto(X, y, **kwargs):
     if y.nunique() <= 12 and not data['classify']:
         print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
 
+    # assign xgb objective depending on type of model
+    if data['classify']:
+        # objective for XGBClassifier
+        num_class = y.nunique()
+        if num_class == 2:
+            # binomial response variable
+            data['objective'] = 'binary:logistic'
+        else:
+            # multinomial response variable
+            data['objective'] = 'multi:softmax'
+            data['num_class'] = num_class
+    else:
+        # objective for XGBRegressor
+        data['objective'] = 'reg:squarederror'
+
     # Suppress warnings
     warnings.filterwarnings('ignore')
 
@@ -16079,7 +16092,28 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
         "n_estimators": trial.suggest_int("n_estimators", *kwargs["n_estimators"]),
         'random_state': kwargs['random_state'],                
         'device': kwargs['device'],                 
+
+        # extra specified args
+        "verbosity": kwargs["verbosity"],
+        "objective": kwargs["objective"],
+        "booster": kwargs["booster"],
+        "tree_method": kwargs["tree_method"],
+        "nthread": kwargs["nthread"],
+        "colsample_bylevel": kwargs["colsample_bylevel"],
+        "colsample_bynode": kwargs["colsample_bynode"],
+        "base_score": kwargs["base_score"],
+        "missing": kwargs["missing"],
+        "importance_type": kwargs["importance_type"],
+        "enable_categorical": kwargs["enable_categorical"],
+
     }
+
+    if not kwargs['classify']:
+        xgb_params['predictor'] = kwargs['predictor']
+        xgb_params['scale_pos_weight'] = kwargs['scale_pos_weight']
+
+    if kwargs['objective'] == 'multi:softmax':
+        xgb_params['num_class'] = kwargs['num_class']
 
     # Stage 1: Fit XGBoost for feature selection
     # print(f'Trial {trial.number+1} stage 1 ...')
@@ -16370,6 +16404,21 @@ def xgbrfe_auto(X, y, **kwargs):
     # Warn the user to consider using classify=True if y has < 12 classes
     if y.nunique() <= 12 and not data['classify']:
         print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+        
+    # assign objective depending on type of model
+    if data['classify']:
+        # objective for XGBClassifier
+        num_class = y.nunique()
+        if num_class == 2:
+            # binomial response variable
+            data['objective'] = 'binary:logistic'
+        else:
+            # multinomial response variable
+            data['objective'] = 'multi:softmax'
+            data['num_class'] = num_class
+    else:
+        # objective for XGBRegressor
+        data['objective'] = 'reg:squarederror'
 
     # Suppress warnings
     warnings.filterwarnings('ignore')
