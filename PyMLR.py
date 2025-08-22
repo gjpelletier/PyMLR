@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.140"
+__version__ = "1.2.141"
 
 def check_X_y(X,y):
 
@@ -16154,8 +16154,8 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
         # permutation_importances_raw = np.abs(result.importances_mean[0])
         permutation_importances_raw = np.abs(result.importances_mean)
         permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
-        print('permutation_importances_raw:\n',permutation_importances_raw)
-        print('permutation_importances_norm:\n',permutation_importances_norm)
+        # print('permutation_importances_raw:\n',permutation_importances_raw)
+        # print('permutation_importances_norm:\n',permutation_importances_norm)
 
     # feature selection
     threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True) 
@@ -16200,8 +16200,8 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     if kwargs['use_permutation']:
         # stage1_results["permutation_importances_raw"] = permutation_importances_raw.tolist(),
         # stage1_results["permutation_importances_norm"] = permutation_importances_norm.tolist(),
-        stage1_results["permutation_importances_raw"] = permutation_importances_raw,
-        stage1_results["permutation_importances_norm"] = permutation_importances_norm,
+        stage1_results["permutation_importances_raw"] = permutation_importances_raw[0],
+        stage1_results["permutation_importances_norm"] = permutation_importances_norm[0],
     trial.set_user_attr("stage1_results", stage1_results)
     
     # Subset data
