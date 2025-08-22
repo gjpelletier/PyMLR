@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.122"
+__version__ = "1.2.123"
 
 def check_X_y(X,y):
 
@@ -12847,6 +12847,9 @@ def mlp(X, y, **kwargs):
         'verbose': False,                 
         'random_state': data['random_state'],                
     }
+
+    model_outputs['params'] = params   
+    model_outputs['extra_params'] = extra_params   
 
     if data['classify']:
         print('Fitting MLPClassifier model, please wait ...')
