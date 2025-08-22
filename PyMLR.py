@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.135"
+__version__ = "1.2.136"
 
 def check_X_y(X,y):
 
@@ -16151,7 +16151,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     # absolute value of mean permutation importances
     if kwargs['use_permutation']:
         result = permutation_importance(xgb_model_stage1, X, y, n_repeats=5, random_state=seed)
-        permutation_importances_raw = np.abs(result.importances_mean)
+        permutation_importances_raw = np.abs(result.importances_mean[0])
         permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
 
     # feature selection
