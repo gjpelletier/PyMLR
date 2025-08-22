@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.126"
+__version__ = "1.2.127"
 
 def check_X_y(X,y):
 
@@ -11695,7 +11695,7 @@ def model_agnostic(model, X_test, y_test,
         try:
             result = permutation_importance(
                 # model, X_test_proc, y_test, n_repeats=10, random_state=42
-                model, X_test_proc, y_test, n_repeats=5, random_state=42, n_jobs=-1
+                model, X_test_proc, y_test, n_repeats=5, random_state=42
             )
             imp_series = pd.Series(result.importances_mean, index=X_test_proc.columns)
             imp_series.sort_values().plot.barh(title="Permutation Importance")
