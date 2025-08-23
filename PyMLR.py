@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.148"
+__version__ = "1.2.150"
 
 def check_X_y(X,y):
 
@@ -12984,7 +12984,7 @@ def mlp_objective(trial, X, y, study, **kwargs):
     from sklearn.neural_network import MLPRegressor, MLPClassifier
 
     if kwargs['show_trial_progress'] and trial.number > 0:
-        print(f'Trial {trial.number} best cv test score so far: {study.best_value:.6f} ...')
+        print(f'Trial {trial.number}, best cv test score so far: {study.best_value:.6f} ...')
 
     seed = kwargs.get("random_state", 42)
     rng = np.random.default_rng(seed)
@@ -15417,13 +15417,13 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
     from sklearn.inspection import permutation_importance
 
     if kwargs['show_trial_progress'] and trial.number > 0:
-        print(f'Trial {trial.number} best cv test score so far: {study.best_value:.6f} ...')
+        print(f'Trial {trial.number}, best cv test score so far: {study.best_value:.6f} ...')
     
     seed = kwargs.get("random_state", 42)
     rng = np.random.default_rng(seed)
     
     # XGBoost params
-    xgb_params = {
+    params_stage1 = {
         "learning_rate": trial.suggest_float("xgb_learning_rate", *kwargs["xgb_learning_rate"], log=True),
         "max_depth": trial.suggest_int("max_depth", *kwargs["max_depth"]),
         "min_child_weight": trial.suggest_int("min_child_weight", *kwargs["min_child_weight"]),
@@ -15453,18 +15453,18 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
 
     # Fit XGBoost for feature selection
     if kwargs['classify']:
-        xgb_model = XGBClassifier(**xgb_params)
+        model_stage1 = XGBClassifier(**params_stage1)
     else:
-        xgb_model = XGBRegressor(**xgb_params)
-    xgb_model.fit(X, y)
+        model_stage1 = XGBRegressor(**params_stage1)
+    model_stage1.fit(X, y)
     
     # absolute value of feature importances (not used for feature selection)
-    feature_importances_raw = np.abs(xgb_model.feature_importances_)
+    feature_importances_raw = np.abs(model_stage1.feature_importances_)
     feature_importances_norm = feature_importances_raw / feature_importances_raw.sum()
 
     # absolute value of mean permutation importances
     if kwargs['use_permutation']:
-        result = permutation_importance(xgb_model, X, y, n_repeats=5, random_state=seed)
+        result = permutation_importance(model_stage1, X, y, n_repeats=5, random_state=seed)
         permutation_importances_raw = np.abs(result.importances_mean)
         permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
 
@@ -15493,7 +15493,7 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
 
     # dictionary to log results of stage 1
     if kwargs['use_permutation']:
-        stage1_results = {
+        results_stage1 = {
             "selected_idx": selected_idx,
             "selected_features": selected_features,
             'feature_names': feature_names,
@@ -15506,7 +15506,7 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
             "permutation_importances_norm": permutation_importances_norm,
         }
     else:
-        stage1_results = {
+        results_stage1 = {
             "selected_idx": selected_idx,
             "selected_features": selected_features,
             'feature_names': feature_names,
@@ -15516,7 +15516,7 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
             "feature_importances_raw": feature_importances_raw,
             "feature_importances_norm": feature_importances_norm,
         }
-    trial.set_user_attr("stage1_results", stage1_results)
+    trial.set_user_attr("results_stage1", results_stage1)
 
     # Subset data
     X_selected = X[selected_features]
@@ -15548,7 +15548,7 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
     max_fun = trial.suggest_int("max_fun", *kwargs['max_fun'])
     
     # MLP params for base_estimator
-    mlp_params = {
+    params_stage2 = {
         'hidden_layer_sizes': hidden_layer_sizes,
         'activation': activation,
         'solver': solver,
@@ -15572,16 +15572,16 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
 
     # Fit MLP for classification or regression
     if kwargs['classify']:
-        mlp_model = MLPClassifier(**mlp_params)
+        model_stage2 = MLPClassifier(**params_stage2)
         # Cross-validated scoring
         cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
         scores = cross_val_score(
-            mlp_model, X_selected, y,
+            model_stage2, X_selected, y,
             cv=cv,
             scoring="f1_weighted"
         )
     else:
-        mlp_model = MLPRegressor(**mlp_params)
+        model_stage2 = MLPRegressor(**params_stage2)
         # Cross-validated scoring
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
@@ -15592,10 +15592,10 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
     score_mean = np.mean(scores)
 
     # log params, models, and score
-    trial.set_user_attr("xgb_params", xgb_params)
-    trial.set_user_attr("xgb_model", xgb_model)
-    trial.set_user_attr("mlp_params", mlp_params)
-    trial.set_user_attr("mlp_model", mlp_model)
+    trial.set_user_attr("params_stage1", params_stage1)
+    trial.set_user_attr("model_stage1", model_stage1)
+    trial.set_user_attr("params_stage2", params_stage2)
+    trial.set_user_attr("model_stage2", model_stage2)
     trial.set_user_attr("score", score_mean)
         
     return score_mean
@@ -15643,23 +15643,25 @@ def xgbmlp_auto(X, y, **kwargs):
 
         # objective function options
         'show_trial_progress': True,        # print trial numbers during execution
-        'use_permutation': False,            # use permutation importances for RFE
-        'use_normalized': True,              # normalize the importances for RFE
+        'use_permutation': False,    # True to use abs permutation importances for RFE
+                                     # False to use abs .feature_importances_ for RFE
+        'use_normalized': True,      # True to normalize the abs importances for RFE
+                                     # False to use raw abs importances
 
         # xgb params that are optimized by optuna
         'feature_threshold': [0.001, 0.1],   # threshold for feature_importance
         'xgb_learning_rate': [1e-4, 1.0],       # Step size shrinkage (also called eta).
         'max_depth': [3, 12],               # Max depth of a tree.
-        'min_child_weight': [1, 10],        # Min sum of instance weight (hessian) in a child.
-        'subsample': [0.5, 1],              # Fraction of samples used for training each tree.
-        'colsample_bytree': [0.5, 1],       # Fraction of features used for each tree.
-        'gamma': [1e-8, 10.0],              # Minimum loss reduction to make a split.
-        'reg_lambda': [1e-8, 10.0],         # L2 regularization term on weights.
-        'alpha': [1e-8, 10.0],              # L1 regularization term on weights.
-        'n_estimators': [50, 500],        # Number of boosting rounds (trees).
+        'min_child_weight': [1, 10],  # Min sum of instance weight (hessian) in a child.
+        'subsample': [0.5, 1],        # Fraction of samples used for training each tree.
+        'colsample_bytree': [0.5, 1],   # Fraction of features used for each tree.
+        'gamma': [1e-8, 10.0],          # Minimum loss reduction to make a split.
+        'reg_lambda': [1e-8, 10.0],     # L2 regularization term on weights.
+        'alpha': [1e-8, 10.0],          # L1 regularization term on weights.
+        'n_estimators': [50, 500],      # Number of boosting rounds (trees).
 
         # xgb extra_params that are optional user-specified
-        'verbosity': 1,               # Verbosity of output (0=silent, 1=warnings, 2=info).
+        'verbosity': 1,           # Verbosity of output (0=silent, 1=warnings, 2=info).
         'booster': "gbtree",          # Type of booster ('gbtree','gblinear','dart').
         'tree_method': "auto",        # Tree construction algorithm.
         'nthread': -1,                # Number of parallel threads.
@@ -15669,8 +15671,8 @@ def xgbmlp_auto(X, y, **kwargs):
         'base_score': 0.5,            # Initial prediction score (global bias).
         'missing': np.nan,            # Value in the data to be treated as missing.
         'importance_type': "gain",    # Feature importance type 
-                                      # ('weight','gain','cover','total_gain','total_cover').
-        'predictor': "auto",          # Type of predictor ('cpu_predictor', 'gpu_predictor').
+                                  # ('weight','gain','cover','total_gain','total_cover').
+        'predictor': "auto",      # Type of predictor ('cpu_predictor', 'gpu_predictor').
         'enable_categorical': False,  # Whether to enable categorical data support.    
 
         # mlp numerical core hyperparameters optimized by optuna
@@ -15691,9 +15693,10 @@ def xgbmlp_auto(X, y, **kwargs):
         # mlp categorical hyperparameters optimized by optuna
         'activation': ["relu", "tanh", "logistic"],  # hidden layer activation method
         'solver': ["adam", "sgd", "lbfgs"],          # for weight optimization
-        'mlp_learning_rate': ["constant", "invscaling", "adaptive"],  # for weight updates
+        'mlp_learning_rate': 
+            ["constant", "invscaling", "adaptive"],  # for weight updates
         'early_stopping': [True, False],     # terminate when score not improving
-        'nesterov': [True, False],           # used for nesterovs_momentum if solver is sgd
+        'nesterov': [True, False],      # used for nesterovs_momentum if solver is sgd
 
         # mlp extra_params that are optional user-specified for optuna
         'tol': 1e-4,
@@ -15725,6 +15728,14 @@ def xgbmlp_auto(X, y, **kwargs):
                     - 'categorical_cols': categorical numerical columns 
                     - 'non_numeric_cats': non-numeric categorical columns 
                     - 'continous_cols': continuous numerical columns
+                - 'params_stage1' = study.best_trial.user_attrs.get('params_stage1')
+                - 'model_stage1' = study.best_trial.user_attrs.get('model_stage1')
+                - 'params_stage2' = study.best_trial.user_attrs.get('params_stage2')
+                - 'model_stage2' = study.best_trial.user_attrs.get('model_stage2')
+                - 'results_stage1' = study.best_trial.user_attrs.get('results_stage1')
+                - 'selected_features' = study.best_trial.user_attrs.get('selected_features')
+                - 'score_mean' = study.best_trial.user_attrs.get('score_mean')
+                - 'best_trial' = study.best_trial
                 - 'optuna_study': optimzed optuna study object
                 - 'best_params': best model hyper-parameters found by optuna
                 - 'y_pred': Predicted y values
@@ -15959,17 +15970,17 @@ def xgbmlp_auto(X, y, **kwargs):
     model_outputs['X_processed'] = X.copy()
     model_outputs['pruning'] = data['pruning']
     model_outputs['optuna_study'] = study
-    model_outputs['xgb_params'] = study.best_trial.user_attrs.get('xgb_params')
-    model_outputs['xgb_model'] = study.best_trial.user_attrs.get('xgb_model')
-    model_outputs['mlp_params'] = study.best_trial.user_attrs.get('mlp_params')
-    model_outputs['mlp_model'] = study.best_trial.user_attrs.get('mlp_model')
-    model_outputs['stage1_results'] = study.best_trial.user_attrs.get('stage1_results')
+    model_outputs['params_stage1'] = study.best_trial.user_attrs.get('params_stage1')
+    model_outputs['model_stage1'] = study.best_trial.user_attrs.get('model_stage1')
+    model_outputs['params_stage2'] = study.best_trial.user_attrs.get('params_stage2')
+    model_outputs['model_stage2'] = study.best_trial.user_attrs.get('model_stage2')
+    model_outputs['results_stage1'] = study.best_trial.user_attrs.get('results_stage1')
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
 
     # get best_params from the optuna study
-    best_params = study.best_trial.user_attrs.get('mlp_params')
+    best_params = study.best_trial.user_attrs.get('params_stage2')
 
     model_outputs['best_params'] = best_params
 
@@ -16133,13 +16144,13 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     from sklearn.inspection import permutation_importance
 
     if kwargs['show_trial_progress'] and trial.number > 0:
-        print(f'Trial {trial.number} best cv test score so far: {study.best_value:.6f} ...')
+        print(f'Trial {trial.number}, best cv test score so far: {study.best_value:.6f} ...')
     
     seed = kwargs.get("random_state", 42)
     rng = np.random.default_rng(seed)
     
     # XGBoost params
-    xgb_params = {
+    params_stage1 = {
         "learning_rate": trial.suggest_float("xgb_learning_rate", *kwargs["xgb_learning_rate"], log=True),
         "max_depth": trial.suggest_int("max_depth", *kwargs["max_depth"]),
         "min_child_weight": trial.suggest_int("min_child_weight", *kwargs["min_child_weight"]),
@@ -16168,27 +16179,27 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     }
 
     if not kwargs['classify']:
-        xgb_params['predictor'] = kwargs['predictor']
-        xgb_params['scale_pos_weight'] = kwargs['scale_pos_weight']
+        params_stage1['predictor'] = kwargs['predictor']
+        params_stage1['scale_pos_weight'] = kwargs['scale_pos_weight']
 
     if kwargs['objective'] == 'multi:softmax':
-        xgb_params['num_class'] = kwargs['num_class']
+        params_stage1['num_class'] = kwargs['num_class']
 
     # Stage 1: Fit XGBoost for feature selection
     # print(f'Trial {trial.number+1} stage 1 ...')
     if kwargs['classify']:
-        xgb_model_stage1 = XGBClassifier(**xgb_params)
+        model_stage1 = XGBClassifier(**params_stage1)
     else:
-        xgb_model_stage1 = XGBRegressor(**xgb_params)
-    xgb_model_stage1.fit(X, y)
+        model_stage1 = XGBRegressor(**params_stage1)
+    model_stage1.fit(X, y)
     
     # absolute value of feature importances (not used for feature selection)
-    feature_importances_raw = np.abs(xgb_model_stage1.feature_importances_)
+    feature_importances_raw = np.abs(model_stage1.feature_importances_)
     feature_importances_norm = feature_importances_raw / feature_importances_raw.sum()
 
     # absolute value of mean permutation importances
     if kwargs['use_permutation']:
-        result = permutation_importance(xgb_model_stage1, X, y, n_repeats=5, random_state=seed)
+        result = permutation_importance(model_stage1, X, y, n_repeats=5, random_state=seed)
         permutation_importances_raw = np.abs(result.importances_mean)
         permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
 
@@ -16217,7 +16228,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
 
     # dictionary to log results of stage 1
     if kwargs['use_permutation']:
-        stage1_results = {
+        results_stage1 = {
             "selected_idx": selected_idx,
             "selected_features": selected_features,
             'feature_names': feature_names,
@@ -16230,7 +16241,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
             "permutation_importances_norm": permutation_importances_norm,
         }
     else:
-        stage1_results = {
+        results_stage1 = {
             "selected_idx": selected_idx,
             "selected_features": selected_features,
             'feature_names': feature_names,
@@ -16240,7 +16251,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
             "feature_importances_raw": feature_importances_raw,
             "feature_importances_norm": feature_importances_norm,
         }
-    trial.set_user_attr("stage1_results", stage1_results)
+    trial.set_user_attr("results_stage1", results_stage1)
     
     # Subset data
     X_selected = X[selected_features]
@@ -16248,16 +16259,16 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     # Stage 2: Fit XGBoost for classification or regression using selected_features
     # print(f'Trial {trial.number+1} stage 2 ...')
     if kwargs['classify']:
-        xgb_model_stage2 = XGBClassifier(**xgb_params)
+        model_stage2 = XGBClassifier(**params_stage1)
         # Cross-validated scoring
         cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
         scores = cross_val_score(
-            xgb_model_stage2, X_selected, y,
+            model_stage2, X_selected, y,
             cv=cv,
             scoring="f1_weighted"
         )
     else:
-        xgb_model_stage2 = XGBRegressor(**xgb_params)
+        model_stage2 = XGBRegressor(**params_stage1)
         # Cross-validated scoring
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
@@ -16268,9 +16279,9 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     score_mean = np.mean(scores)
 
     # log params, models, and score
-    trial.set_user_attr("xgb_params", xgb_params)
-    trial.set_user_attr("xgb_model_stage1", xgb_model_stage1)
-    trial.set_user_attr("xgb_model_stage2", xgb_model_stage2)
+    trial.set_user_attr("params_stage1", params_stage1)
+    trial.set_user_attr("model_stage1", model_stage1)
+    trial.set_user_attr("model_stage2", model_stage2)
     trial.set_user_attr("score", score_mean)
         
     return score_mean
@@ -16306,25 +16317,27 @@ def xgbrfe_auto(X, y, **kwargs):
                                     # - categorical_cols (categorical cols)
                                     # - non_numeric_cats (non-num cat cols)
                                     # - continuous_cols  (continuous cols)
-        verbose= 'on',                    # 'on' to display all 
-        gpu= True,                        # Autodetect to use gpu if present
-        n_splits= 5,                      # number of splits for KFold CV
-        pruning= False,                   # prune poor optuna trials
+        verbose= 'on',              # 'on' to display all 
+        gpu= True,                  # Autodetect to use gpu if present
+        n_splits= 5,                # number of splits for KFold CV
+        pruning= False,             # prune poor optuna trials
 
         # random seed for all functions 
-        'random_state': 42,                 # random seed for reproducibility
+        'random_state': 42,         # random seed for reproducibility
 
         # objective function options
-        'show_trial_progress': True,        # print each trial number and best cv score
-        'use_permutation': False,            # use permutation importances for RFE
-        'use_normalized': True,              # normalize the importances for RFE
+        'show_trial_progress': True, # print each trial number and best cv score
+        'use_permutation': False,    # True to use abs permutation importances for RFE
+                                     # False to use abs .feature_importances_ for RFE
+        'use_normalized': True,      # True to normalize the abs importances for RFE
+                                     # False to use raw abs importances
 
         # xgb params that are optimized by optuna
-        'feature_threshold': [0.001, 0.1],   # threshold for feature_importance
-        'xgb_learning_rate': [1e-4, 1.0],       # Step size shrinkage (also called eta).
+        'feature_threshold': [0.001, 0.1],  # threshold for feature_importance
+        'xgb_learning_rate': [1e-4, 1.0],   # Step size shrinkage (also called eta).
         'max_depth': [3, 12],               # Max depth of a tree.
-        'min_child_weight': [1, 10],        # Min sum of instance weight (hessian) in a child.
-        'subsample': [0.5, 1],              # Fraction of samples used for training each tree.
+        'min_child_weight': [1, 10],   # Min sum of instance weight (hessian) in a child.
+        'subsample': [0.5, 1],         # Fraction of samples used for training each tree.
         'colsample_bytree': [0.5, 1],       # Fraction of features used for each tree.
         'gamma': [1e-8, 10.0],              # Minimum loss reduction to make a split.
         'reg_lambda': [1e-8, 10.0],         # L2 regularization term on weights.
@@ -16332,7 +16345,7 @@ def xgbrfe_auto(X, y, **kwargs):
         'n_estimators': [50, 500],        # Number of boosting rounds (trees).
 
         # xgb extra_params that are optional user-specified
-        'verbosity': 1,               # Verbosity of output (0=silent, 1=warnings, 2=info).
+        'verbosity': 1,            # Verbosity of output (0=silent, 1=warnings, 2=info).
         'booster': "gbtree",          # Type of booster ('gbtree','gblinear','dart').
         'tree_method': "auto",        # Tree construction algorithm.
         'nthread': -1,                # Number of parallel threads.
@@ -16342,8 +16355,8 @@ def xgbrfe_auto(X, y, **kwargs):
         'base_score': 0.5,            # Initial prediction score (global bias).
         'missing': np.nan,            # Value in the data to be treated as missing.
         'importance_type': "gain",    # Feature importance type 
-                                      # ('weight','gain','cover','total_gain','total_cover').
-        'predictor': "auto",          # Type of predictor ('cpu_predictor', 'gpu_predictor').
+                                  # ('weight','gain','cover','total_gain','total_cover').
+        'predictor': "auto",      # Type of predictor ('cpu_predictor', 'gpu_predictor').
         'enable_categorical': False,  # Whether to enable categorical data support.    
 
         preprocessing options:
@@ -16372,6 +16385,13 @@ def xgbrfe_auto(X, y, **kwargs):
                     - 'categorical_cols': categorical numerical columns 
                     - 'non_numeric_cats': non-numeric categorical columns 
                     - 'continous_cols': continuous numerical columns
+                - 'params_stage1' = study.best_trial.user_attrs.get('params_stage1')
+                - 'model_stage1' = study.best_trial.user_attrs.get('model_stage1')
+                - 'model_stage2' = study.best_trial.user_attrs.get('model_stage2')
+                - 'results_stage1' = study.best_trial.user_attrs.get('results_stage1')
+                - 'selected_features' = study.best_trial.user_attrs.get('selected_features')
+                - 'score_mean' = study.best_trial.user_attrs.get('score_mean')
+                - 'best_trial' = study.best_trial
                 - 'optuna_study': optimzed optuna study object
                 - 'best_params': best model hyper-parameters found by optuna
                 - 'y_pred': Predicted y values
@@ -16580,16 +16600,16 @@ def xgbrfe_auto(X, y, **kwargs):
     model_outputs['X_processed'] = X.copy()
     model_outputs['pruning'] = data['pruning']
     model_outputs['optuna_study'] = study
-    model_outputs['xgb_params'] = study.best_trial.user_attrs.get('xgb_params')
-    model_outputs['xgb_model_stage1'] = study.best_trial.user_attrs.get('xgb_model_stage1')
-    model_outputs['xgb_model_stage2'] = study.best_trial.user_attrs.get('xgb_model_stage2')
-    model_outputs['stage1_results'] = study.best_trial.user_attrs.get('stage1_results')
+    model_outputs['params_stage1'] = study.best_trial.user_attrs.get('params_stage1')
+    model_outputs['model_stage1'] = study.best_trial.user_attrs.get('model_stage1')
+    model_outputs['model_stage2'] = study.best_trial.user_attrs.get('model_stage2')
+    model_outputs['results_stage1'] = study.best_trial.user_attrs.get('results_stage1')
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
 
     # get best_params from the optuna study
-    best_params = study.best_trial.user_attrs.get('xgb_params')
+    best_params = study.best_trial.user_attrs.get('params_stage1')
 
     model_outputs['best_params'] = best_params
 
