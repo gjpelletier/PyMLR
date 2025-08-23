@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.150"
+__version__ = "1.2.151"
 
 def check_X_y(X,y):
 
@@ -16752,3 +16752,591 @@ def xgbrfe_auto(X, y, **kwargs):
     warnings.filterwarnings("default")
 
     return fitted_model, model_outputs
+
+def adarfe_objective(trial, X, y, study, **kwargs):
+    '''
+    Objective function used by optuna 
+    to find the optimum hyper-parameters for XGBoost
+    XGBRegressor or AdaBoostClassifier with Recursive Feature Elimination
+    using a threshold of feature_importance in two stages:
+    Stage 1: AdaBoost for feature selection using threshold of feature_importance
+    Stage 2: AdaBoost using the selected features from Stage 1 
+    for classification or regression
+    '''
+    import numpy as np
+    import pandas as pd
+    from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
+    from sklearn.pipeline import Pipeline
+    from sklearn.model_selection import cross_val_score, RepeatedKFold, StratifiedKFold
+    from PyMLR import detect_gpu
+    from sklearn.inspection import permutation_importance
+    from sklearn.ensemble import AdaBoostRegressor, AdaBoostClassifier
+    from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier 
+
+    if kwargs['show_trial_progress'] and trial.number > 0:
+        print(f'Trial {trial.number}, best cv test score so far: {study.best_value:.6f} ...')
+    
+    seed = kwargs.get("random_state", 42)
+    rng = np.random.default_rng(seed)
+    
+    # AdaBoost params_stage1
+    params_stage1 = {
+        # AdaBoost params_stage1
+        "n_estimators": trial.suggest_int("n_estimators",
+            *kwargs['n_estimators']),
+        'learning_rate': trial.suggest_float("learning_rate", 
+            *kwargs['learning_rate'], log=True),        
+        'random_state': kwargs['random_state'],                
+    }
+
+    # DecisionTree params for base_estimator of AdaBoost
+    params_estimator = {
+        "max_depth": trial.suggest_int("max_depth",
+            *kwargs['max_depth']),
+        "min_samples_split": trial.suggest_int("min_samples_split",
+            *kwargs['min_samples_split'], log=True),
+        "min_samples_leaf": trial.suggest_int("min_samples_leaf",
+            *kwargs['min_samples_leaf'], log=True),
+        "max_features": trial.suggest_float("max_features",
+            *kwargs['max_features']),
+        "max_leaf_nodes": trial.suggest_int("max_leaf_nodes",
+            *kwargs['max_leaf_nodes'], log=True),
+    }
+
+    # Use DecisionTree as estimator for AdaBoost
+    if kwargs['classify']:
+        params_stage1['estimator'] = DecisionTreeClassifier(
+            max_depth= params_estimator['max_depth'], 
+            min_samples_split= params_estimator['min_samples_split'], 
+            min_samples_leaf= params_estimator['min_samples_leaf'], 
+            max_features= params_estimator['max_features'], 
+            max_leaf_nodes= params_estimator['max_leaf_nodes'], 
+            random_state=seed)
+    else:
+        params_stage1['estimator'] = DecisionTreeRegressor(
+            max_depth= params_estimator['max_depth'], 
+            min_samples_split= params_estimator['min_samples_split'], 
+            min_samples_leaf= params_estimator['min_samples_leaf'], 
+            max_features= params_estimator['max_features'], 
+            max_leaf_nodes= params_estimator['max_leaf_nodes'], 
+            random_state=seed)
+        params_stage1['loss'] = trial.suggest_categorical("loss", kwargs['loss'])
+
+    # Stage 1: Fit XGBoost for feature selection
+    # print(f'Trial {trial.number+1} stage 1 ...')
+    if kwargs['classify']:
+        model_stage1 = AdaBoostClassifier(**params_stage1)
+    else:
+        model_stage1 = AdaBoostRegressor(**params_stage1)
+    model_stage1.fit(X, y)
+    
+    # absolute value of feature importances (not used for feature selection)
+    feature_importances_raw = np.abs(model_stage1.feature_importances_)
+    feature_importances_norm = feature_importances_raw / feature_importances_raw.sum()
+
+    # absolute value of mean permutation importances
+    if kwargs['use_permutation']:
+        result = permutation_importance(model_stage1, X, y, n_repeats=5, random_state=seed)
+        permutation_importances_raw = np.abs(result.importances_mean)
+        permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
+
+    # feature selection
+    threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True) 
+    if kwargs['use_permutation']:
+        if kwargs['use_normalized']:
+            selected_idx = np.where(permutation_importances_norm > threshold)[0]
+        else:
+            selected_idx = np.where(permutation_importances_raw > threshold)[0]
+    else:
+        if kwargs['use_normalized']:
+            selected_idx = np.where(feature_importances_norm > threshold)[0]
+        else:
+            selected_idx = np.where(feature_importances_raw > threshold)[0]
+        
+    # heavily penalize trials with no selected features
+    if len(selected_idx) == 0:
+        trial.set_user_attr("selected_features", [])
+        return 0.0
+
+    # selected_features
+    feature_names = kwargs['feature_names']
+    selected_features = [feature_names[i] for i in selected_idx]
+    trial.set_user_attr("selected_features", selected_features)
+
+    # dictionary to log results of stage 1
+    if kwargs['use_permutation']:
+        results_stage1 = {
+            "selected_idx": selected_idx,
+            "selected_features": selected_features,
+            'feature_names': feature_names,
+            'use_normalized': kwargs['use_normalized'],
+            'use_permutation': kwargs['use_permutation'],
+            'threshold': threshold,
+            "feature_importances_raw": feature_importances_raw,
+            "feature_importances_norm": feature_importances_norm,
+            "permutation_importances_raw": permutation_importances_raw,
+            "permutation_importances_norm": permutation_importances_norm,
+        }
+    else:
+        results_stage1 = {
+            "selected_idx": selected_idx,
+            "selected_features": selected_features,
+            'feature_names': feature_names,
+            'use_normalized': kwargs['use_normalized'],
+            'use_permutation': kwargs['use_permutation'],
+            'threshold': threshold,
+            "feature_importances_raw": feature_importances_raw,
+            "feature_importances_norm": feature_importances_norm,
+        }
+    trial.set_user_attr("results_stage1", results_stage1)
+    
+    # Subset data
+    X_selected = X[selected_features]
+
+    # Stage 2: Fit AdaBoost for classification or regression using selected_features
+    if kwargs['classify']:
+        model_stage2 = AdaBoostClassifier(**params_stage1)
+        # Cross-validated scoring
+        cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
+        scores = cross_val_score(
+            model_stage2, X_selected, y,
+            cv=cv,
+            scoring="f1_weighted"
+        )
+    else:
+        model_stage2 = AdaBoostRegressor(**params_stage1)
+        # Cross-validated scoring
+        cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
+        scores = cross_val_score(
+            mp_model, X_selected, y,
+            cv=cv,
+            scoring="neg_root_mean_squared_error"
+        )
+    score_mean = np.mean(scores)
+
+    # log params, models, and score
+    trial.set_user_attr("params_estimator", params_estimator)
+    trial.set_user_attr("params_stage1", params_stage1)
+    trial.set_user_attr("model_stage1", model_stage1)
+    trial.set_user_attr("model_stage2", model_stage2)
+    trial.set_user_attr("score", score_mean)
+        
+    return score_mean
+ 
+def adarfe_auto(X, y, **kwargs):
+
+    """
+    Autocalibration of hyperparameters for a hybrid model 
+    of AdaBoost with Recursive Feature Elimination
+    Stage 1: AdaBoost for feature selection using threshold of feature importance
+    Stage 2: AdaBoost for classification or regression using selected features 
+
+    by
+    Greg Pelletier
+    gjpelletier@gmail.com
+    20-Aug-2025
+
+    REQUIRED INPUTS (X and y should have same number of rows and 
+    only contain real numbers)
+    X = dataframe of the candidate independent variables 
+        (as many columns of data as needed)
+    y = dataframe of the dependent variable (one column of data)
+
+    OPTIONAL KEYWORD ARGUMENTS
+    **kwargs (optional keyword arguments):
+        n_trials= 50,               # number of optuna trials
+        classify= False,            # True for MLPClassifier
+        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess_result= None,    # dict of the following result from 
+                                    # preprocess_train if available:         
+                                    # - encoder          (OneHotEncoder)
+                                    # - scaler           (StandardScaler)
+                                    # - categorical_cols (categorical cols)
+                                    # - non_numeric_cats (non-num cat cols)
+                                    # - continuous_cols  (continuous cols)
+        verbose= 'on',              # 'on' to display all 
+        gpu= True,                  # Autodetect to use gpu if present
+        n_splits= 5,                # number of splits for KFold CV
+        pruning= False,             # prune poor optuna trials
+
+        # random seed for all functions 
+        'random_state': 42,         # random seed for reproducibility
+
+        # objective function options
+        'show_trial_progress': True, # print each trial number and best cv score
+        'use_permutation': False,    # True to use abs permutation importances for RFE
+                                     # False to use abs .feature_importances_ for RFE
+        'use_normalized': True,      # True to normalize the abs importances for RFE
+                                     # False to use raw abs importances
+
+        # param for for permutation_importance 
+        'n_jobs': -1,                 # -1 to use all CPU cores with cross_val_score
+        
+        # params for AdaBoost optimized by optuna
+        'n_estimators': [50, 500],
+        'learning_rate': [0.01, 1.0],
+        'loss': ["linear", "square", "exponential"],  # loss fn for regressor
+        
+        # params for base_estimator (DecisionTree)
+        'max_depth': [2, 30],               # max depth of a tree
+        'min_samples_split': [2, 20],       # min samples to split internal node
+        'min_samples_leaf': [1, 20],        # min samples to be at a leaf node
+        'max_features': [0.1, 1.0],         # number of features to consider 
+                                            # when looking for the best split
+        'max_leaf_nodes': [10, 100],        # max number of leaf nodes 
+        
+        preprocessing options:
+            use_encoder (bool): True (default) or False
+            use_scaler (bool): True (default) or False
+            threshold_cat (int): Max unique values for numeric columns 
+                to be considered categorical (default: 12)
+            scale (str): 'minmax' or 'standard' for scaler (default: 'standard')
+            unskew_pos (bool): True: use log1p transform on features with 
+                skewness greater than threshold_skew_pos (default: False)
+            threshold_skew_pos: threshold skewness to log1p transform features
+                used if unskew_pos=True (default: 0.5)
+            unskew_neg (bool): True: use sqrt transform on features with 
+                skewness less than threshold_skew_neg (default: False)
+            threshold_skew_neg: threshold skewness to sqrt transform features
+                used if unskew_neg=True (default: -0.5)
+
+    RETURNS
+        fitted_model, model_outputs
+            model_objects is the fitted model object
+            model_outputs is a dictionary of the following outputs: 
+                - 'preprocess': True for OneHotEncoder and StandardScaler
+                - 'preprocess_result': output or echo of the following:
+                    - 'encoder': OneHotEncoder for categorical X
+                    - 'scaler': StandardScaler for continuous X
+                    - 'categorical_cols': categorical numerical columns 
+                    - 'non_numeric_cats': non-numeric categorical columns 
+                    - 'continous_cols': continuous numerical columns
+                - 'params_stage1' = study.best_trial.user_attrs.get('params_stage1')
+                - 'model_stage1' = study.best_trial.user_attrs.get('model_stage1')
+                - 'model_stage2' = study.best_trial.user_attrs.get('model_stage2')
+                - 'results_stage1' = study.best_trial.user_attrs.get('results_stage1')
+                - 'selected_features' = study.best_trial.user_attrs.get('selected_features')
+                - 'score_mean' = study.best_trial.user_attrs.get('score_mean')
+                - 'best_trial' = study.best_trial
+                - 'optuna_study': optimzed optuna study object
+                - 'best_params': best model hyper-parameters found by optuna
+                - 'y_pred': Predicted y values
+                - 'residuals': Residuals (y-y_pred) for each of the four methods
+                - 'stats': Regression statistics for each model
+
+    NOTE
+    Do any necessary/optional cleaning of the data before 
+    passing the data to this function. X and y should have the same number of rows
+    and contain only real numbers with no missing values. X can contain as many
+    columns as needed, but y should only be one column. X should have unique
+    column names for for each column
+
+    EXAMPLE 
+    model, outputs = xgbrfe_auto(X, y)
+
+    """
+
+    from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
+    import time
+    import pandas as pd
+    import numpy as np
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.model_selection import cross_val_score, train_test_split
+    from sklearn.metrics import mean_squared_error
+    from sklearn.base import clone
+    from sklearn.metrics import PredictionErrorDisplay
+    from sklearn.model_selection import train_test_split
+    import matplotlib.pyplot as plt
+    import warnings
+    import sys
+    import statsmodels.api as sm
+    import optuna
+    from xgboost import XGBRegressor, XGBClassifier
+
+    # Define default values of input data arguments
+    defaults = {
+        'n_trials': 50,                     # number of optuna trials
+        'classify': False,            # True for MLPClassifier
+        'preprocess': True,           # True for OneHotEncoder and StandardScaler
+        'preprocess_result': None,    # dict of  the following result from 
+                                      # preprocess_train if available:         
+                                      # - encoder          (OneHotEncoder) 
+                                      # - scaler           (StandardScaler)
+                                      # - categorical_cols (categorical columns)
+                                      # - non_numeric_cats (non-numeric cats)
+                                      # - continuous_cols  (continuous columns)
+        # --- preprocess_train ---
+        'use_encoder': True, 
+        'use_scaler': True, 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
+        'scale': 'standard', 
+        'unskew_pos': False, 
+        'threshold_skew_pos': 0.5,
+        'unskew_neg': False, 
+        'threshold_skew_neg': -0.5,        
+        # ------------------------
+        'verbose': 'on',
+        'gpu': True,                         # Autodetect to use gpu if present
+        'n_splits': 5,                       # number of splits for KFold CV
+
+        'pruning': False,                    # prune poor optuna trials
+
+        # objective function options
+        'show_trial_progress': True,         # print trial numbers during execution
+        'use_permutation': False,            # use permutation importances for RFE
+        'use_normalized': True,              # normalize the importances for RFE
+        
+        # random seed for all functions 
+        'random_state': 42,                 # random seed for reproducibility
+
+        # param for for permutation_importance 
+        'n_jobs': -1,                 # -1 to use all CPU cores with cross_val_score
+        
+        # params for AdaBoost optimized by optuna
+        'n_estimators': [50, 500],
+        'learning_rate': [0.01, 1.0],
+        'loss': ["linear", "square", "exponential"],  # loss fn for regressor
+        
+        # params for base_estimator (DecisionTree)
+        'max_depth': [2, 30],               # max depth of a tree
+        'min_samples_split': [2, 20],       # min samples to split internal node
+        'min_samples_leaf': [1, 20],        # min samples to be at a leaf node
+        'max_features': [0.1, 1.0],         # number of features to consider 
+                                            # when looking for the best split
+        'max_leaf_nodes': [10, 100],        # max number of leaf nodes        
+    }
+
+    # Update input data argumements with any provided keyword arguments in kwargs
+    data = {**defaults, **kwargs}
+
+    # print a warning for unexpected input kwargs
+    unexpected = kwargs.keys() - defaults.keys()
+    if unexpected:
+        # raise ValueError(f"Unexpected argument(s): {unexpected}")
+        print(f"Unexpected input kwargs: {unexpected}")
+
+    # Auto-detect if GPU is present and use GPU if present
+    if data['gpu']:
+        use_gpu = detect_gpu()
+        if use_gpu:
+            data['device'] = 'gpu'
+        else:
+            data['device'] = 'cpu'
+    else:
+        data['device'] = 'cpu'
+
+    # copy X and y to avoid altering the originals
+    X = X.copy()
+    y = y.copy()
+    
+    X, y = check_X_y(X,y)
+
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+        
+    # Suppress warnings
+    warnings.filterwarnings('ignore')
+
+    # Set start time for calculating run time
+    start_time = time.time()
+
+    # Set global random seed
+    np.random.seed(data['random_state'])
+
+    # check if X contains dummy variables
+    X_has_dummies = detect_dummy_variables(X)
+
+    # Initialize output dictionaries
+    model_objects = {}
+    model_outputs = {}
+
+    # Pre-process X to apply OneHotEncoder and StandardScaler
+    if data['preprocess']:
+        if data['preprocess_result']!=None:
+            # print('preprocess_test')
+            X = preprocess_test(X, data['preprocess_result'])
+        else:
+            kwargs_pre = {
+                'use_encoder': data['use_encoder'],
+                'use_scaler': data['use_scaler'],
+                'threshold_cat': data['threshold_cat'],
+                'scale': data['scale'], 
+                'unskew_pos': data['unskew_pos'], 
+                'threshold_skew_pos': data['threshold_skew_pos'],
+                'unskew_neg': data['unskew_neg'], 
+                'threshold_skew_neg': data['threshold_skew_neg']        
+            }
+            data['preprocess_result'] = preprocess_train(X, **kwargs_pre)
+            X = data['preprocess_result']['df_processed']
+
+    data['feature_names'] = X.columns.to_list()
+
+    print('Running optuna to find best parameters, could take a few minutes, please wait...')
+    optuna.logging.set_verbosity(optuna.logging.ERROR)
+
+    # optional pruning
+    if data['pruning']:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True),
+            pruner=optuna.pruners.MedianPruner())
+    else:
+        study = optuna.create_study(
+            direction="maximize", 
+            sampler=optuna.samplers.TPESampler(seed=data['random_state'], multivariate=True))
+    
+    X_opt = X.copy()    # copy X to prevent altering the original
+
+    from PyMLR import adarfe_objective
+    study.optimize(lambda trial: adarfe_objective(trial, X_opt, y, study, **data), n_trials=data['n_trials'])
+
+    # save outputs
+    model_outputs['preprocess'] = data['preprocess']   
+    model_outputs['preprocess_result'] = data['preprocess_result'] 
+    model_outputs['X_processed'] = X.copy()
+    model_outputs['pruning'] = data['pruning']
+    model_outputs['optuna_study'] = study
+    model_outputs['params_estimator'] = study.best_trial.user_attrs.get('params_estimator')
+    model_outputs['params_stage1'] = study.best_trial.user_attrs.get('params_stage1')
+    model_outputs['model_stage1'] = study.best_trial.user_attrs.get('model_stage1')
+    model_outputs['model_stage2'] = study.best_trial.user_attrs.get('model_stage2')
+    model_outputs['results_stage1'] = study.best_trial.user_attrs.get('results_stage1')
+    model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
+    model_outputs['best_trial'] = study.best_trial
+
+    # get best_params from the optuna study
+    best_params = study.best_trial.user_attrs.get('params_stage1')
+
+    model_outputs['best_params'] = best_params
+
+    if data['classify']:
+        print('Fitting AdaBoostClassifier model with best parameters, please wait ...')    
+        fitted_model = AdaBoostClassifier(**best_params).fit(
+            X[model_outputs['selected_features']],y)
+    else:    
+        print('Fitting AdaBoostRegressor model with best parameters, please wait ...')    
+        fitted_model = AdaBoostRegressor(**best_params).fit(
+            X[model_outputs['selected_features']],y)
+
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X[selected_features], y)
+            hfig.savefig("AdaBoostClassifier_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X[selected_features], y)
+            hfig.savefig("AdaBoostClassifier_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X[model_outputs['selected_features']], y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['AdaBoostClassifier']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])    
+        if data['verbose'] == 'on':
+            print('')
+            print("AdaBoostClassifier goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:
+    
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table
+        
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X[model_outputs['selected_features']], y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['AdaBoostRegressor']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
+    
+        if data['verbose'] == 'on':
+            print('')
+            print("AdaBoostRegressor goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
+    
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
+    
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("AdaBoostRegressor_predictions.png", dpi=300)
+
+    # Best score of CV test data
+    print('')
+    print(f"Best-fit score of CV test data: {study.best_value:.6f}")
+    print('')
+
+    # Print the run time
+    fit_time = time.time() - start_time
+    print('Done')
+    print(f"Time elapsed: {fit_time:.2f} sec")
+    print('')
+
+    # Restore warnings to normal
+    warnings.filterwarnings("default")
+
+    return fitted_model, model_outputs
+
+
