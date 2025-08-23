@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.147"
+__version__ = "1.2.148"
 
 def check_X_y(X,y):
 
@@ -15414,6 +15414,7 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
     from PyMLR import detect_gpu
     from xgboost import XGBClassifier, XGBRegressor
     from sklearn.neural_network import MLPClassifier, MLPRegressor
+    from sklearn.inspection import permutation_importance
 
     if kwargs['show_trial_progress'] and trial.number > 0:
         print(f'Trial {trial.number} best cv test score so far: {study.best_value:.6f} ...')
