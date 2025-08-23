@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.146"
+__version__ = "1.2.147"
 
 def check_X_y(X,y):
 
@@ -15457,32 +15457,67 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
         xgb_model = XGBRegressor(**xgb_params)
     xgb_model.fit(X, y)
     
-    # log feature importances
-    importances = xgb_model.feature_importances_
-    trial.set_user_attr("feature_importances", importances)
+    # absolute value of feature importances (not used for feature selection)
+    feature_importances_raw = np.abs(xgb_model.feature_importances_)
+    feature_importances_norm = feature_importances_raw / feature_importances_raw.sum()
 
-    # Feature selection
-    threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True)  # [0.01 ,0.1]
-    selected_idx = np.where(importances > threshold)[0]
+    # absolute value of mean permutation importances
+    if kwargs['use_permutation']:
+        result = permutation_importance(xgb_model, X, y, n_repeats=5, random_state=seed)
+        permutation_importances_raw = np.abs(result.importances_mean)
+        permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
 
+    # feature selection
+    threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True) 
+    if kwargs['use_permutation']:
+        if kwargs['use_normalized']:
+            selected_idx = np.where(permutation_importances_norm > threshold)[0]
+        else:
+            selected_idx = np.where(permutation_importances_raw > threshold)[0]
+    else:
+        if kwargs['use_normalized']:
+            selected_idx = np.where(feature_importances_norm > threshold)[0]
+        else:
+            selected_idx = np.where(feature_importances_raw > threshold)[0]
+        
     # heavily penalize trials with no selected features
     if len(selected_idx) == 0:
         trial.set_user_attr("selected_features", [])
         return 0.0
 
-    # log selected_features
+    # selected_features
     feature_names = kwargs['feature_names']
     selected_features = [feature_names[i] for i in selected_idx]
     trial.set_user_attr("selected_features", selected_features)
 
-    # log selected_features_with_importances
-    selected_features_with_importances = {
-        feature_names[i]: float(importances[i]) for i in selected_idx
-    }
-    trial.set_user_attr("selected_features_with_importances", selected_features_with_importances)
+    # dictionary to log results of stage 1
+    if kwargs['use_permutation']:
+        stage1_results = {
+            "selected_idx": selected_idx,
+            "selected_features": selected_features,
+            'feature_names': feature_names,
+            'use_normalized': kwargs['use_normalized'],
+            'use_permutation': kwargs['use_permutation'],
+            'threshold': threshold,
+            "feature_importances_raw": feature_importances_raw,
+            "feature_importances_norm": feature_importances_norm,
+            "permutation_importances_raw": permutation_importances_raw,
+            "permutation_importances_norm": permutation_importances_norm,
+        }
+    else:
+        stage1_results = {
+            "selected_idx": selected_idx,
+            "selected_features": selected_features,
+            'feature_names': feature_names,
+            'use_normalized': kwargs['use_normalized'],
+            'use_permutation': kwargs['use_permutation'],
+            'threshold': threshold,
+            "feature_importances_raw": feature_importances_raw,
+            "feature_importances_norm": feature_importances_norm,
+        }
+    trial.set_user_attr("stage1_results", stage1_results)
 
     # Subset data
-    # X_selected = X[:, selected_idx]
     X_selected = X[selected_features]
     
     # 1. MLP Sample architecture: depth and width
@@ -15605,8 +15640,10 @@ def xgbmlp_auto(X, y, **kwargs):
         # random seed for all functions 
         'random_state': 42,                 # random seed for reproducibility
 
-        # print trial progress
-        'show_trial_progress': True,        # print each trial number and best cv score
+        # objective function options
+        'show_trial_progress': True,        # print trial numbers during execution
+        'use_permutation': False,            # use permutation importances for RFE
+        'use_normalized': True,              # normalize the importances for RFE
 
         # xgb params that are optimized by optuna
         'feature_threshold': [0.001, 0.1],   # threshold for feature_importance
@@ -15753,8 +15790,10 @@ def xgbmlp_auto(X, y, **kwargs):
 
         'pruning': False,                    # prune poor optuna trials
 
-        # print trial progress
+        # objective function options
         'show_trial_progress': True,        # print trial numbers during execution
+        'use_permutation': False,            # use permutation importances for RFE
+        'use_normalized': True,              # normalize the importances for RFE
         
         # random seed for all functions 
         'random_state': 42,                 # random seed for reproducibility
@@ -15923,10 +15962,8 @@ def xgbmlp_auto(X, y, **kwargs):
     model_outputs['xgb_model'] = study.best_trial.user_attrs.get('xgb_model')
     model_outputs['mlp_params'] = study.best_trial.user_attrs.get('mlp_params')
     model_outputs['mlp_model'] = study.best_trial.user_attrs.get('mlp_model')
-    model_outputs['feature_importances'] = study.best_trial.user_attrs.get('feature_mportances')
+    model_outputs['stage1_results'] = study.best_trial.user_attrs.get('stage1_results')
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
-    model_outputs['selected_features_with_importances'] = study.best_trial.user_attrs.get(
-        'selected_features_with_importances')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
 
@@ -16202,11 +16239,9 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
             "feature_importances_raw": feature_importances_raw,
             "feature_importances_norm": feature_importances_norm,
         }
-
     trial.set_user_attr("stage1_results", stage1_results)
     
     # Subset data
-    # X_selected = X[:, selected_idx]
     X_selected = X[selected_features]
 
     # Stage 2: Fit XGBoost for classification or regression using selected_features
