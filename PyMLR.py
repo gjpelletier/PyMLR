@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.143"
+__version__ = "1.2.144"
 
 def check_X_y(X,y):
 
@@ -16147,34 +16147,25 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     # absolute value of feature importances (not used for feature selection)
     feature_importances_raw = np.abs(xgb_model_stage1.feature_importances_)
     feature_importances_norm = feature_importances_raw / feature_importances_raw.sum()
-    print('feature_importances_raw_sum:',feature_importances_raw.sum())
 
     # absolute value of mean permutation importances
     if kwargs['use_permutation']:
         result = permutation_importance(xgb_model_stage1, X, y, n_repeats=5, random_state=seed)
-        # permutation_importances_raw = np.abs(result.importances_mean[0])
         permutation_importances_raw = np.abs(result.importances_mean)
         permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
-        # print('permutation_importances_raw:\n',permutation_importances_raw)
-        # print('permutation_importances_norm:\n',permutation_importances_norm)
-        print('permutation_importances_raw_sum:',permutation_importances_raw.sum())
 
     # feature selection
     threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True) 
     if kwargs['use_permutation']:
         if kwargs['use_normalized']:
             selected_idx = np.where(permutation_importances_norm > threshold)[0]
-            # selected_idx = np.where(permutation_importances_norm > threshold)
         else:
             selected_idx = np.where(permutation_importances_raw > threshold)[0]
-            # selected_idx = np.where(permutation_importances_raw > threshold)
     else:
         if kwargs['use_normalized']:
             selected_idx = np.where(feature_importances_norm > threshold)[0]
-            # selected_idx = np.where(feature_importances_norm > threshold)
         else:
             selected_idx = np.where(feature_importances_raw > threshold)[0]
-            # selected_idx = np.where(feature_importances_raw > threshold)
         
     # heavily penalize trials with no selected features
     if len(selected_idx) == 0:
@@ -16187,21 +16178,6 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     trial.set_user_attr("selected_features", selected_features)
 
     # dictionary to log results of stage 1
-    '''
-    stage1_results = {
-        "selected_idx": selected_idx,
-        "selected_features": selected_features,
-        'feature_names': feature_names,
-        'use_normalized': kwargs['use_normalized'],
-        'use_permutation': kwargs['use_permutation'],
-        'threshold': threshold,
-        "feature_importances_raw": feature_importances_raw,
-        "feature_importances_norm": feature_importances_norm,
-    }
-    if kwargs['use_permutation']:
-        stage1_results["permutation_importances_raw"] = permutation_importances_raw,
-        stage1_results["permutation_importances_norm"] = permutation_importances_norm,
-    '''
     if kwargs['use_permutation']:
         stage1_results = {
             "selected_idx": selected_idx,
@@ -16304,8 +16280,8 @@ def xgbrfe_auto(X, y, **kwargs):
 
         # objective function options
         'show_trial_progress': True,        # print each trial number and best cv score
-        'use_permutation': False,           # use permutation importances for RFE
-        'use_normalized': False,            # normalize the importances for RFE
+        'use_permutation': False,            # use permutation importances for RFE
+        'use_normalized': True,              # normalize the importances for RFE
 
         # xgb params that are optimized by optuna
         'feature_threshold': [0.001, 0.1],   # threshold for feature_importance
@@ -16429,7 +16405,7 @@ def xgbrfe_auto(X, y, **kwargs):
         # objective function options
         'show_trial_progress': True,         # print trial numbers during execution
         'use_permutation': False,            # use permutation importances for RFE
-        'use_normalized': False,             # normalize the importances for RFE
+        'use_normalized': True,              # normalize the importances for RFE
         
         # random seed for all functions 
         'random_state': 42,                 # random seed for reproducibility
