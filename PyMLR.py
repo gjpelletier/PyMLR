@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.142"
+__version__ = "1.2.143"
 
 def check_X_y(X,y):
 
@@ -16147,6 +16147,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     # absolute value of feature importances (not used for feature selection)
     feature_importances_raw = np.abs(xgb_model_stage1.feature_importances_)
     feature_importances_norm = feature_importances_raw / feature_importances_raw.sum()
+    print('feature_importances_raw_sum:',feature_importances_raw.sum())
 
     # absolute value of mean permutation importances
     if kwargs['use_permutation']:
@@ -16156,6 +16157,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
         permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
         # print('permutation_importances_raw:\n',permutation_importances_raw)
         # print('permutation_importances_norm:\n',permutation_importances_norm)
+        print('permutation_importances_raw_sum:',permutation_importances_raw.sum())
 
     # feature selection
     threshold = trial.suggest_float("feature_threshold", *kwargs["feature_threshold"], log=True) 
@@ -16185,6 +16187,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     trial.set_user_attr("selected_features", selected_features)
 
     # dictionary to log results of stage 1
+    '''
     stage1_results = {
         "selected_idx": selected_idx,
         "selected_features": selected_features,
@@ -16192,16 +16195,38 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
         'use_normalized': kwargs['use_normalized'],
         'use_permutation': kwargs['use_permutation'],
         'threshold': threshold,
-        # "feature_importances_raw": feature_importances_raw.tolist(),
-        # "feature_importances_norm": feature_importances_norm.tolist(),
         "feature_importances_raw": feature_importances_raw,
         "feature_importances_norm": feature_importances_norm,
     }
     if kwargs['use_permutation']:
-        # stage1_results["permutation_importances_raw"] = permutation_importances_raw.tolist(),
-        # stage1_results["permutation_importances_norm"] = permutation_importances_norm.tolist(),
         stage1_results["permutation_importances_raw"] = permutation_importances_raw,
         stage1_results["permutation_importances_norm"] = permutation_importances_norm,
+    '''
+    if kwargs['use_permutation']:
+        stage1_results = {
+            "selected_idx": selected_idx,
+            "selected_features": selected_features,
+            'feature_names': feature_names,
+            'use_normalized': kwargs['use_normalized'],
+            'use_permutation': kwargs['use_permutation'],
+            'threshold': threshold,
+            "feature_importances_raw": feature_importances_raw,
+            "feature_importances_norm": feature_importances_norm,
+            "permutation_importances_raw": permutation_importances_raw,
+            "permutation_importances_norm": permutation_importances_norm,
+        }
+    else:
+        stage1_results = {
+            "selected_idx": selected_idx,
+            "selected_features": selected_features,
+            'feature_names': feature_names,
+            'use_normalized': kwargs['use_normalized'],
+            'use_permutation': kwargs['use_permutation'],
+            'threshold': threshold,
+            "feature_importances_raw": feature_importances_raw,
+            "feature_importances_norm": feature_importances_norm,
+        }
+
     trial.set_user_attr("stage1_results", stage1_results)
     
     # Subset data
@@ -16547,11 +16572,6 @@ def xgbrfe_auto(X, y, **kwargs):
     model_outputs['xgb_model_stage1'] = study.best_trial.user_attrs.get('xgb_model_stage1')
     model_outputs['xgb_model_stage2'] = study.best_trial.user_attrs.get('xgb_model_stage2')
     model_outputs['stage1_results'] = study.best_trial.user_attrs.get('stage1_results')
-    # model_outputs['feature_importances'] = study.best_trial.user_attrs.get('feature_mportances')
-    # model_outputs['permutation_importances_raw'] = study.best_trial.user_attrs.get('permutation_mportances_raw')
-    # model_outputs['permutation_importances_norm'] = study.best_trial.user_attrs.get('permutation_mportances_norm')
-    # model_outputs['selected_features_with_importances'] = study.best_trial.user_attrs.get(
-    #     'selected_features_with_importances')
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
