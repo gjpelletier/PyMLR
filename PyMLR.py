@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.151"
+__version__ = "1.2.152"
 
 def check_X_y(X,y):
 
@@ -16973,6 +16973,7 @@ def adarfe_auto(X, y, **kwargs):
         'n_jobs': -1,                 # -1 to use all CPU cores with cross_val_score
         
         # params for AdaBoost optimized by optuna
+        'feature_threshold': [0.001, 0.1],   # threshold for feature_importance
         'n_estimators': [50, 500],
         'learning_rate': [0.01, 1.0],
         'loss': ["linear", "square", "exponential"],  # loss fn for regressor
@@ -17096,6 +17097,7 @@ def adarfe_auto(X, y, **kwargs):
         'n_jobs': -1,                 # -1 to use all CPU cores with cross_val_score
         
         # params for AdaBoost optimized by optuna
+        'feature_threshold': [0.001, 0.1],   # threshold for feature_importance
         'n_estimators': [50, 500],
         'learning_rate': [0.01, 1.0],
         'loss': ["linear", "square", "exponential"],  # loss fn for regressor
