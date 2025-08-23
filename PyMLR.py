@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.144"
+__version__ = "1.2.145"
 
 def check_X_y(X,y):
 
@@ -16186,10 +16186,10 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
             'use_normalized': kwargs['use_normalized'],
             'use_permutation': kwargs['use_permutation'],
             'threshold': threshold,
-            "feature_importances_raw": feature_importances_raw,
-            "feature_importances_norm": feature_importances_norm,
-            "permutation_importances_raw": permutation_importances_raw,
-            "permutation_importances_norm": permutation_importances_norm,
+            "feature_importances_raw": feature_importances_raw.tolist(),
+            "feature_importances_norm": feature_importances_norm.tolist(),
+            "permutation_importances_raw": permutation_importances_raw.tolist(),
+            "permutation_importances_norm": permutation_importances_norm.tolist(),
         }
     else:
         stage1_results = {
@@ -16199,8 +16199,8 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
             'use_normalized': kwargs['use_normalized'],
             'use_permutation': kwargs['use_permutation'],
             'threshold': threshold,
-            "feature_importances_raw": feature_importances_raw,
-            "feature_importances_norm": feature_importances_norm,
+            "feature_importances_raw": feature_importances_raw.tolist(),
+            "feature_importances_norm": feature_importances_norm.tolist(),
         }
 
     trial.set_user_attr("stage1_results", stage1_results)
