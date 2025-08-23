@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.152"
+__version__ = "1.2.153"
 
 def check_X_y(X,y):
 
@@ -17055,7 +17055,8 @@ def adarfe_auto(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     import optuna
-    from xgboost import XGBRegressor, XGBClassifier
+    from sklearn.ensemble import AdaBoostRegressor, AdaBoostClassifier
+    from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier 
 
     # Define default values of input data arguments
     defaults = {
