@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.153"
+__version__ = "1.2.154"
 
 def check_X_y(X,y):
 
@@ -16836,7 +16836,8 @@ def adarfe_objective(trial, X, y, study, **kwargs):
 
     # absolute value of mean permutation importances
     if kwargs['use_permutation']:
-        result = permutation_importance(model_stage1, X, y, n_repeats=5, random_state=seed)
+        result = permutation_importance(
+            model_stage1, X, y, n_repeats=5, random_state=seed, n_jobs=kwargs['n_jobs'])
         permutation_importances_raw = np.abs(result.importances_mean)
         permutation_importances_norm = permutation_importances_raw / permutation_importances_raw.sum()
 
