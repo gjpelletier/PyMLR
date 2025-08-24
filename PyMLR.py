@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.156"
+__version__ = "1.2.157"
 
 def check_X_y(X,y):
 
@@ -15619,7 +15619,8 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
         scores = cross_val_score(
             model_stage2, X_selected, y,
             cv=cv,
-            scoring="f1_weighted"
+            # scoring="f1_weighted"
+            scoring=kwargs["scoring"]
         )
     else:
         model_stage2 = MLPRegressor(**params_stage2)
@@ -15628,7 +15629,8 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
         scores = cross_val_score(
             mp_model, X_selected, y,
             cv=cv,
-            scoring="neg_root_mean_squared_error"
+            # scoring="neg_root_mean_squared_error"
+            scoring=kwargs["scoring"]
         )
     score_mean = np.mean(scores)
 
@@ -15637,7 +15639,8 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
     trial.set_user_attr("model_stage1", model_stage1)
     trial.set_user_attr("params_stage2", params_stage2)
     trial.set_user_attr("model_stage2", model_stage2)
-    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("scoring", kwargs["scoring"])
+    trial.set_user_attr("score_mean", score_mean)
         
     return score_mean
     
@@ -15847,6 +15850,7 @@ def xgbmlp_auto(X, y, **kwargs):
         'show_trial_progress': True,        # print trial numbers during execution
         'use_permutation': False,            # use permutation importances for RFE
         'use_normalized': True,              # normalize the importances for RFE
+        'scoring': None,                     # cross_val_score scoring name
         
         # random seed for all functions 
         'random_state': 42,                 # random seed for reproducibility
@@ -15934,8 +15938,10 @@ def xgbmlp_auto(X, y, **kwargs):
     if y.nunique() <= 12 and not data['classify']:
         print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
 
-    # assign xgb objective depending on type of model
+    # assign objective depending on type of model
     if data['classify']:
+        if data['scoring'] == None:
+            data['scoring'] = "f1_weighted"
         # objective for XGBClassifier
         num_class = y.nunique()
         if num_class == 2:
@@ -15946,8 +15952,8 @@ def xgbmlp_auto(X, y, **kwargs):
             data['objective'] = 'multi:softmax'
             data['num_class'] = num_class
     else:
-        # objective for XGBRegressor
-        data['objective'] = 'reg:squarederror'
+        if data['scoring'] == None:
+            data['scoring'] = "neg_root_mean_squared_error"
 
     # Suppress warnings
     warnings.filterwarnings('ignore')
@@ -16017,6 +16023,7 @@ def xgbmlp_auto(X, y, **kwargs):
     model_outputs['model_stage2'] = study.best_trial.user_attrs.get('model_stage2')
     model_outputs['results_stage1'] = study.best_trial.user_attrs.get('results_stage1')
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
 
@@ -16952,7 +16959,8 @@ def adarfe_objective(trial, X, y, study, **kwargs):
         scores = cross_val_score(
             model_stage2, X_selected, y,
             cv=cv,
-            scoring="f1_weighted"
+            # scoring="f1_weighted"
+            scoring=kwargs["scoring"]
         )
     else:
         model_stage2 = AdaBoostRegressor(**params_stage1)
@@ -16961,7 +16969,8 @@ def adarfe_objective(trial, X, y, study, **kwargs):
         scores = cross_val_score(
             mp_model, X_selected, y,
             cv=cv,
-            scoring="neg_root_mean_squared_error"
+            # scoring="neg_root_mean_squared_error"
+            scoring=kwargs["scoring"]
         )
     score_mean = np.mean(scores)
 
@@ -16970,7 +16979,8 @@ def adarfe_objective(trial, X, y, study, **kwargs):
     trial.set_user_attr("params_stage1", params_stage1)
     trial.set_user_attr("model_stage1", model_stage1)
     trial.set_user_attr("model_stage2", model_stage2)
-    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("scoring", kwargs["scoring"])
+    trial.set_user_attr("score_mean", score_mean)
         
     return score_mean
  
@@ -17141,6 +17151,7 @@ def adarfe_auto(X, y, **kwargs):
         'show_trial_progress': True,         # print trial numbers during execution
         'use_permutation': False,            # use permutation importances for RFE
         'use_normalized': True,              # normalize the importances for RFE
+        'scoring': None,                     # cross_val_score scoring name
         
         # random seed for all functions 
         'random_state': 42,                 # random seed for reproducibility
@@ -17191,6 +17202,14 @@ def adarfe_auto(X, y, **kwargs):
     # Warn the user to consider using classify=True if y has < 12 classes
     if y.nunique() <= 12 and not data['classify']:
         print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
+    # assign objective depending on type of model
+    if data['classify']:
+        if data['scoring'] == None:
+            data['scoring'] = "f1_weighted"
+    else:
+        if data['scoring'] == None:
+            data['scoring'] = "neg_root_mean_squared_error"
         
     # Suppress warnings
     warnings.filterwarnings('ignore')
@@ -17260,6 +17279,7 @@ def adarfe_auto(X, y, **kwargs):
     model_outputs['model_stage2'] = study.best_trial.user_attrs.get('model_stage2')
     model_outputs['results_stage1'] = study.best_trial.user_attrs.get('results_stage1')
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
 
