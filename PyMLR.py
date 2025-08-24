@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.154"
+__version__ = "1.2.155"
 
 def check_X_y(X,y):
 
@@ -152,6 +152,47 @@ def check_X(X):
         X.columns = ['X' + str(i) for i in X.columns]       
 
     return X
+
+def cross_val_scoring():
+    '''
+    returns result dictionary of all string names of 
+    regression and classification scorers 
+    for sklearn cross_val_score
+    '''
+
+    from sklearn.metrics import get_scorer_names
+    
+    # Get all available scorers
+    all_scorers = get_scorer_names()
+    
+    # Classification scorers (based on common usage and metric semantics)
+    classification_scoring = sorted([
+        scorer for scorer in all_scorers
+        if scorer in {
+            "accuracy", "balanced_accuracy", "f1", "f1_macro", "f1_micro", "f1_weighted",
+            "precision", "precision_macro", "precision_micro", "precision_weighted",
+            "recall", "recall_macro", "recall_micro", "recall_weighted",
+            "roc_auc", "roc_auc_ovr", "roc_auc_ovo", "average_precision",
+            "neg_log_loss", "neg_brier_score"
+        }
+    ])
+    
+    # Regression scorers (based on regression semantics)
+    regression_scoring = sorted([
+        scorer for scorer in all_scorers
+        if scorer in {
+            "r2", "neg_mean_squared_error", "neg_root_mean_squared_error",
+            "neg_mean_absolute_error", "neg_median_absolute_error",
+            "neg_mean_squared_log_error", "explained_variance"
+        }
+    ])
+
+    result = {
+        'classification_scoring': classification_scoring,
+        'regression_scoring': regression_scoring,
+    }        
+    
+    return result 
    
 def preprocess_train(df, **kwargs):
     """
@@ -16265,7 +16306,8 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
         scores = cross_val_score(
             model_stage2, X_selected, y,
             cv=cv,
-            scoring="f1_weighted"
+            # scoring="f1_weighted"
+            scoring=kwargs["scoring"]
         )
     else:
         model_stage2 = XGBRegressor(**params_stage1)
@@ -16274,7 +16316,8 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
         scores = cross_val_score(
             mp_model, X_selected, y,
             cv=cv,
-            scoring="neg_root_mean_squared_error"
+            # scoring="neg_root_mean_squared_error"
+            scoring=kwargs["scoring"]
         )
     score_mean = np.mean(scores)
 
@@ -16282,7 +16325,8 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     trial.set_user_attr("params_stage1", params_stage1)
     trial.set_user_attr("model_stage1", model_stage1)
     trial.set_user_attr("model_stage2", model_stage2)
-    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("scoring", kwargs["scoring"])
+    trial.set_user_attr("score_mean", score_mean)
         
     return score_mean
       
@@ -16462,6 +16506,7 @@ def xgbrfe_auto(X, y, **kwargs):
         'show_trial_progress': True,         # print trial numbers during execution
         'use_permutation': False,            # use permutation importances for RFE
         'use_normalized': True,              # normalize the importances for RFE
+        'scorer': None,                      # cross_val_score scorer name
         
         # random seed for all functions 
         'random_state': 42,                 # random seed for reproducibility
@@ -16525,6 +16570,8 @@ def xgbrfe_auto(X, y, **kwargs):
         
     # assign objective depending on type of model
     if data['classify']:
+        if data['scoring'] == None:
+            data['scoring'] = "f1_weighted"
         # objective for XGBClassifier
         num_class = y.nunique()
         if num_class == 2:
@@ -16535,6 +16582,8 @@ def xgbrfe_auto(X, y, **kwargs):
             data['objective'] = 'multi:softmax'
             data['num_class'] = num_class
     else:
+        if data['scoring'] == None:
+            data['scoring'] = "neg_root_mean_squared_error"
         # objective for XGBRegressor
         data['objective'] = 'reg:squarederror'
 
@@ -16605,6 +16654,7 @@ def xgbrfe_auto(X, y, **kwargs):
     model_outputs['model_stage2'] = study.best_trial.user_attrs.get('model_stage2')
     model_outputs['results_stage1'] = study.best_trial.user_attrs.get('results_stage1')
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
 
