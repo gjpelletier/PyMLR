@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.157"
+__version__ = "1.2.158"
 
 def check_X_y(X,y):
 
@@ -4844,14 +4844,16 @@ def svr_objective(trial, X, y, **kwargs):
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="f1_weighted"        
+            # scoring="f1_weighted"        
+            scoring=kwargs["scoring"]
         )
     else:
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="neg_root_mean_squared_error"
+            # scoring="neg_root_mean_squared_error"
+            scoring=kwargs["scoring"]
         )
     score_mean = np.mean(scores)
 
@@ -4872,7 +4874,8 @@ def svr_objective(trial, X, y, **kwargs):
         trial.set_user_attr("feature_importances", importances.tolist())
 
     trial.set_user_attr("model", pipeline)
-    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("scoring", kwargs["scoring"])
+    trial.set_user_attr("score_mean", score_mean)
     trial.set_user_attr("selected_features", selected_features)
     trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
 
@@ -5032,6 +5035,7 @@ def svr_auto(X, y, **kwargs):
 
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
+        'scoring': None,                     # cross_val_score scoring name
         
         # params for model that are optimized by optuna
         'C': [0.1, 1000],           # range of C Regularization parameter. The strength of the regularization is inversely proportional to C. Must be strictly positive. The penalty is a squared l2.
@@ -5078,6 +5082,14 @@ def svr_auto(X, y, **kwargs):
     # Warn the user to consider using classify=True if y has < 12 classes
     if y.nunique() <= 12 and not data['classify']:
         print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
+    # assign scoring depending on type of model
+    if data['classify']:
+        if data['scoring'] == None:
+            data['scoring'] = "f1_weighted"
+    else:
+        if data['scoring'] == None:
+            data['scoring'] = "neg_root_mean_squared_error"
     
     # Suppress warnings
     warnings.filterwarnings('ignore')
@@ -5165,6 +5177,7 @@ def svr_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
@@ -7045,14 +7058,16 @@ def xgb_objective(trial, X, y, **kwargs):
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="f1_weighted"        
+            # scoring="f1_weighted"        
+            scoring=kwargs["scoring"]
         )
     else:
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="neg_root_mean_squared_error"
+            # scoring="neg_root_mean_squared_error"
+            scoring=kwargs["scoring"]
         )
 
     score_mean = np.mean(scores)
@@ -7074,7 +7089,8 @@ def xgb_objective(trial, X, y, **kwargs):
         trial.set_user_attr("feature_importances", importances.tolist())
 
     trial.set_user_attr("model", pipeline)
-    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("scoring", kwargs["scoring"])
+    trial.set_user_attr("score_mean", score_mean)
     trial.set_user_attr("selected_features", selected_features)
     trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
 
@@ -7244,6 +7260,7 @@ def xgb_auto(X, y, **kwargs):
 
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
+        'scoring': None,                     # cross_val_score scoring name
 
         # params that are optimized by optuna
         'learning_rate': [1e-4, 1.0],       # Step size shrinkage (also called eta).
@@ -7316,6 +7333,14 @@ def xgb_auto(X, y, **kwargs):
     else:
         # objective for XGBRegressor
         data['objective'] = 'reg:squarederror'
+
+    # assign scoring depending on type of model
+    if data['classify']:
+        if data['scoring'] == None:
+            data['scoring'] = "f1_weighted"
+    else:
+        if data['scoring'] == None:
+            data['scoring'] = "neg_root_mean_squared_error"
     
     # Suppress warnings
     warnings.filterwarnings('ignore')
@@ -7400,6 +7425,7 @@ def xgb_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
@@ -9172,14 +9198,16 @@ def forest_objective(trial, X, y, **kwargs):
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="f1_weighted"        
+            # scoring="f1_weighted"        
+            scoring=kwargs["scoring"]
         )
     else:
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="neg_root_mean_squared_error"
+            # scoring="neg_root_mean_squared_error"
+            scoring=kwargs["scoring"]
         )
     score_mean = np.mean(scores)
 
@@ -9200,7 +9228,8 @@ def forest_objective(trial, X, y, **kwargs):
         trial.set_user_attr("feature_importances", importances.tolist())
 
     trial.set_user_attr("model", pipeline)
-    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("scoring", kwargs["scoring"])
+    trial.set_user_attr("score_mean", score_mean)
     trial.set_user_attr("selected_features", selected_features)
     trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
 
@@ -9364,6 +9393,7 @@ def forest_auto(X, y, **kwargs):
 
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
+        'scoring': None,                     # cross_val_score scoring name
         
         # params that are optimized by optuna
         'n_estimators': [50, 500],          # number of trees in the forest
@@ -9426,6 +9456,14 @@ def forest_auto(X, y, **kwargs):
     # Warn the user to consider using classify=True if y has < 12 classes
     if y.nunique() <= 12 and not data['classify']:
         print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
+    # assign scoring depending on type of model
+    if data['classify']:
+        if data['scoring'] == None:
+            data['scoring'] = "f1_weighted"
+    else:
+        if data['scoring'] == None:
+            data['scoring'] = "neg_root_mean_squared_error"
 
     # assign criterion depending on type of model
     if data['classify']:
@@ -9510,6 +9548,7 @@ def forest_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
@@ -10144,14 +10183,16 @@ def knn_objective(trial, X, y, **kwargs):
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="f1_weighted"        
+            # scoring="f1_weighted"        
+            scoring=kwargs["scoring"]
         )
     else:
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="neg_root_mean_squared_error"
+            # scoring="neg_root_mean_squared_error"
+            scoring=kwargs["scoring"]
         )
 
     score_mean = np.mean(scores)
@@ -10189,7 +10230,8 @@ def knn_objective(trial, X, y, **kwargs):
         trial.set_user_attr("feature_importances", importances.tolist())
 
     trial.set_user_attr("model", pipeline)
-    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("scoring", kwargs["scoring"])
+    trial.set_user_attr("score_mean", score_mean)
     trial.set_user_attr("selected_features", selected_features)
     trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
 
@@ -10353,6 +10395,7 @@ def knn_auto(X, y, **kwargs):
 
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
+        'scoring': None,                     # cross_val_score scoring name
         
         # user params that are optimized by optuna (for future version)
         # 'pca_transform': [True, False],     # optuna chooses if PCA transform
@@ -10400,6 +10443,14 @@ def knn_auto(X, y, **kwargs):
     # Warn the user to consider using classify=True if y has < 12 classes
     if y.nunique() <= 12 and not data['classify']:
         print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
+    # assign scoring depending on type of model
+    if data['classify']:
+        if data['scoring'] == None:
+            data['scoring'] = "f1_weighted"
+    else:
+        if data['scoring'] == None:
+            data['scoring'] = "neg_root_mean_squared_error"
     
     # Suppress warnings
     warnings.filterwarnings('ignore')
@@ -10472,6 +10523,7 @@ def knn_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
@@ -11157,7 +11209,7 @@ def logistic_objective(trial, X, y, **kwargs):
 
     # Stratified cross-validation
     cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
-    scores = cross_val_score(pipeline, X, y, cv=cv, scoring="f1_weighted")
+    scores = cross_val_score(pipeline, X, y, cv=cv, scoring=kwargs["scoring"])
     score_mean = scores.mean()
 
     # Optional full pipeline fit to log selected features
@@ -11171,6 +11223,7 @@ def logistic_objective(trial, X, y, **kwargs):
         selected_features = kwargs["feature_names"]
 
     # Save outputs to trial
+    trial.set_user_attr("scoring", kwargs["scoring"])
     trial.set_user_attr("score_mean", score_mean)
     trial.set_user_attr("selected_features", selected_features)
     trial.set_user_attr("model", pipeline)
@@ -11333,6 +11386,7 @@ def logistic_auto(X, y, **kwargs):
         'n_splits': 5,              # number of splits for KFold CV
         'pruning': False,           # prune poor optuna trials
         'feature_selection': True,  # optuna feature selection
+        'scoring': None,                     # cross_val_score scoring name
         
         # [min,max] model params that are optimized by optuna
         'C': [1e-4, 10.0],                  # Inverse regularization strength
@@ -11365,6 +11419,10 @@ def logistic_auto(X, y, **kwargs):
             data['device'] = 'cpu'
     else:
         data['device'] = 'cpu'
+
+    # assign default scoring 
+    if data['scoring'] == None:
+        data['scoring'] = "f1_weighted"
 
     X, y = check_X_y(X,y)
 
@@ -11441,6 +11499,7 @@ def logistic_auto(X, y, **kwargs):
     # user attributes for optuna
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
 
     print('Fitting LogisticRegression model with best parameters, please wait ...')
@@ -13124,14 +13183,16 @@ def mlp_objective(trial, X, y, study, **kwargs):
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="f1_weighted"
+            # scoring="f1_weighted"
+            scoring=kwargs["scoring"]
         )
     else:
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="neg_root_mean_squared_error"
+            # scoring="neg_root_mean_squared_error"
+            scoring=kwargs["scoring"]
         )
     score_mean = np.mean(scores)
 
@@ -13157,7 +13218,8 @@ def mlp_objective(trial, X, y, study, **kwargs):
     # trial.set_user_attr("layer_units", layer_units)
 
     trial.set_user_attr("model", pipeline)
-    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("scoring", kwargs["scoring"])
+    trial.set_user_attr("score_mean", score_mean)
     trial.set_user_attr("selected_features", selected_features)
     trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
 
@@ -13321,6 +13383,7 @@ def mlp_auto(X, y, **kwargs):
 
         'pruning': False,                    # prune poor optuna trials
         'feature_selection': True,           # optuna feature selection
+        'scoring': None,                     # cross_val_score scoring name
 
         # print trial progress
         'show_trial_progress': True,        # print each trial number and best cv score
@@ -13382,6 +13445,14 @@ def mlp_auto(X, y, **kwargs):
     # Warn the user to consider using classify=True if y has < 12 classes
     if y.nunique() <= 12 and not data['classify']:
         print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
+    # assign scoring depending on type of model
+    if data['classify']:
+        if data['scoring'] == None:
+            data['scoring'] = "f1_weighted"
+    else:
+        if data['scoring'] == None:
+            data['scoring'] = "neg_root_mean_squared_error"
 
     # Suppress warnings
     warnings.filterwarnings('ignore')
@@ -13453,6 +13524,7 @@ def mlp_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
 
@@ -14071,14 +14143,16 @@ def tree_objective(trial, X, y, **kwargs):
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="f1_weighted"        
+            # scoring="f1_weighted"        
+            scoring=kwargs["scoring"]
         )
     else:
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="neg_root_mean_squared_error"
+            # scoring="neg_root_mean_squared_error"
+            scoring=kwargs["scoring"]
         )
     score_mean = np.mean(scores)
 
@@ -14099,7 +14173,8 @@ def tree_objective(trial, X, y, **kwargs):
         trial.set_user_attr("feature_importances", importances.tolist())
 
     trial.set_user_attr("model", pipeline)
-    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("scoring", kwargs["scoring"])
+    trial.set_user_attr("score_mean", score_mean)
     trial.set_user_attr("selected_features", selected_features)
     trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
 
@@ -14250,6 +14325,7 @@ def tree_auto(X, y, **kwargs):
 
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
+        'scoring': None,                     # cross_val_score scoring name
         
         # params that are optimized by optuna
         'max_depth': [2, 30],               # max depth of a tree
@@ -14295,13 +14371,13 @@ def tree_auto(X, y, **kwargs):
     if y.nunique() <= 12 and not data['classify']:
         print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
 
-    '''
-    # assign criterion depending on type of model
+    # assign scoring depending on type of model
     if data['classify']:
-        data['criterion'] = 'gini'
+        if data['scoring'] == None:
+            data['scoring'] = "f1_weighted"
     else:
-        data['criterion'] = 'squared_error'
-    '''
+        if data['scoring'] == None:
+            data['scoring'] = "neg_root_mean_squared_error"
     
     # Suppress warnings
     warnings.filterwarnings('ignore')
@@ -14372,6 +14448,7 @@ def tree_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
@@ -15003,7 +15080,8 @@ def ada_objective(trial, X, y, **kwargs):
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="f1_weighted",
+            # scoring="f1_weighted",
+            scoring=kwargs["scoring"],
             n_jobs=kwargs['n_jobs']
         )
     else:
@@ -15011,7 +15089,8 @@ def ada_objective(trial, X, y, **kwargs):
         scores = cross_val_score(
             pipeline, X, y,
             cv=cv,
-            scoring="neg_root_mean_squared_error",
+            # scoring="neg_root_mean_squared_error",
+            scoring=kwargs["scoring"],
             n_jobs=kwargs['n_jobs']
         )
     score_mean = np.mean(scores)
@@ -15036,7 +15115,8 @@ def ada_objective(trial, X, y, **kwargs):
     trial.set_user_attr("params_tree", params_tree)
 
     trial.set_user_attr("model", pipeline)
-    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("scoring", kwargs["scoring"])
+    trial.set_user_attr("score_mean", score_mean)
     trial.set_user_attr("selected_features", selected_features)
     trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
 
@@ -15188,6 +15268,7 @@ def ada_auto(X, y, **kwargs):
 
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
+        'scoring': None,                     # cross_val_score scoring name
         'n_jobs': -1,                 # -1 to use all CPU cores with cross_val_score
         
         # params for AdaBoost optimized by optuna
@@ -15235,6 +15316,14 @@ def ada_auto(X, y, **kwargs):
     # Warn the user to consider using classify=True if y has < 12 classes
     if y.nunique() <= 12 and not data['classify']:
         print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
+    # assign scoring depending on type of model
+    if data['classify']:
+        if data['scoring'] == None:
+            data['scoring'] = "f1_weighted"
+    else:
+        if data['scoring'] == None:
+            data['scoring'] = "neg_root_mean_squared_error"
 
     # Suppress warnings
     warnings.filterwarnings('ignore')
@@ -15305,6 +15394,7 @@ def ada_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
         
@@ -15940,8 +16030,6 @@ def xgbmlp_auto(X, y, **kwargs):
 
     # assign objective depending on type of model
     if data['classify']:
-        if data['scoring'] == None:
-            data['scoring'] = "f1_weighted"
         # objective for XGBClassifier
         num_class = y.nunique()
         if num_class == 2:
@@ -15951,6 +16039,11 @@ def xgbmlp_auto(X, y, **kwargs):
             # multinomial response variable
             data['objective'] = 'multi:softmax'
             data['num_class'] = num_class
+
+    # assign scoring depending on type of model
+    if data['classify']:
+        if data['scoring'] == None:
+            data['scoring'] = "f1_weighted"
     else:
         if data['scoring'] == None:
             data['scoring'] = "neg_root_mean_squared_error"
@@ -16577,8 +16670,6 @@ def xgbrfe_auto(X, y, **kwargs):
         
     # assign objective depending on type of model
     if data['classify']:
-        if data['scoring'] == None:
-            data['scoring'] = "f1_weighted"
         # objective for XGBClassifier
         num_class = y.nunique()
         if num_class == 2:
@@ -16589,10 +16680,16 @@ def xgbrfe_auto(X, y, **kwargs):
             data['objective'] = 'multi:softmax'
             data['num_class'] = num_class
     else:
-        if data['scoring'] == None:
-            data['scoring'] = "neg_root_mean_squared_error"
         # objective for XGBRegressor
         data['objective'] = 'reg:squarederror'
+
+    # assign scoring depending on type of model
+    if data['classify']:
+        if data['scoring'] == None:
+            data['scoring'] = "f1_weighted"
+    else:
+        if data['scoring'] == None:
+            data['scoring'] = "neg_root_mean_squared_error"
 
     # Suppress warnings
     warnings.filterwarnings('ignore')
@@ -17203,7 +17300,7 @@ def adarfe_auto(X, y, **kwargs):
     if y.nunique() <= 12 and not data['classify']:
         print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
 
-    # assign objective depending on type of model
+    # assign scoring depending on type of model
     if data['classify']:
         if data['scoring'] == None:
             data['scoring'] = "f1_weighted"
