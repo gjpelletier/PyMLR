@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.158"
+__version__ = "1.2.159"
 
 def check_X_y(X,y):
 
@@ -4766,6 +4766,9 @@ def svr_objective(trial, X, y, **kwargs):
     from PyMLR import detect_gpu
     from sklearn.svm import SVR, SVC
 
+    if kwargs['show_trial_progress'] and trial.number > 0:
+        print(f'Trial {trial.number}, best cv test score so far: {study.best_value:.6f} ...')
+
     # Detect if the computer has an nvidia gpu, and if so use the gpu
     use_gpu = detect_gpu()
     if use_gpu:
@@ -5036,6 +5039,7 @@ def svr_auto(X, y, **kwargs):
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
+        'show_trial_progress': True,         # print trial numbers during execution
         
         # params for model that are optimized by optuna
         'C': [0.1, 1000],           # range of C Regularization parameter. The strength of the regularization is inversely proportional to C. Must be strictly positive. The penalty is a squared l2.
@@ -6977,6 +6981,9 @@ def xgb_objective(trial, X, y, **kwargs):
     from sklearn.pipeline import Pipeline
     from sklearn.model_selection import cross_val_score, RepeatedKFold, StratifiedKFold
 
+    if kwargs['show_trial_progress'] and trial.number > 0:
+        print(f'Trial {trial.number}, best cv test score so far: {study.best_value:.6f} ...')
+
     seed = kwargs.get("random_state", 42)
     rng = np.random.default_rng(seed)
 
@@ -7261,6 +7268,7 @@ def xgb_auto(X, y, **kwargs):
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
+        'show_trial_progress': True,         # print trial numbers during execution
 
         # params that are optimized by optuna
         'learning_rate': [1e-4, 1.0],       # Step size shrinkage (also called eta).
@@ -9119,6 +9127,9 @@ def forest_objective(trial, X, y, **kwargs):
     from PyMLR import detect_gpu
     from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 
+    if kwargs['show_trial_progress'] and trial.number > 0:
+        print(f'Trial {trial.number}, best cv test score so far: {study.best_value:.6f} ...')
+
     seed = kwargs.get("random_state", 42)
     rng = np.random.default_rng(seed)
     
@@ -9394,6 +9405,7 @@ def forest_auto(X, y, **kwargs):
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
+        'show_trial_progress': True,         # print trial numbers during execution
         
         # params that are optimized by optuna
         'n_estimators': [50, 500],          # number of trees in the forest
@@ -10096,6 +10108,9 @@ def knn_objective(trial, X, y, **kwargs):
     import optuna
     # from sklearn.decomposition import PCA
     
+    if kwargs['show_trial_progress'] and trial.number > 0:
+        print(f'Trial {trial.number}, best cv test score so far: {study.best_value:.6f} ...')
+
     seed = kwargs.get("random_state", 42)
     rng = np.random.default_rng(seed)
 
@@ -10396,6 +10411,7 @@ def knn_auto(X, y, **kwargs):
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
+        'show_trial_progress': True,         # print trial numbers during execution
         
         # user params that are optimized by optuna (for future version)
         # 'pca_transform': [True, False],     # optuna chooses if PCA transform
@@ -11173,6 +11189,9 @@ def logistic_objective(trial, X, y, **kwargs):
     from sklearn.feature_selection import SelectKBest, mutual_info_classif
     from sklearn.pipeline import make_pipeline
 
+    if kwargs['show_trial_progress'] and trial.number > 0:
+        print(f'Trial {trial.number}, best cv test score so far: {study.best_value:.6f} ...')
+
     # Set random seed for reproducibility
     seed = kwargs.get('random_state', 42)
     np.random.seed(seed)
@@ -11387,6 +11406,7 @@ def logistic_auto(X, y, **kwargs):
         'pruning': False,           # prune poor optuna trials
         'feature_selection': True,  # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
+        'show_trial_progress': True,         # print trial numbers during execution
         
         # [min,max] model params that are optimized by optuna
         'C': [1e-4, 10.0],                  # Inverse regularization strength
@@ -13384,8 +13404,6 @@ def mlp_auto(X, y, **kwargs):
         'pruning': False,                    # prune poor optuna trials
         'feature_selection': True,           # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
-
-        # print trial progress
         'show_trial_progress': True,        # print each trial number and best cv score
         
         # numerical core hyperparameters optimized by optuna
@@ -14072,6 +14090,9 @@ def tree_objective(trial, X, y, **kwargs):
     from PyMLR import detect_gpu
     from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier 
 
+    if kwargs['show_trial_progress'] and trial.number > 0:
+        print(f'Trial {trial.number}, best cv test score so far: {study.best_value:.6f} ...')
+
     seed = kwargs.get("random_state", 42)
     rng = np.random.default_rng(seed)
     
@@ -14326,6 +14347,7 @@ def tree_auto(X, y, **kwargs):
         'pruning': False,                   # prune poor optuna trials
         'feature_selection': True,          # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
+        'show_trial_progress': True,         # print trial numbers during execution
         
         # params that are optimized by optuna
         'max_depth': [2, 30],               # max depth of a tree
@@ -14988,6 +15010,9 @@ def ada_objective(trial, X, y, **kwargs):
     from sklearn.ensemble import AdaBoostRegressor, AdaBoostClassifier
     from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier 
 
+    if kwargs['show_trial_progress'] and trial.number > 0:
+        print(f'Trial {trial.number}, best cv test score so far: {study.best_value:.6f} ...')
+
     seed = kwargs.get("random_state", 42)
     rng = np.random.default_rng(seed)
     
@@ -15270,6 +15295,7 @@ def ada_auto(X, y, **kwargs):
         'feature_selection': True,          # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
         'n_jobs': -1,                 # -1 to use all CPU cores with cross_val_score
+        'show_trial_progress': True,         # print trial numbers during execution
         
         # params for AdaBoost optimized by optuna
         'n_estimators': [50, 500],
