@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.159"
+__version__ = "1.2.160"
 
 def check_X_y(X,y):
 
@@ -5170,7 +5170,7 @@ def svr_auto(X, y, **kwargs):
     X_opt = X.copy()    # copy X to prevent altering the original
 
     from PyMLR import svr_objective
-    study.optimize(lambda trial: svr_objective(trial, X_opt, y, **data), n_trials=data['n_trials'])
+    study.optimize(lambda trial: svr_objective(trial, X_opt, y, study, **data), n_trials=data['n_trials'])
 
     # save outputs
     model_outputs['preprocess'] = data['preprocess']   
@@ -7422,7 +7422,7 @@ def xgb_auto(X, y, **kwargs):
     X_opt = X.copy()    # copy X to prevent altering the original
 
     from PyMLR import xgb_objective
-    study.optimize(lambda trial: xgb_objective(trial, X_opt, y, **data), n_trials=data['n_trials'])
+    study.optimize(lambda trial: xgb_objective(trial, X_opt, y, study, **data), n_trials=data['n_trials'])
 
     # save outputs
     model_outputs['preprocess'] = data['preprocess']   
@@ -9549,7 +9549,7 @@ def forest_auto(X, y, **kwargs):
     X_opt = X.copy()    # copy X to prevent altering the original
 
     from PyMLR import forest_objective
-    study.optimize(lambda trial: forest_objective(trial, X_opt, y, **data), n_trials=data['n_trials'])
+    study.optimize(lambda trial: forest_objective(trial, X_opt, y, study, **data), n_trials=data['n_trials'])
 
     # save outputs
     model_outputs['preprocess'] = data['preprocess']   
@@ -10528,7 +10528,7 @@ def knn_auto(X, y, **kwargs):
     X_opt = X.copy()    # copy X to prevent altering the original
 
     from PyMLR import knn_objective
-    study.optimize(lambda trial: knn_objective(trial, X_opt, y, **data), n_trials=data['n_trials'])
+    study.optimize(lambda trial: knn_objective(trial, X_opt, y, study, **data), n_trials=data['n_trials'])
 
     # save outputs
     model_outputs['preprocess'] = data['preprocess']   
@@ -11505,7 +11505,7 @@ def logistic_auto(X, y, **kwargs):
 
     from PyMLR import logistic_objective
     study.optimize(
-        lambda trial: logistic_objective(trial, X_opt, y, **data), 
+        lambda trial: logistic_objective(trial, X_opt, y, study, **data), 
         n_trials=data['n_trials'])
 
     # save outputs
@@ -14459,7 +14459,7 @@ def tree_auto(X, y, **kwargs):
     X_opt = X.copy()    # copy X to prevent altering the original
 
     from PyMLR import tree_objective
-    study.optimize(lambda trial: tree_objective(trial, X_opt, y, **data), n_trials=data['n_trials'])
+    study.optimize(lambda trial: tree_objective(trial, X_opt, y, study, **data), n_trials=data['n_trials'])
 
     # save outputs
     model_outputs['preprocess'] = data['preprocess']   
@@ -15409,7 +15409,7 @@ def ada_auto(X, y, **kwargs):
     X_opt = X.copy()    # copy X to prevent altering the original
 
     from PyMLR import ada_objective
-    study.optimize(lambda trial: ada_objective(trial, X_opt, y, **data), n_trials=data['n_trials'])
+    study.optimize(lambda trial: ada_objective(trial, X_opt, y, study, **data), n_trials=data['n_trials'])
 
     # save outputs
     model_outputs['preprocess'] = data['preprocess']   
