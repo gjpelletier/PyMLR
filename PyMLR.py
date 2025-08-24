@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.160"
+__version__ = "1.2.161"
 
 def check_X_y(X,y):
 
@@ -4753,7 +4753,7 @@ def svr(X, y, **kwargs):
 
     return fitted_model, model_outputs
 
-def svr_objective(trial, X, y, **kwargs):
+def svr_objective(trial, X, y, study, **kwargs):
     '''
     Objective function used by optuna 
     to find the optimum hyper-parameters for SVR
@@ -6968,7 +6968,7 @@ def xgb(X, y, **kwargs):
 
     return fitted_model, model_outputs
 
-def xgb_objective(trial, X, y, **kwargs):
+def xgb_objective(trial, X, y, study, **kwargs):
     '''
     Optuna objective for optimizing XGBRegressor or XGBClassifier with optional feature selection.
     Supports selector choice, logs importances, and ensures reproducibility.
@@ -9113,7 +9113,7 @@ def forest(X, y, **kwargs):
 
     return fitted_model, model_outputs
 
-def forest_objective(trial, X, y, **kwargs):
+def forest_objective(trial, X, y, study, **kwargs):
     '''
     Objective function used by optuna 
     to find the optimum hyper-parameters for 
@@ -10090,7 +10090,7 @@ def knn(X, y, **kwargs):
 
     return fitted_model, model_outputs
 
-def knn_objective(trial, X, y, **kwargs):
+def knn_objective(trial, X, y, study, **kwargs):
     '''
     Objective function used by optuna 
     to find the optimum hyper-parameters for 
@@ -11176,7 +11176,7 @@ def logistic(X, y, **kwargs):
 
     return fitted_model, model_outputs
 
-def logistic_objective(trial, X, y, **kwargs):
+def logistic_objective(trial, X, y, study, **kwargs):
     '''
     Objective function used by Optuna to optimize 
     hyperparameters for sklearn LogisticRegression
@@ -14076,7 +14076,7 @@ def tree(X, y, **kwargs):
 
     return fitted_model, model_outputs
 
-def tree_objective(trial, X, y, **kwargs):
+def tree_objective(trial, X, y, study, **kwargs):
     '''
     Objective function used by optuna 
     to find the optimum hyper-parameters for 
@@ -14995,7 +14995,7 @@ def ada(X, y, **kwargs):
 
     return fitted_model, model_outputs
   
-def ada_objective(trial, X, y, **kwargs):
+def ada_objective(trial, X, y, study, **kwargs):
     '''
     Objective function used by optuna 
     to find the optimum hyper-parameters for 
