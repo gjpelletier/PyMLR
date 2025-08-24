@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.155"
+__version__ = "1.2.156"
 
 def check_X_y(X,y):
 
@@ -16506,7 +16506,7 @@ def xgbrfe_auto(X, y, **kwargs):
         'show_trial_progress': True,         # print trial numbers during execution
         'use_permutation': False,            # use permutation importances for RFE
         'use_normalized': True,              # normalize the importances for RFE
-        'scorer': None,                      # cross_val_score scorer name
+        'scoring': None,                     # cross_val_score scoring name
         
         # random seed for all functions 
         'random_state': 42,                 # random seed for reproducibility
