@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.163"
+__version__ = "1.2.164"
 
 def check_X_y(X,y):
 
@@ -7931,6 +7931,7 @@ def catboost(X, y, **kwargs):
         thread_count= -1,     # number of CPU cores to use (-1 for all cores)
         
         # [min, max] range of params optimized by optuna
+        cat_features= None,         # CatBoost categorical features
         learning_rate= [0.01, 0.3],         # Balances step size in gradient updates.
         depth= [4, 10],                     # Controls tree depth
         iterations= [100, 3000],            # Number of boosting iterations
@@ -8037,6 +8038,7 @@ def catboost(X, y, **kwargs):
         'thread_count': -1,     # number of CPUs to use (-1 for all cores)
 
         # [min, max] range of params optimized by optuna
+        'cat_features': None,          # CatBoost categorical features
         'learning_rate': 0.03,         # Balances step size in gradient updates.
         'depth': 6,                    # Controls tree depth
         'iterations': 1000,            # Number of boosting iterations
@@ -8126,6 +8128,7 @@ def catboost(X, y, **kwargs):
 
     params = {        
         # [min, max] range of params optimized by optuna
+        'cat_features': data['cat_features'],
         'learning_rate': data['learning_rate'],
         'depth': data['depth'],                    # Controls tree depth
         'iterations': data['iterations'],            # Number of boosting iterations
@@ -8321,6 +8324,7 @@ def catboost_objective(trial, X, y, study, **kwargs):
             *kwargs['max_bin'])
     
     extra_params = {
+        'cat_features': kwargs['cat_features'],         
         'random_seed': kwargs['random_state'],         
         'task_type': kwargs['device']                   
     }
@@ -8553,6 +8557,7 @@ def catboost_auto(X, y, **kwargs):
         'show_trial_progress': True,         # print trial numbers during execution
         
         # [min, max] range of params optimized by optuna
+        'cat_features': None,                 # CatBoost categorical features         
         'learning_rate': [0.01, 0.3],         # Balances step size in gradient updates.
         'depth': [4, 10],                     # Controls tree depth
         'iterations': [100, 3000],            # Number of boosting iterations
@@ -8619,6 +8624,8 @@ def catboost_auto(X, y, **kwargs):
 
     # Pre-process X to apply OneHotEncoder and StandardScaler
     if data['preprocess']:
+        if data['cat_features']!=None:
+            print('Warning: cat_features are specified and may not be compatible with PyMLR preprocess')
         if data['preprocess_result']!=None:
             # print('preprocess_test')
             X = preprocess_test(X, data['preprocess_result'])
@@ -8639,6 +8646,7 @@ def catboost_auto(X, y, **kwargs):
     data['feature_names'] = X.columns.to_list()
 
     extra_params = {
+        'cat_features': data['cat_features'],         
         'random_seed': data['random_state'],         
         'task_type': data['device'], 
         'verbose': False
