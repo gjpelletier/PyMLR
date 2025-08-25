@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.162"
+__version__ = "1.2.163"
 
 def check_X_y(X,y):
 
@@ -7990,6 +7990,8 @@ def catboost(X, y, **kwargs):
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables
     from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
     import time
     import pandas as pd
     import numpy as np
@@ -8276,7 +8278,7 @@ def catboost_objective(trial, X, y, study, **kwargs):
     import pandas as pd
     from sklearn.feature_selection import SelectKBest, mutual_info_regression, f_regression
     from sklearn.pipeline import Pipeline
-    from sklearn.model_selection import cross_val_score, RepeatedKFold
+    from sklearn.model_selection import cross_val_score, RepeatedKFold, StratifiedKFold
     from PyMLR import detect_gpu
     from catboost import CatBoostRegressor, CatBoostClassifier
 
@@ -8497,6 +8499,8 @@ def catboost_auto(X, y, **kwargs):
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
     from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
+    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import plot_confusion_matrix, plot_roc_auc
     import time
     import pandas as pd
     import numpy as np
