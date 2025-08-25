@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.164"
+__version__ = "1.2.165"
 
 def check_X_y(X,y):
 
@@ -8095,6 +8095,8 @@ def catboost(X, y, **kwargs):
 
     # Pre-process X to apply OneHotEncoder and StandardScaler
     if data['preprocess']:
+        if data['cat_features']!=None:
+            print('Warning: cat_features are specified and may not be compatible with PyMLR preprocess')
         if data['preprocess_result']!=None:
             # print('preprocess_test')
             X = preprocess_test(X, data['preprocess_result'])
