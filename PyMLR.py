@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.166"
+__version__ = "1.2.167"
 
 def check_X_y(X,y):
 
@@ -11360,7 +11360,7 @@ def logistic_objective(trial, X, y, study, **kwargs):
 
     # Stratified cross-validation
     cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
-    scores = cross_val_score(pipeline, X, y, cv=cv, scoring=kwargs["scoring"])
+    scores = cross_val_score(pipeline, X, y, cv=cv, scoring=kwargs["scoring"], n_jobs=kwargs['n_jobs'])
     score_mean = scores.mean()
 
     # Optional full pipeline fit to log selected features
