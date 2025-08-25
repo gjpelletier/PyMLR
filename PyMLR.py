@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.167"
+__version__ = "1.2.168"
 
 def check_X_y(X,y):
 
@@ -11331,7 +11331,7 @@ def logistic_objective(trial, X, y, study, **kwargs):
     # Hyperparameter search space
     params = {
         "C": trial.suggest_float("C", kwargs["C"][0], kwargs["C"][1], log=True),
-        "solver": trial.suggest_categorical("solver", kwargs["solver"]),
+        # "solver": trial.suggest_categorical("solver", kwargs["solver"]),
     }
 
     # Only relevant penalties based on solver
