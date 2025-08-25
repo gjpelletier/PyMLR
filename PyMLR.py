@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.161"
+__version__ = "1.2.162"
 
 def check_X_y(X,y):
 
@@ -7916,6 +7916,7 @@ def catboost(X, y, **kwargs):
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
         random_state= 42,    # initial random seed
+        'classify': False,          # Use CatBoostClassifier if True
         preprocess= True,           # Apply OneHotEncoder and StandardScaler
         preprocess_result= None,    # dict of the following result from 
                                     # preprocess_train if available:         
@@ -8003,11 +8004,12 @@ def catboost(X, y, **kwargs):
     import warnings
     import sys
     import statsmodels.api as sm
-    from catboost import CatBoostRegressor
+    from catboost import CatBoostRegressor, CatBoostClassifier
     
     # Define default values of input data arguments
     defaults = {
         'random_state': 42,     # Random seed for reproducibility.
+        'classify': False,            # Use CatBoostClassifier if True
         'preprocess': True,           # True for OneHotEncoder and StandardScaler
         'preprocess_result': None,    # dict of  the following result from 
                                       # preprocess_train if available:         
@@ -8073,6 +8075,10 @@ def catboost(X, y, **kwargs):
     # QC check X and y
     X, y = check_X_y(X,y)
 
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
     # Set start time for calculating run time
     start_time = time.time()
 
@@ -8115,9 +8121,6 @@ def catboost(X, y, **kwargs):
 
     # Suppress warnings
     warnings.filterwarnings('ignore')
-    print('Fitting CatBoostRegressor model, please wait ...')
-    if data['verbose'] == 'on':
-        print('')
 
     params = {        
         # [min, max] range of params optimized by optuna
@@ -8145,80 +8148,113 @@ def catboost(X, y, **kwargs):
     else:
         extra_params['thread_count'] = data['thread_count']
     
-    fitted_model = CatBoostRegressor(
-        **params, **extra_params, verbose=False).fit(X,y)
+    if data['classify']:
+        print('Fitting CatBoostClassifier model, please wait ...')
+        fitted_model = CatBoostClassifier(
+            **params, **extra_params, verbose=False).fit(X,y)
+    else:
+        print('Fitting CatBoostRegressor model, please wait ...')
+        fitted_model = CatBoostRegressor(
+            **params, **extra_params, verbose=False).fit(X,y)
         
-    # check to see of the model has intercept and coefficients
-    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-            and fitted_model.coef_.size==len(X.columns)):
-        intercept = fitted_model.intercept_
-        coefficients = fitted_model.coef_
-        # dataframe of model parameters, intercept and coefficients, including zero coefs
-        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
-        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
-        for i in range(n_param):
-            if i == 0:
-                popt[0][i] = 'Intercept'
-                popt[1][i] = fitted_model.intercept_
-            else:
-                popt[0][i] = X.columns[i-1]
-                popt[1][i] = fitted_model.coef_[i-1]
-        popt = pd.DataFrame(popt).T
-        popt.columns = ['Feature', 'Parameter']
-        # Table of intercept and coef
-        popt_table = pd.DataFrame({
-                "Feature": popt['Feature'],
-                "Parameter": popt['Parameter']
-            })
-        popt_table.set_index('Feature',inplace=True)
-        model_outputs['popt_table'] = popt_table
-    
-    # Goodness of fit statistics
-    metrics = fitness_metrics(
-        fitted_model, 
-        X, y)
-    stats = pd.DataFrame([metrics]).T
-    stats.index.name = 'Statistic'
-    stats.columns = ['CatBoostRegressor']
-    model_outputs['metrics'] = metrics
-    model_outputs['stats'] = stats
-    model_outputs['y_pred'] = fitted_model.predict(X)
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            # selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X, y)
+            hfig.savefig("CatBoostClassifier_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X, y)
+            hfig.savefig("CatBoostClassifier_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X, y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['CatBoostClassifier']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)    
+        if data['verbose'] == 'on':
+            print('')
+            print("CatBoostClassifier goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:            
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X.columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X.columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table
+        
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X, y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['CatBoostRegressor']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X)
 
-    if data['verbose'] == 'on':
-        print('')
-        print("CatBoostRegressor goodness of fit to training data in model_outputs['stats']:")
-        print('')
-        print(model_outputs['stats'].to_markdown(index=True))
-        print('')
+        if data['verbose'] == 'on':
+            print('')
+            print("CatBoostRegressor goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
 
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
-        print("Parameters of fitted model in model_outputs['popt']:")
-        print('')
-        print(model_outputs['popt_table'].to_markdown(index=True))
-        print('')
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
 
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("CatBoostRegressor_predictions.png", dpi=300)
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("CatBoostRegressor_predictions.png", dpi=300)
     
     # Print the run time
     fit_time = time.time() - start_time
@@ -8231,7 +8267,7 @@ def catboost(X, y, **kwargs):
 
     return fitted_model, model_outputs
 
-def catboost_objective(trial, X, y, **kwargs):
+def catboost_objective(trial, X, y, study, **kwargs):
     '''
     Optuna objective for optimizing CatBoostRegressor with optional feature selection.
     Supports selector choice, logs importances, and ensures reproducibility.
@@ -8242,7 +8278,10 @@ def catboost_objective(trial, X, y, **kwargs):
     from sklearn.pipeline import Pipeline
     from sklearn.model_selection import cross_val_score, RepeatedKFold
     from PyMLR import detect_gpu
-    from catboost import CatBoostRegressor
+    from catboost import CatBoostRegressor, CatBoostClassifier
+
+    if kwargs['show_trial_progress'] and trial.number > 0:
+        print(f'Trial {trial.number}, best cv test score so far: {study.best_value:.6f} ...')
     
     seed = kwargs.get("random_state", 42)
     rng = np.random.default_rng(seed)
@@ -8301,22 +8340,38 @@ def catboost_objective(trial, X, y, **kwargs):
 
         selector = SelectKBest(score_func=score_func, k=num_features)
 
-        pipeline = Pipeline([
-            ("feature_selector", selector),
-            ("regressor", CatBoostRegressor(**params, **extra_params, verbose=False))
-        ])
-    else:
-        pipeline = Pipeline([
-            ("regressor", CatBoostRegressor(**params, **extra_params, verbose=False))
-        ])
-        num_features = None
+        if kwargs['classify']:
+            pipeline = Pipeline([
+                ("feature_selector", selector),
+                ("regressor", CatBoostClassifier(**params, **extra_params, verbose=False))
+            ])
+        else:
+            pipeline = Pipeline([
+                ("feature_selector", selector),
+                ("regressor", CatBoostRegressor(**params, **extra_params, verbose=False))
+            ])
 
-    # Cross-validated scoring with RepeatedKFold
-    cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
+    else:
+
+        if kwargs['classify']:
+            pipeline = Pipeline([
+                ("regressor", CatBoostClassifier(**params, **extra_params, verbose=False))
+            ])
+        else:
+            pipeline = Pipeline([
+                ("regressor", CatBoostRegressor(**params, **extra_params, verbose=False))
+            ])
+            num_features = None
+
+    # Cross-validated scoring
+    if kwargs['classify']:
+        cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
+    else:
+        cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
     scores = cross_val_score(
         pipeline, X, y,
         cv=cv,
-        scoring="neg_root_mean_squared_error"
+        scoring=kwargs["scoring"]
     )
     score_mean = np.mean(scores)
 
@@ -8337,7 +8392,8 @@ def catboost_objective(trial, X, y, **kwargs):
         trial.set_user_attr("feature_importances", importances.tolist())
 
     trial.set_user_attr("model", pipeline)
-    trial.set_user_attr("score", score_mean)
+    trial.set_user_attr("scoring", kwargs["scoring"])
+    trial.set_user_attr("score_mean", score_mean)
     trial.set_user_attr("selected_features", selected_features)
     trial.set_user_attr("selector_type", selector_type if kwargs.get("feature_selection", True) else None)
 
@@ -8363,6 +8419,7 @@ def catboost_auto(X, y, **kwargs):
     OPTIONAL KEYWORD ARGUMENTS
     **kwargs (optional keyword arguments):
         random_state= 42,    # initial random seed
+        'classify': False,          # Use CatBoostClassifier if True
         n_trials= 50,         # number of optuna trials
         preprocess= True,           # Apply OneHotEncoder and StandardScaler
         preprocess_result= None,    # dict of the following result from 
@@ -8455,12 +8512,13 @@ def catboost_auto(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     import optuna
-    from catboost import CatBoostRegressor
+    from catboost import CatBoostRegressor, CatBoostClassifier
 
     # Define default values of input data arguments
     defaults = {
         'random_state': 42,     # Random seed for reproducibility.
-        'n_trials': 50,         # number of optuna trials
+        'classify': False,            # Use CatBoostClassifier if True
+        'n_trials': 50,               # number of optuna trials
         'preprocess': True,           # True for OneHotEncoder and StandardScaler
         'preprocess_result': None,    # dict of  the following result from 
                                       # preprocess_train if available:         
@@ -8487,6 +8545,8 @@ def catboost_auto(X, y, **kwargs):
 
         'pruning': False,             # prune poor optuna trials
         'feature_selection': True,    # optuna feature selection
+        'scoring': None,                     # cross_val_score scoring name
+        'show_trial_progress': True,         # print trial numbers during execution
         
         # [min, max] range of params optimized by optuna
         'learning_rate': [0.01, 0.3],         # Balances step size in gradient updates.
@@ -8525,6 +8585,18 @@ def catboost_auto(X, y, **kwargs):
     
     X, y = check_X_y(X,y)
 
+    # Warn the user to consider using classify=True if y has < 12 classes
+    if y.nunique() <= 12 and not data['classify']:
+        print(f"Warning: y has {y.nunique()} classes, consider using optional argument classify=True")
+
+    # assign scoring depending on type of model
+    if data['classify']:
+        if data['scoring'] == None:
+            data['scoring'] = "f1_weighted"
+    else:
+        if data['scoring'] == None:
+            data['scoring'] = "neg_root_mean_squared_error"
+    
     # Suppress warnings
     warnings.filterwarnings('ignore')
 
@@ -8590,7 +8662,7 @@ def catboost_auto(X, y, **kwargs):
     X_opt = X.copy()    # copy X to prevent altering the original
 
     from PyMLR import catboost_objective
-    study.optimize(lambda trial: catboost_objective(trial, X_opt, y, **data), n_trials=data['n_trials'])
+    study.optimize(lambda trial: catboost_objective(trial, X_opt, y, study, **data), n_trials=data['n_trials'])
 
     # save outputs
     model_outputs['preprocess'] = data['preprocess']   
@@ -8602,93 +8674,127 @@ def catboost_auto(X, y, **kwargs):
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
+    model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['best_trial'] = study.best_trial
 
     best_params = study.best_params
     model_outputs['best_params'] = best_params
     model_outputs['extra_params'] = extra_params
 
-    print('Fitting CatBoostRegressor model with best parameters, please wait ...')
     if 'use_border_count' in best_params:
         del best_params['use_border_count']
     if 'num_features' in best_params:
         del best_params['num_features']
     if 'selector_type' in best_params:
         del best_params['selector_type']
-    fitted_model = CatBoostRegressor(**best_params, **extra_params).fit(
-        X[model_outputs['selected_features']],y)
-       
-    # check to see of the model has intercept and coefficients
-    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-            and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
-        intercept = fitted_model.intercept_
-        coefficients = fitted_model.coef_
-        # dataframe of model parameters, intercept and coefficients, including zero coefs
-        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
-        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
-        for i in range(n_param):
-            if i == 0:
-                popt[0][i] = 'Intercept'
-                popt[1][i] = fitted_model.intercept_
-            else:
-                popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
-                popt[1][i] = fitted_model.coef_[i-1]
-        popt = pd.DataFrame(popt).T
-        popt.columns = ['Feature', 'Parameter']
-        # Table of intercept and coef
-        popt_table = pd.DataFrame({
-                "Feature": popt['Feature'],
-                "Parameter": popt['Parameter']
-            })
-        popt_table.set_index('Feature',inplace=True)
-        model_outputs['popt_table'] = popt_table
 
-    # Goodness of fit statistics
-    metrics = fitness_metrics(
-        fitted_model, 
-        X[model_outputs['selected_features']], y)
-    stats = pd.DataFrame([metrics]).T
-    stats.index.name = 'Statistic'
-    stats.columns = ['CatBoostRegressor']
-    model_outputs['metrics'] = metrics
-    model_outputs['stats'] = stats
-    model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
+    if data['classify']:
+        print('Fitting CatBoostClassifier model with best parameters, please wait ...')
+        fitted_model = CatBoostClassifier(**best_params, **extra_params).fit(
+            X[model_outputs['selected_features']],y)
+    else:
+        print('Fitting CatBoostRegressor model with best parameters, please wait ...')
+        fitted_model = CatBoostRegressor(**best_params, **extra_params).fit(
+            X[model_outputs['selected_features']],y)
 
-    if data['verbose'] == 'on':
-        print('')
-        print("CatBoostRegressor goodness of fit to training data in model_outputs['stats']:")
-        print('')
-        print(model_outputs['stats'].to_markdown(index=True))
-        print('')
+    if data['classify']:
+        if data['verbose'] == 'on':    
+            # confusion matrix
+            selected_features = model_outputs['selected_features']
+            hfig = plot_confusion_matrix(fitted_model, X[selected_features], y)
+            hfig.savefig("CatBoostClassifier_confusion_matrix.png", dpi=300)            
+            # ROC curve with AUC
+            selected_features = model_outputs['selected_features']
+            hfig = plot_roc_auc(fitted_model, X[selected_features], y)
+            hfig.savefig("CatBoostClassifier_ROC_curve.png", dpi=300)            
+        # Goodness of fit statistics
+        metrics = fitness_metrics_logistic(
+            fitted_model, 
+            X[model_outputs['selected_features']], y, brier=False)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['CatBoostClassifier']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])    
+        if data['verbose'] == 'on':
+            print('')
+            print("CatBoostClassifier goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')    
+    else:
+        # check to see of the model has intercept and coefficients
+        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+                and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
+            intercept = fitted_model.intercept_
+            coefficients = fitted_model.coef_
+            # dataframe of model parameters, intercept and coefficients, including zero coefs
+            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+            for i in range(n_param):
+                if i == 0:
+                    popt[0][i] = 'Intercept'
+                    popt[1][i] = fitted_model.intercept_
+                else:
+                    popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
+                    popt[1][i] = fitted_model.coef_[i-1]
+            popt = pd.DataFrame(popt).T
+            popt.columns = ['Feature', 'Parameter']
+            # Table of intercept and coef
+            popt_table = pd.DataFrame({
+                    "Feature": popt['Feature'],
+                    "Parameter": popt['Parameter']
+                })
+            popt_table.set_index('Feature',inplace=True)
+            model_outputs['popt_table'] = popt_table
 
-    if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
-        print("Parameters of fitted model in model_outputs['popt']:")
-        print('')
-        print(model_outputs['popt_table'].to_markdown(index=True))
-        print('')
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            fitted_model, 
+            X[model_outputs['selected_features']], y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['CatBoostRegressor']
+        model_outputs['metrics'] = metrics
+        model_outputs['stats'] = stats
+        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
 
-    # residual plot for training error
-    if data['verbose'] == 'on':
-        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="actual_vs_predicted",
-            ax=axs[0]
-        )
-        axs[0].set_title("Actual vs. Predicted")
-        PredictionErrorDisplay.from_predictions(
-            y,
-            y_pred=model_outputs['y_pred'],
-            kind="residual_vs_predicted",
-            ax=axs[1]
-        )
-        axs[1].set_title("Residuals vs. Predicted")
-        fig.suptitle(
-            f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("CatBoostRegressor_predictions.png", dpi=300)
+        if data['verbose'] == 'on':
+            print('')
+            print("CatBoostRegressor goodness of fit to training data in model_outputs['stats']:")
+            print('')
+            print(model_outputs['stats'].to_markdown(index=True))
+            print('')
+
+        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
+            print("Parameters of fitted model in model_outputs['popt']:")
+            print('')
+            print(model_outputs['popt_table'].to_markdown(index=True))
+            print('')
+
+        # residual plot for training error
+        if data['verbose'] == 'on':
+            fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="actual_vs_predicted",
+                ax=axs[0]
+            )
+            axs[0].set_title("Actual vs. Predicted")
+            PredictionErrorDisplay.from_predictions(
+                y,
+                y_pred=model_outputs['y_pred'],
+                kind="residual_vs_predicted",
+                ax=axs[1]
+            )
+            axs[1].set_title("Residuals vs. Predicted")
+            fig.suptitle(
+                f"Predictions compared with actual values and residuals (RMSE={metrics['RMSE']:.3f})")
+            plt.tight_layout()
+            # plt.show()
+            plt.savefig("CatBoostRegressor_predictions.png", dpi=300)
 
     # Best score of CV test data
     print('')
