@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.165"
+__version__ = "1.2.166"
 
 def check_X_y(X,y):
 
@@ -8077,7 +8077,8 @@ def catboost(X, y, **kwargs):
     y = y.copy()
     
     # QC check X and y
-    X, y = check_X_y(X,y)
+    if data['cat_features']==None:
+        X, y = check_X_y(X,y)
 
     # Warn the user to consider using classify=True if y has < 12 classes
     if y.nunique() <= 12 and not data['classify']:
@@ -8095,24 +8096,25 @@ def catboost(X, y, **kwargs):
 
     # Pre-process X to apply OneHotEncoder and StandardScaler
     if data['preprocess']:
-        if data['cat_features']!=None:
-            print('Warning: cat_features are specified and may not be compatible with PyMLR preprocess')
-        if data['preprocess_result']!=None:
-            # print('preprocess_test')
-            X = preprocess_test(X, data['preprocess_result'])
+        if data['cat_features']==None:
+            print('Warning: The PyMLR processor is not compatible with specified cat_features')
         else:
-            kwargs_pre = {
-                'use_encoder': data['use_encoder'],
-                'use_scaler': data['use_scaler'],
-                'threshold_cat': data['threshold_cat'],
-                'scale': data['scale'], 
-                'unskew_pos': data['unskew_pos'], 
-                'threshold_skew_pos': data['threshold_skew_pos'],
-                'unskew_neg': data['unskew_neg'], 
-                'threshold_skew_neg': data['threshold_skew_neg']        
-            }
-            data['preprocess_result'] = preprocess_train(X, **kwargs_pre)
-            X = data['preprocess_result']['df_processed']
+            if data['preprocess_result']!=None:
+                # print('preprocess_test')
+                X = preprocess_test(X, data['preprocess_result'])
+            else:
+                kwargs_pre = {
+                    'use_encoder': data['use_encoder'],
+                    'use_scaler': data['use_scaler'],
+                    'threshold_cat': data['threshold_cat'],
+                    'scale': data['scale'], 
+                    'unskew_pos': data['unskew_pos'], 
+                    'threshold_skew_pos': data['threshold_skew_pos'],
+                    'unskew_neg': data['unskew_neg'], 
+                    'threshold_skew_neg': data['threshold_skew_neg']        
+                }
+                data['preprocess_result'] = preprocess_train(X, **kwargs_pre)
+                X = data['preprocess_result']['df_processed']
 
     if data['selected_features'] == None:
         data['selected_features'] = X.columns.to_list()
@@ -8376,11 +8378,20 @@ def catboost_objective(trial, X, y, study, **kwargs):
         cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
     else:
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
-    scores = cross_val_score(
-        pipeline, X, y,
-        cv=cv,
-        scoring=kwargs["scoring"]
-    )
+    if kwargs['cat_features'] == None:
+        scores = cross_val_score(
+            pipeline, X, y,
+            cv=cv,
+            scoring=kwargs["scoring"]
+        )
+    else:
+        scores = cross_val_score(
+            pipeline, X, y,
+            cv=cv,
+            scoring=kwargs["scoring"],
+            fit_params={'cat_features': kwargs['cat_features']}  # Pass cat_features to fit
+        )
+        
     score_mean = np.mean(scores)
 
     # Fit on full data to extract feature info
@@ -8626,24 +8637,25 @@ def catboost_auto(X, y, **kwargs):
 
     # Pre-process X to apply OneHotEncoder and StandardScaler
     if data['preprocess']:
-        if data['cat_features']!=None:
-            print('Warning: cat_features are specified and may not be compatible with PyMLR preprocess')
-        if data['preprocess_result']!=None:
-            # print('preprocess_test')
-            X = preprocess_test(X, data['preprocess_result'])
+        if data['cat_features']==None:
+            print('Warning: The PyMLR processor is not compatible with specified cat_features')
         else:
-            kwargs_pre = {
-                'use_encoder': data['use_encoder'],
-                'use_scaler': data['use_scaler'],
-                'threshold_cat': data['threshold_cat'],
-                'scale': data['scale'], 
-                'unskew_pos': data['unskew_pos'], 
-                'threshold_skew_pos': data['threshold_skew_pos'],
-                'unskew_neg': data['unskew_neg'], 
-                'threshold_skew_neg': data['threshold_skew_neg']        
-            }
-            data['preprocess_result'] = preprocess_train(X, **kwargs_pre)
-            X = data['preprocess_result']['df_processed']
+            if data['preprocess_result']!=None:
+                # print('preprocess_test')
+                X = preprocess_test(X, data['preprocess_result'])
+            else:
+                kwargs_pre = {
+                    'use_encoder': data['use_encoder'],
+                    'use_scaler': data['use_scaler'],
+                    'threshold_cat': data['threshold_cat'],
+                    'scale': data['scale'], 
+                    'unskew_pos': data['unskew_pos'], 
+                    'threshold_skew_pos': data['threshold_skew_pos'],
+                    'unskew_neg': data['unskew_neg'], 
+                    'threshold_skew_neg': data['threshold_skew_neg']        
+                }
+                data['preprocess_result'] = preprocess_train(X, **kwargs_pre)
+                X = data['preprocess_result']['df_processed']
 
     data['feature_names'] = X.columns.to_list()
 
