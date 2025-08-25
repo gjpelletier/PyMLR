@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.169"
+__version__ = "1.2.170"
 
 def check_X_y(X,y):
 
@@ -7899,13 +7899,12 @@ def lgbm(X, y, **kwargs):
 def catboost(X, y, **kwargs):
 
     """
-    CatboostRegressor linear regression
-    Beta version
+    CatboostRegressor or CatBoost Classifier
 
     by
     Greg Pelletier
     gjpelletier@gmail.com
-    30-Jun-2025
+    25-Aug-2025
 
     REQUIRED INPUTS (X and y should have same number of rows and 
     only contain real numbers)
@@ -8096,8 +8095,10 @@ def catboost(X, y, **kwargs):
 
     # Pre-process X to apply OneHotEncoder and StandardScaler
     if data['preprocess']:
-        if data['cat_features']==None:
-            print('Warning: The PyMLR processor is not compatible with specified cat_features')
+        if data['cat_features']!=None:
+            print('Warning: The PyMLR processor is not compatible cat_features,')
+            print('therefore X is not automatically preprocessed.')
+            print('Use of cat_features is experimental and may not work properly')
         else:
             if data['preprocess_result']!=None:
                 # print('preprocess_test')
@@ -8278,8 +8279,8 @@ def catboost(X, y, **kwargs):
 
 def catboost_objective(trial, X, y, study, **kwargs):
     '''
-    Optuna objective for optimizing CatBoostRegressor with optional feature selection.
-    Supports selector choice, logs importances, and ensures reproducibility.
+    Optuna objective for optimizing CatBoostRegressor or CatBoostClassifier 
+    with optional feature selection.
     '''
     import numpy as np
     import pandas as pd
@@ -8328,10 +8329,12 @@ def catboost_objective(trial, X, y, study, **kwargs):
             *kwargs['max_bin'])
     
     extra_params = {
-        'cat_features': kwargs['cat_features'],         
         'random_seed': kwargs['random_state'],         
         'task_type': kwargs['device']                   
     }
+
+    if kwargs['cat_features']!=None
+        extra_params['cat_features'] = kwargs['cat_features'],         
 
     if kwargs['device'] == 'GPU':
         extra_params['devices'] = kwargs['devices']
@@ -8378,19 +8381,11 @@ def catboost_objective(trial, X, y, study, **kwargs):
         cv = StratifiedKFold(n_splits=kwargs['n_splits'], shuffle=True, random_state=seed)
     else:
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
-    if kwargs['cat_features'] == None:
-        scores = cross_val_score(
-            pipeline, X, y,
-            cv=cv,
-            scoring=kwargs["scoring"]
-        )
-    else:
-        scores = cross_val_score(
-            pipeline, X, y,
-            cv=cv,
-            scoring=kwargs["scoring"],
-            fit_params={'cat_features': kwargs['cat_features']}  # Pass cat_features to fit
-        )
+    scores = cross_val_score(
+        pipeline, X, y,
+        cv=cv,
+        scoring=kwargs["scoring"]
+    )
         
     score_mean = np.mean(scores)
 
@@ -8421,13 +8416,13 @@ def catboost_objective(trial, X, y, study, **kwargs):
 def catboost_auto(X, y, **kwargs):
 
     """
-    Autocalibration of CatBoostRegressor hyper-parameters
-    Beta version
+    Autocalibration of hyperparameters for 
+    CatBoostRegressor or CatBoostClassifier
 
     by
     Greg Pelletier
     gjpelletier@gmail.com
-    29-June-2025
+    25-Aug-2025
 
     REQUIRED INPUTS (X and y should have same number of rows and 
     only contain real numbers)
@@ -8637,8 +8632,10 @@ def catboost_auto(X, y, **kwargs):
 
     # Pre-process X to apply OneHotEncoder and StandardScaler
     if data['preprocess']:
-        if data['cat_features']==None:
-            print('Warning: The PyMLR processor is not compatible with specified cat_features')
+        if data['cat_features']!=None:
+            print('Warning: The PyMLR processor is not compatible with use of cat_features,')
+            print('therefore X is not automatically preprocessed.')
+            print('Use of cat_features is experimental and may not work properly')
         else:
             if data['preprocess_result']!=None:
                 # print('preprocess_test')
@@ -11544,7 +11541,8 @@ def logistic_auto(X, y, **kwargs):
         'C': [1e-4, 10.0],                  # Inverse regularization strength
 
         # categorical model params that are optimized by optuna
-        'solver': ['liblinear', 'lbfgs', 'saga'],   # optimization algorithm
+        # 'solver': ['liblinear', 'lbfgs', 'saga'],   # optimization algorithm
+        'solver': ['lbfgs', 'saga'],   # optimization algorithm
         'penalty': ['l1', 'l2'],      # norm of the penalty
         
         # model extra_params that are optional user-specified
