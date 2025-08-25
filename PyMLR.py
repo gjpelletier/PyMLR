@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.170"
+__version__ = "1.2.171"
 
 def check_X_y(X,y):
 
@@ -8333,8 +8333,8 @@ def catboost_objective(trial, X, y, study, **kwargs):
         'task_type': kwargs['device']                   
     }
 
-    if kwargs['cat_features']!=None
-        extra_params['cat_features'] = kwargs['cat_features'],         
+    if kwargs['cat_features']!=None:
+        extra_params['cat_features'] = kwargs['cat_features']         
 
     if kwargs['device'] == 'GPU':
         extra_params['devices'] = kwargs['devices']
