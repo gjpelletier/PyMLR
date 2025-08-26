@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.171"
+__version__ = "1.2.172"
 
 def check_X_y(X,y):
 
@@ -7931,6 +7931,8 @@ def catboost(X, y, **kwargs):
         
         # [min, max] range of params optimized by optuna
         cat_features= None,         # CatBoost categorical features
+        'subsample': 1.0,              # frac of samples for train each iter
+        'colsample_bylevel': 1.0,      # frac features to determine best split         
         learning_rate= [0.01, 0.3],         # Balances step size in gradient updates.
         depth= [4, 10],                     # Controls tree depth
         iterations= [100, 3000],            # Number of boosting iterations
@@ -8038,6 +8040,8 @@ def catboost(X, y, **kwargs):
 
         # [min, max] range of params optimized by optuna
         'cat_features': None,          # CatBoost categorical features
+        'subsample': 1.0,              # frac of samples for train each iter
+        'colsample_bylevel': 1.0,      # frac features to determine best split         
         'learning_rate': 0.03,         # Balances step size in gradient updates.
         'depth': 6,                    # Controls tree depth
         'iterations': 1000,            # Number of boosting iterations
@@ -8134,6 +8138,7 @@ def catboost(X, y, **kwargs):
     params = {        
         # [min, max] range of params optimized by optuna
         'cat_features': data['cat_features'],
+        'subsample': data['subsample'],
         'learning_rate': data['learning_rate'],
         'depth': data['depth'],                    # Controls tree depth
         'iterations': data['iterations'],            # Number of boosting iterations
@@ -8298,6 +8303,10 @@ def catboost_objective(trial, X, y, study, **kwargs):
 
     # Define hyperparameter space
     params = {
+        "subsample": trial.suggest_float("subsample",
+            *kwargs['subsample']),
+        "colsample_bylevel": trial.suggest_float("colsample_bylevel",
+            *kwargs['colsample_bylevel']),
         "learning_rate": trial.suggest_float("learning_rate",
             *kwargs['learning_rate'], log=True),
         "depth": trial.suggest_int("depth",
@@ -8450,6 +8459,8 @@ def catboost_auto(X, y, **kwargs):
         thread_count= -1,     # number of CPU cores to use (-1 for all cores)
         
         # [min, max] range of params optimized by optuna
+        'subsample': [0.05, 1.0],             # frac of samples for train each iter
+        'colsample_bylevel': [0.05, 1.0],     # frac features to determine best split         
         learning_rate= [0.01, 0.3],         # Balances step size in gradient updates.
         depth= [4, 10],                     # Controls tree depth
         iterations= [100, 3000],            # Number of boosting iterations
@@ -8566,6 +8577,8 @@ def catboost_auto(X, y, **kwargs):
         
         # [min, max] range of params optimized by optuna
         'cat_features': None,                 # CatBoost categorical features         
+        'subsample': [0.05, 1.0],             # frac of samples for train each iter
+        'colsample_bylevel': [0.05, 1.0],     # frac features to determine best split         
         'learning_rate': [0.01, 0.3],         # Balances step size in gradient updates.
         'depth': [4, 10],                     # Controls tree depth
         'iterations': [100, 3000],            # Number of boosting iterations
