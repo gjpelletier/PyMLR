@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.172"
+__version__ = "1.2.173"
 
 def check_X_y(X,y):
 
@@ -8139,6 +8139,7 @@ def catboost(X, y, **kwargs):
         # [min, max] range of params optimized by optuna
         'cat_features': data['cat_features'],
         'subsample': data['subsample'],
+        'colsample_bylevel': data['colsample_bylevel'],
         'learning_rate': data['learning_rate'],
         'depth': data['depth'],                    # Controls tree depth
         'iterations': data['iterations'],            # Number of boosting iterations
