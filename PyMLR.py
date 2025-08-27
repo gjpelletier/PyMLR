@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.173"
+__version__ = "1.2.174"
 
-def check_X_y(X,y):
+def check_X_y(X,y, enable_categorical=False):
 
     '''
     Check the X and y inputs used in regression 
@@ -65,11 +65,33 @@ def check_X_y(X,y):
         if not ctrl:
             print('Check y: it needs to have no inf values!','\n')
             sys.exit()
+
+    # convert X and y to pandas dataframe and series if not already
+    # if isinstance(X, np.ndarray):
+    if not isinstance(X, pd.DataFrame):
+        X = pd.DataFrame(X)
+        X.columns = ['X' + str(i) for i in X.columns]       
+    # if isinstance(y, np.ndarray):
+    if not isinstance(y, pd.Series):
+        y = pd.Series(y)
+        y.name = 'y'
     
-    ctrl = np.isreal(X).all()
+    if enable_categorical:
+        cat_dtype_cols = X.select_dtypes(include=['category']).columns.tolist()
+        non_cat_dtype_cols = [
+            col for col, dtype in X.dtypes.items() 
+            if not isinstance(dtype, pd.CategoricalDtype)
+        ]
+        ctrl = np.isreal(X[non_cat_dtype_cols]).all()
+    else:    
+        ctrl = np.isreal(X).all()
     if not ctrl:
-        print('Check X: it needs be all real numbers!','\n')
+        if enable_categorical:
+            print('Check non-categorical X cols: they need to be all real numbers!','\n')
+        else:
+            print('Check X: it needs be all real numbers!','\n')
         sys.exit()
+
     ctrl = X.ndim==2
     if not ctrl:
         print('Check X: it needs be 2-D!','\n')
@@ -87,19 +109,9 @@ def check_X_y(X,y):
         print('Check X and y: X and y need to have the same number of rows!','\n')
         sys.exit()
 
-    # convert X and y to pandas dataframe and series if not already
-    # if isinstance(X, np.ndarray):
-    if not isinstance(X, pd.DataFrame):
-        X = pd.DataFrame(X)
-        X.columns = ['X' + str(i) for i in X.columns]       
-    # if isinstance(y, np.ndarray):
-    if not isinstance(y, pd.Series):
-        y = pd.Series(y)
-        y.name = 'y'
-
     return X, y
 
-def check_X(X):
+def check_X(X, enable_categorical=False):
 
     '''
     Check the X input used in regression 
@@ -136,21 +148,33 @@ def check_X(X):
             print('Check X: it needs to have no inf values!','\n')
             sys.exit()
     
-    ctrl = np.isreal(X).all()
-    if not ctrl:
-        print('Check X: it needs be all real numbers!','\n')
-        sys.exit()
-    ctrl = X.ndim==2
-    if not ctrl:
-        print('Check X: it needs be 2-D!','\n')
-        sys.exit()
-
     # convert X to pandas dataframe if not already
     # if isinstance(X, np.ndarray):
     if not isinstance(X, pd.DataFrame):
         X = pd.DataFrame(X)
         X.columns = ['X' + str(i) for i in X.columns]       
 
+    if enable_categorical:
+        cat_dtype_cols = X.select_dtypes(include=['category']).columns.tolist()
+        non_cat_dtype_cols = [
+            col for col, dtype in X.dtypes.items() 
+            if not isinstance(dtype, pd.CategoricalDtype)
+        ]
+        ctrl = np.isreal(X[non_cat_dtype_cols]).all()
+    else:
+        ctrl = np.isreal(X).all()
+    if not ctrl:
+        if enable_categorical:
+            print('Check non-categorical X cols: they need to be all real numbers!','\n')
+        else:
+            print('Check X: it needs be all real numbers!','\n')
+        sys.exit()
+
+    ctrl = X.ndim==2
+    if not ctrl:
+        print('Check X: it needs be 2-D!','\n')
+        sys.exit()
+    
     return X
 
 def cross_val_scoring():
@@ -255,6 +279,7 @@ def preprocess_train(df, **kwargs):
 
     # Define default values of input data arguments
     defaults = {
+        'enable_categorical': False, 
         'use_scaler': True, 
         'use_encoder': True, 
         'threshold_cat': 12,
@@ -273,7 +298,7 @@ def preprocess_train(df, **kwargs):
     if unexpected:
         # raise ValueError(f"Unexpected argument(s): {unexpected}")
         print(f"Unexpected input kwargs: {unexpected}")
-
+    
     # extract control variables from data dictionary
     use_encoder = data['use_encoder']
     use_scaler = data['use_scaler']
@@ -283,13 +308,16 @@ def preprocess_train(df, **kwargs):
     threshold_skew_pos = data['threshold_skew_pos']
     unskew_neg = data['unskew_neg']
     threshold_skew_neg = data['threshold_skew_neg']
-
+    enable_categorical = data['enable_categorical']
+    
     # Start with a copy to avoid changing the original df
     df = df.copy()
+    df_orig = df.copy()
 
     # check df and convert to dataframe if not already
-    df = check_X(df)
-
+    # df = check_X(df)
+    df = check_X(df, enable_categorical=enable_categorical)
+    
     # # identify columns that are any typed or coercible date or time
     def get_all_datetime_like_columns(df):
         # 1. Columns with datetime-like dtypes
@@ -307,6 +335,17 @@ def preprocess_train(df, **kwargs):
                     continue  # Skip completely incompatible columns
         return list(dict.fromkeys(typed + coercible))  # Preserve order and uniqueness
 
+    # lists of columns of dtype categorical and not categorical
+    cat_dtype_cols = df.select_dtypes(include=['category']).columns.tolist()
+    non_cat_dtype_cols = [
+        col for col, dtype in df.dtypes.items() 
+        if not isinstance(dtype, pd.CategoricalDtype)
+    ]
+
+    # preprocess only the non-cat dtypes if enable_categorical
+    if enable_categorical:
+        df = df[non_cat_dtype_cols].copy()
+    
     datetime_cols = get_all_datetime_like_columns(df)
 
     # identify boolean columns and covert to int
@@ -375,20 +414,6 @@ def preprocess_train(df, **kwargs):
     # -------- One-hot encoding --------
     
     # One-hot encoding
-    '''
-    if all_cat_cols:
-        encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
-        encoded_array = encoder.fit_transform(df[all_cat_cols])
-        encoded_df = pd.DataFrame(encoded_array,
-                                  columns=encoder.get_feature_names_out(all_cat_cols),
-                                  index=df.index).astype(float)
-        category_mappings = {
-            col: encoder.categories_[i].tolist()
-            for i, col in enumerate(all_cat_cols)
-        }
-    else:
-        encoder, encoded_df, category_mappings = None, pd.DataFrame(index=df.index), {}
-    '''
     if use_encoder and non_bool_cats:
         encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
         encoded_array = encoder.fit_transform(df[non_bool_cats])
@@ -431,11 +456,18 @@ def preprocess_train(df, **kwargs):
     float_cols = [item for item in all_cols if item not in datetime_cols]
     df_processed[float_cols] = df_processed[float_cols].astype(float)
 
+    # columnn-wise concat of original cat_dtype_cols with preprocessed non-categorical dtypes
+    if enable_categorical:
+        df_processed = pd.concat([df_orig[cat_dtype_cols], df_processed], axis=1)
+    
     return {
-        'df': df,
+        'df': df_orig,
         'df_processed': df_processed,
-        'columns_original': df.columns.to_list(),
+        'columns_original': df_orig.columns.to_list(),
         'columns_processed': df_processed.columns.to_list(),
+        'enable_categorical': enable_categorical,
+        'cat_dtype_cols': cat_dtype_cols,
+        'non_cat_dtype_cols': non_cat_dtype_cols,
         'encoder': encoder,
         'scaler': scaler,
         'use_encoder': use_encoder,
@@ -493,16 +525,24 @@ def preprocess_test(df_test, preprocess_result):
         skewed_neg_cols = preprocess_result['skewed_neg_cols']  
         unskew_pos = preprocess_result['unskew_pos'] 
         unskew_neg = preprocess_result['unskew_neg']     
+        enable_categorical = preprocess_result['enable_categorical']
+        cat_dtype_cols = preprocess_result['cat_dtype_cols']
+        non_cat_dtype_cols = preprocess_result['non_cat_dtype_cols']
     else:
         print('Exited preprocess_test because preprocess_result=None','\n')
         sys.exit()
     
     # copy df_test to prevent altering the original
     df_test = df_test.copy()
+    df_test_orig = df_test.copy()
 
     # check that df_test is a dataframe and convert to dataframe if needed
-    df_test = check_X(df_test)
+    df_test = check_X(df_test, enable_categorical=enable_categorical)
 
+    # preprocess only the non-cat dtypes if enable_categorical
+    if enable_categorical:
+        df_test = df_test[non_cat_dtype_cols].copy()
+    
     # -------- Transforming skewed continuous_cols before scaling --------
 
     # log1p-transform positively skewed features in df if unskew_pos==True
@@ -522,26 +562,6 @@ def preprocess_test(df_test, preprocess_result):
         
     # -------- One-hot encoding --------
 
-    '''
-    for col in categorical_cols:
-        if df_test.get(col, pd.Series(dtype=object)).dtype == bool:
-            df_test[col] = df_test[col].astype(int)
-    
-    # Encode categoricals
-    if encoder is not None and categorical_cols:
-        df_cat = pd.DataFrame(index=df_test.index)
-        for col in categorical_cols:
-            df_cat[col] = df_test[col] if col in df_test.columns else np.nan
-
-        encoded_array = encoder.transform(df_cat[categorical_cols])
-        encoded_df = pd.DataFrame(
-            encoded_array,
-            columns=encoder.get_feature_names_out(categorical_cols),
-            index=df_test.index
-        ).astype(float)
-    else:
-        encoded_df = pd.DataFrame(index=df_test.index)
-    '''
     for col in non_bool_cats:
         if df_test.get(col, pd.Series(dtype=object)).dtype == bool:
             df_test[col] = df_test[col].astype(int)
@@ -591,6 +611,10 @@ def preprocess_test(df_test, preprocess_result):
     float_cols = [item for item in all_cols if item not in datetime_cols]
     df_processed[float_cols] = df_processed[float_cols].astype(float)
 
+    # columnn-wise concat of original cat_dtype_cols with preprocessed non-categorical dtypes
+    if enable_categorical:
+        df_processed = pd.concat([df_test_orig[cat_dtype_cols], df_processed], axis=1)
+    
     # Restore warnings to normal
     warnings.filterwarnings("default")
 
