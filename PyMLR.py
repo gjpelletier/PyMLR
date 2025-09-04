@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.175"
+__version__ = "1.2.176"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -1159,7 +1159,7 @@ def detect_dummy_variables(df, sep=None):
 
 def detect_gpu():
     '''
-    Check if the computer as an nvidia gpu
+    Check if the computer has an nvidia gpu
     returns boolean use_gpu= True or False to indicate if the computer has a gpu or not
     '''
     import subprocess
@@ -1321,7 +1321,15 @@ def stepwise(X, y, **kwargs):
     from statsmodels.stats.outliers_influence import variance_inflation_factor
     from sklearn.metrics import PredictionErrorDisplay
     import warnings
-    
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'criterion': 'AIC',
@@ -2279,6 +2287,14 @@ def lasso(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
    
     # Define default values of input data arguments
     defaults = {
@@ -3067,6 +3083,14 @@ def ridge(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
    
     # Define default values of input data arguments
     defaults = {
@@ -3660,6 +3684,14 @@ def elastic(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
    
     # Define default values of input data arguments
     defaults = {
@@ -4119,6 +4151,14 @@ def stacking(X, y, **kwargs):
     from statsmodels.stats.outliers_influence import variance_inflation_factor
     # import xgboost as xgb
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'random_state': 42,
@@ -4527,6 +4567,14 @@ def svr(X, y, **kwargs):
     import statsmodels.api as sm
     from statsmodels.stats.outliers_influence import variance_inflation_factor
     # import xgboost as xgb
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -5032,6 +5080,14 @@ def svr_auto(X, y, **kwargs):
     import optuna
     from sklearn.svm import SVR, SVC
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'random_state': 42,                 # Random seed for reproducibility.
@@ -5441,6 +5497,14 @@ def sgd(X, y, **kwargs):
     from statsmodels.stats.outliers_influence import variance_inflation_factor
     # import xgboost as xgb
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'random_state': 42,
@@ -5769,6 +5833,14 @@ def gbr(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     # import xgboost as xgb
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -6229,6 +6301,14 @@ def gbr_auto(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     import optuna
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -6693,6 +6773,14 @@ def xgb(X, y, **kwargs):
     import statsmodels.api as sm
     import xgboost as xgb
     from xgboost import XGBRegressor, XGBClassifier
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -7165,7 +7253,7 @@ def xgb_auto(X, y, **kwargs):
 
         # [min, max] ranges of params for model to be optimized by optuna:
         learning_rate= [1e-4, 1.0], # Step size shrinkage (also called eta).
-        max_depth= [3, 12],         # Maximum depth of a tree.
+        max_depth= [3, 15],         # Maximum depth of a tree.
         min_child_weight= [1, 10],  # Minimum sum of instance weight 
                                     # (hessian) needed in a child.
         subsample= [0.5, 1],        # Fraction of samples used for training each tree.
@@ -7173,7 +7261,7 @@ def xgb_auto(X, y, **kwargs):
         gamma= [1e-8, 10.0],        # Minimum loss reduction to make a split.
         reg_lambda= [1e-8, 10.0],   # L2 regularization term on weights.
         alpha= [1e-8, 10.0],        # L1 regularization term on weights.
-        n_estimators= [100, 1000]   # Number of boosting rounds (trees).
+        n_estimators= [100, 2000]   # Number of boosting rounds (trees).
 
         # extra_params for model that are optional user-specified
         random_state= 42,           # Random seed for reproducibility.
@@ -7263,6 +7351,14 @@ def xgb_auto(X, y, **kwargs):
     from xgboost import XGBRegressor, XGBClassifier
     import optuna
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'n_trials': 50,                     # number of optuna trials
@@ -7296,14 +7392,14 @@ def xgb_auto(X, y, **kwargs):
 
         # params that are optimized by optuna
         'learning_rate': [1e-4, 1.0],       # Step size shrinkage (also called eta).
-        'max_depth': [3, 12],               # Maximum depth of a tree.
+        'max_depth': [3, 15],               # Maximum depth of a tree.
         'min_child_weight': [1, 10],        # Minimum sum of instance weight (hessian) needed in a child.
         'subsample': [0.5, 1],              # Fraction of samples used for training each tree.
         'colsample_bytree': [0.5, 1],       # Fraction of features used for each tree.
         'gamma': [1e-8, 10.0],              # Minimum loss reduction to make a split.
         'reg_lambda': [1e-8, 10.0],         # L2 regularization term on weights.
         'alpha': [1e-8, 10.0],              # L1 regularization term on weights.
-        'n_estimators': [100, 1000],        # Number of boosting rounds (trees).
+        'n_estimators': [100, 2000],        # Number of boosting rounds (trees).
 
         # extra_params that are optional user-specified
         'random_state': 42,           # Random seed for reproducibility.
@@ -7708,6 +7804,14 @@ def lgbm(X, y, **kwargs):
     import xgboost as xgb
     from lightgbm import LGBMRegressor
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'random_state': 42,       # Random seed for reproducibility
@@ -8034,6 +8138,14 @@ def catboost(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     from catboost import CatBoostRegressor, CatBoostClassifier
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
     
     # Define default values of input data arguments
     defaults = {
@@ -8567,6 +8679,14 @@ def catboost_auto(X, y, **kwargs):
     import optuna
     from catboost import CatBoostRegressor, CatBoostClassifier
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'random_state': 42,     # Random seed for reproducibility.
@@ -9000,6 +9120,14 @@ def forest(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -9543,6 +9671,14 @@ def forest_auto(X, y, **kwargs):
     import statsmodels.api as sm
     import optuna
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'n_trials': 50,                     # number of optuna trials
@@ -9974,6 +10110,14 @@ def knn(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -10541,6 +10685,14 @@ def knn_auto(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     import optuna
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -11175,6 +11327,14 @@ def logistic(X, y, **kwargs):
     import optuna
     import seaborn as sns
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
 
@@ -11543,6 +11703,14 @@ def logistic_auto(X, y, **kwargs):
     import statsmodels.api as sm
     import optuna
     import seaborn as sns
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -12147,6 +12315,14 @@ def linear(X, y, **kwargs):
     from statsmodels.stats.outliers_influence import variance_inflation_factor
     # import xgboost as xgb
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'preprocess': True,         # True for OneHotEncoder and StandardScaler
@@ -12590,6 +12766,14 @@ def linear_auto(X, y, **kwargs):
     from sklearn.linear_model import LinearRegression
     from statsmodels.stats.outliers_influence import variance_inflation_factor
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'n_trials': 50,                     # number of optuna trials
@@ -12979,6 +13163,14 @@ def mlp(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     from sklearn.neural_network import MLPRegressor, MLPClassifier
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -13543,6 +13735,14 @@ def mlp_auto(X, y, **kwargs):
     import statsmodels.api as sm
     import optuna
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'n_trials': 50,                     # number of optuna trials
@@ -13978,6 +14178,14 @@ def tree(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier 
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -14486,6 +14694,14 @@ def tree_auto(X, y, **kwargs):
     import statsmodels.api as sm
     import optuna
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'n_trials': 50,                     # number of optuna trials
@@ -14889,6 +15105,14 @@ def ada(X, y, **kwargs):
     import statsmodels.api as sm
     from sklearn.ensemble import AdaBoostRegressor, AdaBoostClassifier
     from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier 
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -15432,6 +15656,14 @@ def ada_auto(X, y, **kwargs):
     import sys
     import statsmodels.api as sm
     import optuna
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -16103,6 +16335,14 @@ def xgbmlp_auto(X, y, **kwargs):
     import statsmodels.api as sm
     import optuna
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'n_trials': 50,                     # number of optuna trials
@@ -16769,6 +17009,14 @@ def xgbrfe_auto(X, y, **kwargs):
     import optuna
     from xgboost import XGBRegressor, XGBClassifier
 
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
+
     # Define default values of input data arguments
     defaults = {
         'n_trials': 50,                     # number of optuna trials
@@ -17410,6 +17658,14 @@ def adarfe_auto(X, y, **kwargs):
     import optuna
     from sklearn.ensemble import AdaBoostRegressor, AdaBoostClassifier
     from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier 
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
     defaults = {
