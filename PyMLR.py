@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.176"
+__version__ = "1.2.177"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -666,6 +666,16 @@ def show_optuna(study, random_state=42):
     from optuna.importance import FanovaImportanceEvaluator
     import matplotlib.pyplot as plt
     import warnings
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {os.getcwd()}")    
+
     warnings.filterwarnings('ignore')
 
     # Show the best parameters
@@ -1327,8 +1337,9 @@ def stepwise(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -2293,8 +2304,9 @@ def lasso(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
    
     # Define default values of input data arguments
     defaults = {
@@ -3089,8 +3101,9 @@ def ridge(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
    
     # Define default values of input data arguments
     defaults = {
@@ -3690,8 +3703,9 @@ def elastic(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
    
     # Define default values of input data arguments
     defaults = {
@@ -4156,8 +4170,9 @@ def stacking(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -4573,8 +4588,9 @@ def svr(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -5085,8 +5101,9 @@ def svr_auto(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -5502,8 +5519,9 @@ def sgd(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -5839,8 +5857,9 @@ def gbr(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -6307,8 +6326,9 @@ def gbr_auto(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -6779,8 +6799,9 @@ def xgb(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -7356,8 +7377,9 @@ def xgb_auto(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -7809,8 +7831,9 @@ def lgbm(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -8144,8 +8167,9 @@ def catboost(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
     
     # Define default values of input data arguments
     defaults = {
@@ -8684,8 +8708,9 @@ def catboost_auto(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -9126,8 +9151,9 @@ def forest(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -9676,8 +9702,9 @@ def forest_auto(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -10116,8 +10143,9 @@ def knn(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -10691,8 +10719,9 @@ def knn_auto(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -11332,8 +11361,9 @@ def logistic(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -11709,8 +11739,9 @@ def logistic_auto(X, y, **kwargs):
     from pathlib import Path
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {Path.home()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
     defaults = {
@@ -11990,8 +12021,16 @@ def model_agnostic(model, X_test, y_test,
     from sklearn.inspection import PartialDependenceDisplay, permutation_importance
     # from alepython import ale_plot
     import numpy as np
-    import os
     import time
+
+    # Check if cwd has write permissions and change cwd to home if not
+    import os
+    from pathlib import Path
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
+        os.chdir(Path.home())
+        print(f"Working directory changed to: {os.getcwd()}")    
     
     print('Performing model agnostic analysis, please wait...')
 
