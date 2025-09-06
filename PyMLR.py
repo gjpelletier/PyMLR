@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.177"
+__version__ = "1.2.178"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -674,7 +674,9 @@ def show_optuna(study, random_state=42):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
-        print(f"Working directory changed to: {os.getcwd()}")    
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
+       print(f"Working directory changed to: {os.getcwd()}")    
 
     warnings.filterwarnings('ignore')
 
@@ -1339,6 +1341,8 @@ def stepwise(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -2306,6 +2310,8 @@ def lasso(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
    
     # Define default values of input data arguments
@@ -3103,6 +3109,8 @@ def ridge(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
    
     # Define default values of input data arguments
@@ -3705,6 +3713,8 @@ def elastic(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
    
     # Define default values of input data arguments
@@ -4172,6 +4182,8 @@ def stacking(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -4590,6 +4602,8 @@ def svr(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -5103,6 +5117,8 @@ def svr_auto(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -5521,6 +5537,8 @@ def sgd(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -5859,6 +5877,8 @@ def gbr(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -6328,6 +6348,8 @@ def gbr_auto(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -6801,6 +6823,8 @@ def xgb(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -7379,6 +7403,8 @@ def xgb_auto(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -7833,6 +7859,8 @@ def lgbm(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -8169,6 +8197,8 @@ def catboost(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
     
     # Define default values of input data arguments
@@ -8710,6 +8740,8 @@ def catboost_auto(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -9153,6 +9185,8 @@ def forest(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -9704,6 +9738,8 @@ def forest_auto(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -10145,6 +10181,8 @@ def knn(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -10721,6 +10759,8 @@ def knn_auto(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -11363,6 +11403,8 @@ def logistic(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -11741,6 +11783,8 @@ def logistic_auto(X, y, **kwargs):
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
 
     # Define default values of input data arguments
@@ -12030,6 +12074,8 @@ def model_agnostic(model, X_test, y_test,
         # Change the working directory to home if no write permissions
         print(f"Current working directory has no write permission: {os.getcwd()}")    
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {os.getcwd()}")    
     
     print('Performing model agnostic analysis, please wait...')
@@ -12360,6 +12406,8 @@ def linear(X, y, **kwargs):
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
@@ -12811,6 +12859,8 @@ def linear_auto(X, y, **kwargs):
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
@@ -13209,6 +13259,8 @@ def mlp(X, y, **kwargs):
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
@@ -13780,6 +13832,8 @@ def mlp_auto(X, y, **kwargs):
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
@@ -14224,6 +14278,8 @@ def tree(X, y, **kwargs):
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
@@ -14739,6 +14795,8 @@ def tree_auto(X, y, **kwargs):
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
@@ -15151,6 +15209,8 @@ def ada(X, y, **kwargs):
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
@@ -15702,6 +15762,8 @@ def ada_auto(X, y, **kwargs):
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
@@ -16380,6 +16442,8 @@ def xgbmlp_auto(X, y, **kwargs):
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
@@ -17054,6 +17118,8 @@ def xgbrfe_auto(X, y, **kwargs):
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
@@ -17704,6 +17770,8 @@ def adarfe_auto(X, y, **kwargs):
     if not os.access(os.getcwd(), os.W_OK):
         # Change the working directory to home if no write permissions
         os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
         print(f"Working directory changed to: {Path.home()}")    
 
     # Define default values of input data arguments
