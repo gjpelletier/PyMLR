@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.178"
+__version__ = "1.2.179"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -676,7 +676,7 @@ def show_optuna(study, random_state=42):
         os.chdir(Path.home())
         os.makedirs('pymlr', exist_ok=True)
         os.chdir('pymlr')
-       print(f"Working directory changed to: {os.getcwd()}")    
+        print(f"Working directory changed to: {os.getcwd()}")    
 
     warnings.filterwarnings('ignore')
 
