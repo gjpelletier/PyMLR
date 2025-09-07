@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.179"
+__version__ = "1.2.180"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -16245,7 +16245,7 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
         # Cross-validated scoring
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
-            mp_model, X_selected, y,
+            model_stage2, X_selected, y,
             cv=cv,
             # scoring="neg_root_mean_squared_error"
             scoring=kwargs["scoring"]
@@ -16952,7 +16952,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
         # Cross-validated scoring
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
-            mp_model, X_selected, y,
+            model_stage2, X_selected, y,
             cv=cv,
             # scoring="neg_root_mean_squared_error"
             scoring=kwargs["scoring"]
@@ -17612,7 +17612,7 @@ def adarfe_objective(trial, X, y, study, **kwargs):
         # Cross-validated scoring
         cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
         scores = cross_val_score(
-            mp_model, X_selected, y,
+            model_stage2, X_selected, y,
             cv=cv,
             # scoring="neg_root_mean_squared_error"
             scoring=kwargs["scoring"]
