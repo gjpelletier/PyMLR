@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.181"
+__version__ = "1.2.182"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -16151,7 +16151,7 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
     # heavily penalize trials with no selected features
     if len(selected_idx) == 0:
         trial.set_user_attr("selected_features", [])
-        return 0.0
+        return -1e6
 
     # selected_features
     feature_names = kwargs['feature_names']
@@ -16907,7 +16907,7 @@ def xgbrfe_objective(trial, X, y, study, **kwargs):
     # heavily penalize trials with no selected features
     if len(selected_idx) == 0:
         trial.set_user_attr("selected_features", [])
-        return 0.0
+        return -1e6
 
     # selected_features
     feature_names = kwargs['feature_names']
@@ -17569,7 +17569,7 @@ def adarfe_objective(trial, X, y, study, **kwargs):
     # heavily penalize trials with no selected features
     if len(selected_idx) == 0:
         trial.set_user_attr("selected_features", [])
-        return 0.0
+        return -1e6
 
     # selected_features
     feature_names = kwargs['feature_names']
