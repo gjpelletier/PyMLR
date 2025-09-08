@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.182"
+__version__ = "1.2.183"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -17272,6 +17272,7 @@ def xgbrfe_auto(X, y, **kwargs):
             X = preprocess_test(X, data['preprocess_result'])
         else:
             kwargs_pre = {
+                'enable_categorical': data['enable_categorical'],
                 'use_encoder': data['use_encoder'],
                 'use_scaler': data['use_scaler'],
                 'threshold_cat': data['threshold_cat'],
