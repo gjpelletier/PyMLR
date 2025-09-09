@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.187"
+__version__ = "1.2.188"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -9353,7 +9353,16 @@ def catboost_auto(X, y, **kwargs):
         random_state= 42,    # initial random seed
         'classify': False,          # Use CatBoostClassifier if True
         n_trials= 50,         # number of optuna trials
-        preprocess= True,           # Apply OneHotEncoder and StandardScaler
+        preprocess= True,            # Apply OneHotEncoder and StandardScaler
+        'enable_categorical': True,  # bypass category dtype
+        'use_encoder': True, 
+        'use_scaler': True, 
+        'threshold_cat': 12,    # threshold number of unique items for categorical 
+        'scale': 'standard', 
+        'unskew_pos': False, 
+        'threshold_skew_pos': 0.5,
+        'unskew_neg': False, 
+        'threshold_skew_neg': -0.5,        
         preprocess_result= None,    # dict of the following result from 
                                     # preprocess_train if available:         
                                     # - encoder          (OneHotEncoder)
@@ -9475,6 +9484,7 @@ def catboost_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'enable_categorical': True, 
         'use_encoder': True, 
         'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
@@ -9566,15 +9576,16 @@ def catboost_auto(X, y, **kwargs):
     # Pre-process X to apply OneHotEncoder and StandardScaler
     if data['preprocess']:
         if data['cat_features']!=None:
-            print('Warning: The PyMLR processor is not compatible with use of cat_features,')
-            print('therefore X is not automatically preprocessed.')
-            print('Use of cat_features is experimental and may not work properly')
+            print('Warning: Use of cat_features may not work properly if each cat_features is not assigned category dtype')
+        if data['cat_features']!=None and not data['enable_categorical']:
+            print('Warning: Use of cat_features will not work properly unless enable_categorical=True')
         else:
             if data['preprocess_result']!=None:
                 # print('preprocess_test')
                 X = preprocess_test(X, data['preprocess_result'])
             else:
                 kwargs_pre = {
+                    'enable_categorical': data['enable_categorical'],
                     'use_encoder': data['use_encoder'],
                     'use_scaler': data['use_scaler'],
                     'threshold_cat': data['threshold_cat'],
