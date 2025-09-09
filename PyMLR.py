@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.184"
+__version__ = "1.2.185"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -7948,6 +7948,8 @@ def lgbm(X, y, **kwargs):
         'reg_alpha': 1e-8,
         'reg_lambda': 1e-8,
         'class_weight': None,
+        'min_split_gain': 0.0,
+        'min_child_weight': 1e-3,
         'boosting_type': "gbdt",
 
         # extra_params that are optional user-specified
@@ -8058,6 +8060,8 @@ def lgbm(X, y, **kwargs):
         "reg_lambda": data["reg_lambda"],
         "reg_alpha": data["reg_alpha"],
         "num_leaves": data["num_leaves"],
+        'min_split_gain': data["min_split_gain"],
+        'min_child_weight': data["min_child_weight"],
         "boosting_type": data["boosting_type"],
     }
 
@@ -8217,6 +8221,8 @@ def lgbm_objective(trial, X, y, study, **kwargs):
         "reg_lambda": trial.suggest_float("reg_lambda", *kwargs["reg_lambda"], log=True),
         "reg_alpha": trial.suggest_float("reg_alpha", *kwargs["reg_alpha"], log=True),
         "num_leaves": trial.suggest_int("num_leaves", *kwargs["num_leaves"]),
+        "min_split_gain": trial.suggest_float("min_split_gain", *kwargs["min_split_gain"]),
+        "min_child_weight": trial.suggest_float("min_child_weight", *kwargs["min_child_weight"], log=True),
         "boosting_type": trial.suggest_categorical("boosting_type", kwargs["boosting_type"]),
     }
 
@@ -8297,8 +8303,10 @@ def lgbm_objective(trial, X, y, study, **kwargs):
     # Log feature importances and metadata
     model_step = pipeline.named_steps["regressor"]
     importances = getattr(model_step, "feature_importances_", None)
+    feature_names = getattr(model_step, "feature_name_", None)    
     if importances is not None:
         trial.set_user_attr("feature_importances", importances.tolist())
+        trial.set_user_attr("feature_names", feature_names.tolist())
 
     trial.set_user_attr("model", pipeline)
     trial.set_user_attr("scoring", kwargs["scoring"])
@@ -8370,6 +8378,8 @@ def lgbm_auto(X, y, **kwargs):
         'reg_alpha': [1e-8, 10.0],
         'reg_lambda': [1e-8, 10.0],
         'class_weight': [None, "balanced"],
+        'min_split_gain': [0.0, 1.0],
+        'min_child_weight': [1e-3, 10.0],
         'boosting_type': ["gbdt", "dart"],
 
         # extra_params that are optional user-specified
@@ -8503,6 +8513,8 @@ def lgbm_auto(X, y, **kwargs):
         'reg_alpha': [1e-8, 10.0],
         'reg_lambda': [1e-8, 10.0],
         'class_weight': [None, "balanced"],
+        'min_split_gain': [0.0, 1.0],
+        'min_child_weight': [1e-3, 10.0],
         'boosting_type': ["gbdt", "dart"],
 
         # extra_params that are optional user-specified
