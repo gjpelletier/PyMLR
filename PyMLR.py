@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.189"
+__version__ = "1.2.190"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -8931,6 +8931,7 @@ def catboost(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
+        'enable_categorical': True,     # bypass category dtype
         'use_encoder': True, 
         'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
@@ -9017,6 +9018,7 @@ def catboost(X, y, **kwargs):
                 X = preprocess_test(X, data['preprocess_result'])
             else:
                 kwargs_pre = {
+                    'enable_categorical': data['enable_categorical'],
                     'use_encoder': data['use_encoder'],
                     'use_scaler': data['use_scaler'],
                     'threshold_cat': data['threshold_cat'],
