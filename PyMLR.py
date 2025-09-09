@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.185"
+__version__ = "1.2.186"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -8305,8 +8305,10 @@ def lgbm_objective(trial, X, y, study, **kwargs):
     importances = getattr(model_step, "feature_importances_", None)
     feature_names = getattr(model_step, "feature_name_", None)    
     if importances is not None:
-        trial.set_user_attr("feature_importances", importances.tolist())
-        trial.set_user_attr("feature_names", feature_names.tolist())
+        # trial.set_user_attr("feature_importances", importances.tolist())
+        # trial.set_user_attr("feature_names", feature_names.tolist())
+        trial.set_user_attr("feature_importances", importances)
+        trial.set_user_attr("feature_names", feature_names)
 
     trial.set_user_attr("model", pipeline)
     trial.set_user_attr("scoring", kwargs["scoring"])
