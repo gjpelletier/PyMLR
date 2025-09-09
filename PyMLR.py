@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.186"
+__version__ = "1.2.187"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -8654,6 +8654,8 @@ def lgbm_auto(X, y, **kwargs):
     model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
+    model_outputs['feature_importances'] = study.best_trial.user_attrs.get('feature_importances')
+    model_outputs['feature_names'] = study.best_trial.user_attrs.get('feature_names')
         
     best_params = study.best_params
     model_outputs['best_params'] = best_params
