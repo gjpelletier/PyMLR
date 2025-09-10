@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.197"
+__version__ = "1.2.198"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -7278,9 +7278,14 @@ def xgb_objective(trial, X, y, study, **kwargs):
 
     # Log feature importances and metadata
     model_step = pipeline.named_steps["regressor"]
-    importances = getattr(model_step, "feature_importances_", None)
+    # importances = getattr(model_step, "feature_importances_", None)
+    importances = model_step.feature_importances_  # Gain-based by default
+    feature_names = model_step.get_booster().feature_names
     if importances is not None:
-        trial.set_user_attr("feature_importances", importances.tolist())
+        # trial.set_user_attr("feature_importances", importances.tolist())
+        # trial.set_user_attr("feature_names", feature_names.tolist())
+        trial.set_user_attr("feature_importances", importances)
+        trial.set_user_attr("feature_names", feature_names)
 
     trial.set_user_attr("model", pipeline)
     trial.set_user_attr("scoring", kwargs["scoring"])
@@ -7652,6 +7657,8 @@ def xgb_auto(X, y, **kwargs):
     model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
+    model_outputs['feature_importances'] = study.best_trial.user_attrs.get('feature_importances')
+    model_outputs['feature_names'] = study.best_trial.user_attrs.get('feature_names')
         
     best_params = study.best_params
     model_outputs['best_params'] = best_params
