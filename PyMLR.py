@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.192"
+__version__ = "1.2.193"
 
 def check_X_y(X,y, enable_categorical=False, bypass_cols=None):
 
@@ -8965,7 +8965,8 @@ def catboost(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'enable_categorical': True,     # bypass category dtype
+        'bypass_cols': None,          # bypass columns
+        'enable_categorical': False,   # bypass category dtype
         'use_encoder': True, 
         'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
@@ -9052,6 +9053,7 @@ def catboost(X, y, **kwargs):
                 X = preprocess_test(X, data['preprocess_result'])
             else:
                 kwargs_pre = {
+                    'bypass_cols': data['bypass_cols'],
                     'enable_categorical': data['enable_categorical'],
                     'use_encoder': data['use_encoder'],
                     'use_scaler': data['use_scaler'],
@@ -9394,6 +9396,7 @@ def catboost_auto(X, y, **kwargs):
         'classify': False,          # Use CatBoostClassifier if True
         n_trials= 50,         # number of optuna trials
         preprocess= True,            # Apply OneHotEncoder and StandardScaler
+        'bypass_cols': None,         # bypass columns
         'enable_categorical': True,  # bypass category dtype
         'use_encoder': True, 
         'use_scaler': True, 
@@ -9524,7 +9527,8 @@ def catboost_auto(X, y, **kwargs):
                                       # - non_numeric_cats (non-numeric cats)
                                       # - continuous_cols  (continuous columns)
         # --- preprocess_train ---
-        'enable_categorical': True, 
+        'bypass_cols': None,
+        'enable_categorical': False, 
         'use_encoder': True, 
         'use_scaler': True, 
         'threshold_cat': 12,    # threshold number of unique items for categorical 
@@ -9616,15 +9620,16 @@ def catboost_auto(X, y, **kwargs):
     # Pre-process X to apply OneHotEncoder and StandardScaler
     if data['preprocess']:
         if data['cat_features']!=None:
-            print('Warning: Use of cat_features may not work properly if each cat_features is not assigned category dtype')
-        if data['cat_features']!=None and not data['enable_categorical']:
-            print('Warning: Use of cat_features will not work properly unless enable_categorical=True')
+            print('Warning: Use of cat_features may not work properly if cat_features is not the same as bypass_cols')
+        if data['enable_categorical']:
+            print('Warning: CatBoost does not support category dtype')
         else:
             if data['preprocess_result']!=None:
                 # print('preprocess_test')
                 X = preprocess_test(X, data['preprocess_result'])
             else:
                 kwargs_pre = {
+                    'bypass_cols': data['bypass_cols'],
                     'enable_categorical': data['enable_categorical'],
                     'use_encoder': data['use_encoder'],
                     'use_scaler': data['use_scaler'],
