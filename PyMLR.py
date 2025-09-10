@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.190"
+__version__ = "1.2.191"
 
-def check_X_y(X,y, enable_categorical=False):
+def check_X_y(X,y, enable_categorical=False, bypass_cols=None):
 
     '''
     Check the X and y inputs used in regression 
@@ -124,6 +124,11 @@ def check_X(X, enable_categorical=False):
     # start with copies of X and y to avoid changing the original
     X = X.copy()
 
+    if bypass_cols == None:
+        process_cols = list(set(X.columns))
+    else:
+        process_cols = list(set(X.columns) - set(bypass_cols))
+
     if isinstance(X, pd.DataFrame):
         ctrl = X.isna().sum().sum()==0
         if not ctrl:
@@ -241,6 +246,8 @@ def preprocess_train(df, **kwargs):
                 used if unskew_neg=True (default: -0.5)
             use_encoder: True (default) or False
             use_scaler: True (default) or False
+            enable_categorical: True or False (default)
+            bypass_cols: None or list of column names to bypass preprocessing
 
     Returns:
         dict: {
@@ -279,6 +286,7 @@ def preprocess_train(df, **kwargs):
 
     # Define default values of input data arguments
     defaults = {
+        'bypass_cols': None, 
         'enable_categorical': False, 
         'use_scaler': True, 
         'use_encoder': True, 
@@ -298,7 +306,7 @@ def preprocess_train(df, **kwargs):
     if unexpected:
         # raise ValueError(f"Unexpected argument(s): {unexpected}")
         print(f"Unexpected input kwargs: {unexpected}")
-    
+
     # extract control variables from data dictionary
     use_encoder = data['use_encoder']
     use_scaler = data['use_scaler']
@@ -317,7 +325,14 @@ def preprocess_train(df, **kwargs):
     # check df and convert to dataframe if not already
     # df = check_X(df)
     df = check_X(df, enable_categorical=enable_categorical)
-    
+
+    if data['bypass_cols'] == None:
+        columns_processed = list(set(df.columns))
+    else:
+        columns_processed = list(set(df.columns) - set(bypass_cols))
+        df_bypass = df[bypass_cols].copy()
+        df = df[columns_processed].copy()
+        
     # # identify columns that are any typed or coercible date or time
     def get_all_datetime_like_columns(df):
         # 1. Columns with datetime-like dtypes
@@ -344,6 +359,7 @@ def preprocess_train(df, **kwargs):
 
     # preprocess only the non-cat dtypes if enable_categorical
     if enable_categorical:
+        df_cat_dtype = df[cat_dtype_cols].copy()
         df = df[non_cat_dtype_cols].copy()
     
     datetime_cols = get_all_datetime_like_columns(df)
@@ -458,13 +474,19 @@ def preprocess_train(df, **kwargs):
 
     # columnn-wise concat of original cat_dtype_cols with preprocessed non-categorical dtypes
     if enable_categorical:
-        df_processed = pd.concat([df_orig[cat_dtype_cols], df_processed], axis=1)
+        # df_processed = pd.concat([df_orig[cat_dtype_cols], df_processed], axis=1)
+        df_processed = pd.concat(df_cat_dtype, df_processed], axis=1)
+
+    # columnn-wise concat to include bypass_cols
+    if data['bypass_cols'] != None:
+        df_processed = pd.concat([df_bypass, df_processed], axis=1)
     
     return {
         'df': df_orig,
         'df_processed': df_processed,
         'columns_original': df_orig.columns.to_list(),
-        'columns_processed': df_processed.columns.to_list(),
+        'columns_processed': columns_processed,
+        'bypass_cols': bypass_cols,
         'enable_categorical': enable_categorical,
         'cat_dtype_cols': cat_dtype_cols,
         'non_cat_dtype_cols': non_cat_dtype_cols,
@@ -528,6 +550,8 @@ def preprocess_test(df_test, preprocess_result):
         enable_categorical = preprocess_result['enable_categorical']
         cat_dtype_cols = preprocess_result['cat_dtype_cols']
         non_cat_dtype_cols = preprocess_result['non_cat_dtype_cols']
+        bypass_cols = preprocess_result['bypass_cols']
+        columns_processed = preprocess_result['columns_processed']
     else:
         print('Exited preprocess_test because preprocess_result=None','\n')
         sys.exit()
@@ -539,8 +563,13 @@ def preprocess_test(df_test, preprocess_result):
     # check that df_test is a dataframe and convert to dataframe if needed
     df_test = check_X(df_test, enable_categorical=enable_categorical)
 
+    if data['bypass_cols'] != None:
+        df_test_bypass = df_test[bypass_cols].copy()
+        df_test = df[columns_processed].copy()
+
     # preprocess only the non-cat dtypes if enable_categorical
     if enable_categorical:
+        df_cat_dtype = df_test[cat_dtype_cols].copy()
         df_test = df_test[non_cat_dtype_cols].copy()
     
     # -------- Transforming skewed continuous_cols before scaling --------
@@ -613,7 +642,12 @@ def preprocess_test(df_test, preprocess_result):
 
     # columnn-wise concat of original cat_dtype_cols with preprocessed non-categorical dtypes
     if enable_categorical:
-        df_processed = pd.concat([df_test_orig[cat_dtype_cols], df_processed], axis=1)
+        # df_processed = pd.concat([df_test_orig[cat_dtype_cols], df_processed], axis=1)
+        df_processed = pd.concat(df_cat_dtype, df_processed], axis=1)
+
+    # columnn-wise concat to include bypass_cols
+    if data['bypass_cols'] != None:
+        df_processed = pd.concat([df_test_bypass, df_processed], axis=1)
     
     # Restore warnings to normal
     warnings.filterwarnings("default")
