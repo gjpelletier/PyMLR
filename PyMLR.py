@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.195"
+__version__ = "1.2.196"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -559,9 +559,9 @@ def preprocess_test(df_test, preprocess_result):
     # check that df_test is a dataframe and convert to dataframe if needed
     df_test = check_X(df_test, enable_categorical=enable_categorical)
 
-    if data['bypass_cols'] != None:
+    if bypass_cols != None:
         df_test_bypass = df_test[bypass_cols].copy()
-        df_test = df[columns_processed].copy()
+        df_test = df_test[columns_processed].copy()
 
     # preprocess only the non-cat dtypes if enable_categorical
     if enable_categorical:
@@ -642,7 +642,7 @@ def preprocess_test(df_test, preprocess_result):
         df_processed = pd.concat([df_cat_dtype, df_processed], axis=1)
 
     # columnn-wise concat to include bypass_cols
-    if data['bypass_cols'] != None:
+    if bypass_cols != None:
         df_processed = pd.concat([df_test_bypass, df_processed], axis=1)
     
     # Restore warnings to normal
