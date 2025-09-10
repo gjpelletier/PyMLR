@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.194"
+__version__ = "1.2.195"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -312,6 +312,7 @@ def preprocess_train(df, **kwargs):
     unskew_neg = data['unskew_neg']
     threshold_skew_neg = data['threshold_skew_neg']
     enable_categorical = data['enable_categorical']
+    bypass_cols = data['bypass_cols']
     
     # Start with a copy to avoid changing the original df
     df = df.copy()
