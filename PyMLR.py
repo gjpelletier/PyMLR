@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.193"
+__version__ = "1.2.194"
 
-def check_X_y(X,y, enable_categorical=False, bypass_cols=None):
+def check_X_y(X,y, enable_categorical=False):
 
     '''
     Check the X and y inputs used in regression 
@@ -123,11 +123,6 @@ def check_X(X, enable_categorical=False):
 
     # start with copies of X and y to avoid changing the original
     X = X.copy()
-
-    if bypass_cols == None:
-        process_cols = list(set(X.columns))
-    else:
-        process_cols = list(set(X.columns) - set(bypass_cols))
 
     if isinstance(X, pd.DataFrame):
         ctrl = X.isna().sum().sum()==0
