@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.196"
+__version__ = "1.2.197"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -9019,9 +9019,12 @@ def catboost(X, y, **kwargs):
     X = X.copy()
     y = y.copy()
     
-    # QC check X and y
-    if data['cat_features']==None:
-        X, y = check_X_y(X,y)
+    X, y = check_X_y(X,y)
+
+    if data['cat_features'] != None:
+        if data['bypass_cols'] != data['cat_features']:
+            print('Warning - bypass_cols was set equal to cat_features for correct preprocessing')
+            data['bypass_cols'] = data['cat_features']
 
     # Warn the user to consider using classify=True if y has < 12 classes
     if y.nunique() <= 12 and not data['classify']:
@@ -9596,7 +9599,12 @@ def catboost_auto(X, y, **kwargs):
     else:
         if data['scoring'] == None:
             data['scoring'] = "neg_root_mean_squared_error"
-    
+
+    if data['cat_features'] != None:
+        if data['bypass_cols'] != data['cat_features']:
+            print('Warning - bypass_cols was set equal to cat_features for correct preprocessing')
+            data['bypass_cols'] = data['cat_features']
+            
     # Suppress warnings
     warnings.filterwarnings('ignore')
 
