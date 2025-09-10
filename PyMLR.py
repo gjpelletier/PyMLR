@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.191"
+__version__ = "1.2.192"
 
 def check_X_y(X,y, enable_categorical=False, bypass_cols=None):
 
@@ -475,7 +475,7 @@ def preprocess_train(df, **kwargs):
     # columnn-wise concat of original cat_dtype_cols with preprocessed non-categorical dtypes
     if enable_categorical:
         # df_processed = pd.concat([df_orig[cat_dtype_cols], df_processed], axis=1)
-        df_processed = pd.concat(df_cat_dtype, df_processed], axis=1)
+        df_processed = pd.concat([df_cat_dtype, df_processed], axis=1)
 
     # columnn-wise concat to include bypass_cols
     if data['bypass_cols'] != None:
@@ -643,7 +643,7 @@ def preprocess_test(df_test, preprocess_result):
     # columnn-wise concat of original cat_dtype_cols with preprocessed non-categorical dtypes
     if enable_categorical:
         # df_processed = pd.concat([df_test_orig[cat_dtype_cols], df_processed], axis=1)
-        df_processed = pd.concat(df_cat_dtype, df_processed], axis=1)
+        df_processed = pd.concat([df_cat_dtype, df_processed], axis=1)
 
     # columnn-wise concat to include bypass_cols
     if data['bypass_cols'] != None:
