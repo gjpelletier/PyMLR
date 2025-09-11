@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.198"
+__version__ = "1.2.199"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -8981,11 +8981,12 @@ def catboost(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',        # 'on' to display stats and residual plots
-        'gpu': False,           # Autodetect to use gpu if present
-        'devices': '0',         # Which GPU to use (0 to use first GPU)
+        'gpu': True,           # Autodetect to use gpu if present
+        'devices': '1',         # Which GPU to use (0 to use first GPU)
         'thread_count': -1,     # number of CPUs to use (-1 for all cores)
 
         # [min, max] range of params optimized by optuna
+        'task_type': 'GPU',            # 'CPU' or 'GPU' 
         'cat_features': None,          # CatBoost categorical features
         'subsample': 1.0,              # frac of samples for train each iter
         'colsample_bylevel': 1.0,      # frac features to determine best split         
@@ -9545,8 +9546,8 @@ def catboost_auto(X, y, **kwargs):
         'threshold_skew_neg': -0.5,        
         # ------------------------
         'verbose': 'on',        # 'on' to display stats and residual plots
-        'gpu': False,           # Autodetect to use gpu if present
-        'devices': '0',         # Which GPU to use (0 to use first GPU)
+        'gpu': True,           # Autodetect to use gpu if present
+        'devices': '1',         # Which GPU to use (0 to use first GPU)
         'n_splits': 5,          # number of splits for KFold CV
         'thread_count': -1,     # number of CPUs to use (-1 for all cores)
 
@@ -9556,6 +9557,7 @@ def catboost_auto(X, y, **kwargs):
         'show_trial_progress': True,         # print trial numbers during execution
         
         # [min, max] range of params optimized by optuna
+        'task_type': 'GPU',                   # 'CPU' or 'GPU' 
         'cat_features': None,                 # CatBoost categorical features         
         'subsample': [0.05, 1.0],             # frac of samples for train each iter
         'colsample_bylevel': [0.05, 1.0],     # frac features to determine best split         
