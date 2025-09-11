@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.200"
+__version__ = "1.2.201"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -9632,8 +9632,6 @@ def catboost_auto(X, y, **kwargs):
 
     # Pre-process X to apply OneHotEncoder and StandardScaler
     if data['preprocess']:
-        if data['cat_features']!=None:
-            print('Warning: Use of cat_features may not work properly if cat_features is not the same as bypass_cols')
         if data['enable_categorical']:
             print('Warning: CatBoost does not support category dtype')
         else:
