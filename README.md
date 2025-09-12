@@ -61,9 +61,9 @@ The functions in PyMLR allow the user to write one line of high-level python cod
 
 - automatic Kfold cross-validated optimization of hyperparameters by optuna (RepeatedKFold for continuous response variables, StratifiedKFold for binomial or multinomial response variables)
 - automatic KFold cross-validated LassoCV, LassoLarsCV, RidgeCV, or ElasticNetCV regression
-- automated feature selection using SelectKBest, mutual_info regression, and f_regression in the optuna optimization pipeline 
-- automatic standardization of continuous features and output of the fitted StandardScaler 
-- automatic detection and encoding of categorical features and output of the fitted OneHotEncoder
+- optional automated feature selection using SelectKBest, mutual_info regression, and f_regression in the optuna optimization pipeline 
+- optional automatic standardization of continuous features and output of the fitted StandardScaler 
+- optional automatic detection and encoding of categorical features and output of the fitted OneHotEncoder
 - metrics describing the model skill (e.g. r-squared, adjusted r-squared, RMSE of residuals, p-value of the F-statistic, AIC, BIC, alpha, etc., if applicable)
 - model-angostic analysis (plots of predicted vs actual, predicted vs residuals, SHAP Beeswarm, SHAP Importance, Permutation Importance, PDB/ICE)
 - plots of optuna optimization history, hyperparameter importance, and contour plots of relationships between hyperparameters and MSE 
@@ -71,9 +71,9 @@ The functions in PyMLR allow the user to write one line of high-level python cod
 - variance  inflation factors (if applicable)
 - best fit intercept and model coefficients (if applicable)
 - final fitted model object
-- automatic detection and use of NVIDIA GPU for computations if available (XGBoost)
-- optimization of hyperparameters for regression of continuous response variables with either XGBoost XGBRegressor (xgb_auto), sklearn SVR (svr_auto), KNeighborsRegressor (knn_auto), RandomForestRegressor (forest_auto), DecisionTreeRegressor (tree_auto), AdaBoostRegressor (ada_auto), MLPRegressor (mlp_auto), LinearRegression (linear_auto), CatBoostRegressor (catboost_auto), GradientBoostingRegressor (gbr_auto), or Lasso, Ridge, ElasticNet, or stepwise linear  regression
-- optimization of hyperparameters for classification of binomial or multinomial response variables with either LogisticRegression (logistic_auto), XGBoost XGBClassifier (xgb_auto), sklearn SVC (svr_auto), KNeighborsClassifier (knn_auto), RandomForestClassifier (forest_auto), DecisionTreeClassifier (tree_auto), AdaBoostClassifier (ada_auto), or MLPClassifier (mlp_auto)
+- optional automatic detection and use of NVIDIA GPU for computations if available (XGBoost)
+- optimization of hyperparameters for regression of continuous response variables with either XGBoost XGBRegressor (xgb_auto), CatBoostRegressor (catboost_auto), LightGBM LGBMRegressor (lgbm_auto), sklearn SVR (svr_auto), KNeighborsRegressor (knn_auto), RandomForestRegressor (forest_auto), DecisionTreeRegressor (tree_auto), AdaBoostRegressor (ada_auto), MLPRegressor (mlp_auto), LinearRegression (linear_auto), GradientBoostingRegressor (gbr_auto), or Lasso, Ridge, ElasticNet, or stepwise linear  regression
+- optimization of hyperparameters for classification of binomial or multinomial response variables with either XGBoost XGBClassifier (xgb_auto), CatBoostClassifier (catboost_auto), LightGBM LGBMClassifier (lgbm_auto), LogisticRegression (logistic_auto), sklearn SVC (svr_auto), KNeighborsClassifier (knn_auto), RandomForestClassifier (forest_auto), DecisionTreeClassifier (tree_auto), AdaBoostClassifier (ada_auto), or MLPClassifier (mlp_auto)
 - Hybrid models for optimization of hyperparameters in 2-stage hybrid machine learning models either combining two models in sequence or using the same model with Recursive Feature Elimination based on permutation importances of stage 1:
   - XGBoost-MLP (**xgbmlp_auto**) uses a 2-stage method in the optuna optimization pipeline as described by Li et al 2022 (https://doi.org/10.3390/forecast4010011). Stage 1 uses feature importances from XGBoost to select features by tuning a hyperparameter for the threshold of feature importance that is optimized by optuna. Stage 2 uses MLPClassifier or MLPRegressor for classification or regression using the selected features that have feature importances greater than the threshold from stage 1.
   - XGBoost with Recursive Feature Elimination (**xgbrfe_auto**) is similar to the hybrid XGBoost-MLP method, except that stage 1 and 2 both use XGBoost.
@@ -208,6 +208,7 @@ Ridge regression reduces the Variance Inflation Factors of the features by addin
 Cross-validated ridge regression (e.g. using RidgeCV) does not always result in acceptable multicollinearity as indicated by VIF. While cross-validation helps in fine-tuning the regression coefficients, it does not always result in VIF values close to 1. Ideally the VIF of all features should be as close as possibe to VIF=1. This can be achieved using a trial and error method of evaluating the VIF values of the model features over a range of alpha values. 
 
 The **ridge** function in PyMLR includes an algorithm (RidgeVIF) to find the model with the optimum value of alpha that will result in VIF values as close as possible to a user-specified target VIF (default target VIF=1.0). This assures that there will be acceptable multicollinearity for all features. The trade-off is that this algorithm reduces the model coefficients such that the target VIF will be achieved. The user has the option to specify any target for VIF to explore the balance between VIF and coefficient values.  
+
 
 
 
