@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.204"
+__version__ = "1.2.205"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -13976,7 +13976,7 @@ def mlp(X, y, **kwargs):
         'nesterov': True,             # used for nesterovs_momentum if solver is sgd
 
         # extra_params 
-        'n_jobs': -1,                       # -1 to use all cpus
+        # 'n_jobs': -1,                       # -1 to use all cpus
         'random_state': 42,           # random seed for reproducibility
         'tol': 1e-4,
         'max_iter': 200,
@@ -14102,7 +14102,7 @@ def mlp(X, y, **kwargs):
         'nesterovs_momentum': True,   # placeholder for nesterovs_momentum if solver is sgd
 
         # extra_params 
-        'n_jobs': -1,                       # -1 to use all cpus
+        # 'n_jobs': -1,                       # -1 to use all cpus
         'random_state': 42,           # random seed for reproducibility
         'tol': 1e-4,
         'max_iter': 200,
@@ -14210,7 +14210,7 @@ def mlp(X, y, **kwargs):
     extra_params = {
         'verbose': False,                 
         'random_state': data['random_state'],                
-        'n_jobs': data['n_jobs'],                       
+        # 'n_jobs': data['n_jobs'],                       
     }
 
     model_outputs['best_params'] = params | extra_params   
@@ -14402,7 +14402,7 @@ def mlp_objective(trial, X, y, study, **kwargs):
     extra_params = {
         'verbose': False,                 
         'random_state': kwargs['random_state'],                
-        'n_jobs': kwargs['n_jobs'],                
+        # 'n_jobs': kwargs['n_jobs'],                
     }
 
     # Feature selection
@@ -14551,7 +14551,7 @@ def mlp_auto(X, y, **kwargs):
         'nesterov': [True, False],           # used for nesterovs_momentum if solver is sgd
 
         # extra_params that are optional user-specified for optuna
-        'n_jobs': -1,                       # -1 to use all cpus
+        # 'n_jobs': -1,                       # -1 to use all cpus
         'random_state': 42,                 # random seed for reproducibility
         'tol': 1e-4,
         'max_iter': 200,
@@ -14686,7 +14686,7 @@ def mlp_auto(X, y, **kwargs):
         'nesterov': [True, False],           # used for nesterovs_momentum if solver is sgd
 
         # extra_params that are optional user-specified for optuna
-        'n_jobs': -1,                       # -1 to use all cpus
+        # 'n_jobs': -1,                       # -1 to use all cpus
         'random_state': 42,                 # random seed for reproducibility
         'tol': 1e-4,
         'max_iter': 200,
@@ -14770,7 +14770,7 @@ def mlp_auto(X, y, **kwargs):
     extra_params = {
         'verbose': False,                 
         'random_state': data['random_state'],                
-        'n_jobs': data['n_jobs'],                
+        # 'n_jobs': data['n_jobs'],                
     }
 
     print('Running optuna to find best parameters, could take a few minutes, please wait...')
@@ -17027,7 +17027,7 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
         'max_iter': kwargs['max_iter'],
         'max_fun': max_fun,
         'random_state': kwargs['random_state'],                
-        'n_jobs': kwargs['n_jobs'],                       
+        # 'n_jobs': kwargs['n_jobs'],                       
         'verbose': False,                 
     }
 
@@ -17167,7 +17167,7 @@ def xgbmlp_auto(X, y, **kwargs):
         # mlp extra_params that are optional user-specified for optuna
         'tol': 1e-4,
         'max_iter': 200,
-        'n_jobs': -1,                       
+        # 'n_jobs': -1,                       
 
         preprocessing options:
             use_encoder (bool): True (default) or False
@@ -17340,7 +17340,7 @@ def xgbmlp_auto(X, y, **kwargs):
         # mlp extra_params that are optional user-specified for optuna
         'tol': 1e-4,
         'max_iter': 200,
-        'n_jobs': -1,                       
+        # 'n_jobs': -1,                       
         
     }
 
