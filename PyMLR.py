@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.203"
+__version__ = "1.2.204"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -7191,7 +7191,7 @@ def xgb_objective(trial, X, y, study, **kwargs):
         "random_state": seed,
         "device": kwargs["device"],
         "verbosity": kwargs["verbosity"],
-        # "objective": kwargs["objective"],
+        "objective": kwargs["objective"],
         "booster": kwargs["booster"],
         "tree_method": kwargs["tree_method"],
         "nthread": kwargs["nthread"],
@@ -16898,7 +16898,7 @@ def xgbmlp_objective(trial, X, y, study, **kwargs):
 
         # xgb extra specified args
         "verbosity": kwargs["verbosity"],
-        "objective": kwargs["objective"],
+        # "objective": kwargs["objective"],
         "booster": kwargs["booster"],
         "tree_method": kwargs["tree_method"],
         "nthread": kwargs["nthread"],
