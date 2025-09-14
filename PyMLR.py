@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.205"
+__version__ = "1.2.206"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -16424,9 +16424,17 @@ def ada_objective(trial, X, y, study, **kwargs):
 
     # Log feature importances and metadata
     model_step = pipeline.named_steps["regressor"]
+
+    # importances = getattr(model_step, "feature_importances_", None)
+    # if importances is not None:
+    #     trial.set_user_attr("feature_importances", importances.tolist())
     importances = getattr(model_step, "feature_importances_", None)
+    feature_names = kwargs["feature_names"]    
     if importances is not None:
-        trial.set_user_attr("feature_importances", importances.tolist())
+        # trial.set_user_attr("feature_importances", importances.tolist())
+        # trial.set_user_attr("feature_names", feature_names.tolist())
+        trial.set_user_attr("feature_importances", importances)
+        trial.set_user_attr("feature_names", feature_names)
 
     trial.set_user_attr("params", params)
     trial.set_user_attr("params_tree", params_tree)
@@ -16723,6 +16731,8 @@ def ada_auto(X, y, **kwargs):
     model_outputs['optuna_model'] = study.best_trial.user_attrs.get('model')
     model_outputs['feature_selection'] = data['feature_selection']
     model_outputs['selected_features'] = study.best_trial.user_attrs.get('selected_features')
+    model_outputs['feature_importances'] = study.best_trial.user_attrs.get('feature_importances')
+    model_outputs['feature_names'] = study.best_trial.user_attrs.get('feature_names')
     model_outputs['scoring'] = study.best_trial.user_attrs.get('scoring')
     model_outputs['score_mean'] = study.best_trial.user_attrs.get('score_mean')
     model_outputs['best_trial'] = study.best_trial
