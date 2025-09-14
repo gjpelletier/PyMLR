@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.206"
+__version__ = "1.2.207"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -16374,7 +16374,7 @@ def ada_objective(trial, X, y, study, **kwargs):
         else:        
             pipeline = Pipeline([
                 ("feature_selector", selector),
-                ("regressor", AdaaBoostRegressor(**params, **extra_params))
+                ("regressor", AdaBoostRegressor(**params, **extra_params))
             ])
 
     else:
