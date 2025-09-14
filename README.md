@@ -5,7 +5,7 @@ PyMLR is a Python module designed to simplify the use of various machine learnin
 ## Key Features
 
 - **Regression and Classification**: Supports linear and logistic regression, and many other machine learning regression and classification models.
-- **Integration with Popular Libraries**: Works seamlessly with tools like scikit-learn for preprocessing and modeling, and SHAP for explainability.
+- **Integration with Popular Libraries**: Works seamlessly with tools like scikit-learn, XGBoost, CatBoost, LightGBM, and other packages for preprocessing and modeling, and SHAP for explainability.
 - **Hyperparameter Optimization**: Includes functionality for hyperparameter tuning using Optuna.
 - **Ease of Use**: Provides a streamlined interface to reduce the complexity of implementing machine learning workflows.
 
@@ -208,6 +208,7 @@ Ridge regression reduces the Variance Inflation Factors of the features by addin
 Cross-validated ridge regression (e.g. using RidgeCV) does not always result in acceptable multicollinearity as indicated by VIF. While cross-validation helps in fine-tuning the regression coefficients, it does not always result in VIF values close to 1. Ideally the VIF of all features should be as close as possibe to VIF=1. This can be achieved using a trial and error method of evaluating the VIF values of the model features over a range of alpha values. 
 
 The **ridge** function in PyMLR includes an algorithm (RidgeVIF) to find the model with the optimum value of alpha that will result in VIF values as close as possible to a user-specified target VIF (default target VIF=1.0). This assures that there will be acceptable multicollinearity for all features. The trade-off is that this algorithm reduces the model coefficients such that the target VIF will be achieved. The user has the option to specify any target for VIF to explore the balance between VIF and coefficient values.  
+
 
 
 
