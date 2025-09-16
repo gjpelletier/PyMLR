@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyMLR"
-version = "1.2.212"
+version = "1.2.213"
 authors = [
     { name = "Greg Pelletier" }
 ]
@@ -19,9 +19,9 @@ dependencies = [
     "scikit-learn>=1.0.0,<1.6.0",
     "tabulate",
     "matplotlib",
-    "xgboost>=1.7.6",
-    "lightgbm>=4.3.0",
-    "catboost>=1.2.2",
+    "xgboost",
+    "lightgbm",
+    "catboost",
     "mlxtend",
     "optuna",
     "shap"
