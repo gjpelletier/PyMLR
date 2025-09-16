@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.207"
+__version__ = "1.2.208"
 
 def check_X_y(X,y, enable_categorical=False):
 

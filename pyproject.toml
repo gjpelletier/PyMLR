@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PyMLR"
+version = "1.2.208"
+authors = [
+    { name = "Greg Pelletier" }
+]
+description = "A modular machine learning regression toolkit"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "numpy",
+    "pandas",
+    "statsmodels",
+    "seaborn",
+    "scikit-learn",
+    "tabulate",
+    "matplotlib",
+    "xgboost",
+    "lightgbm",
+    "mlxtend",
+    "optuna",
+    "shap"
+]
+
+[tool.setuptools]
+py-modules = ["PyMLR"]
+
+[tool.setuptools.dynamic]
+version = { attr = "PyMLR.__version__" }
