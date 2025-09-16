@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyMLR"
-version = "1.2.208"
+version = "1.2.209"
 authors = [
     { name = "Greg Pelletier" }
 ]
-description = "A modular machine learning regression toolkit"
+description = "A modular machine learning regression and classification toolkit"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
@@ -21,6 +21,7 @@ dependencies = [
     "matplotlib",
     "xgboost",
     "lightgbm",
+    "catoost",
     "mlxtend",
     "optuna",
     "shap"
