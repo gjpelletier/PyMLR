@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyMLR"
-version = "1.2.213"
+version = "1.2.214"
 authors = [
     { name = "Greg Pelletier" }
 ]
@@ -12,11 +12,11 @@ description = "A modular machine learning regression and classification toolkit"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    "numpy>=2.0,<3.0",
+    "numpy",
     "pandas",
     "statsmodels",
     "seaborn",
-    "scikit-learn>=1.0.0,<1.6.0",
+    "scikit-learn",
     "tabulate",
     "matplotlib",
     "xgboost",
