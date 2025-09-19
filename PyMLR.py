@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.218"
+__version__ = "1.2.219"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -18904,7 +18904,7 @@ def adarfe_auto(X, y, **kwargs):
 #                         l2_penalty: float = 0.0) -> np.ndarray:
 def optimize_weights_df(preds_train_df, y_train, 
                         method: str = 'mse', constraints: bool = True,
-                        l2_penalty: float = 0.0) -> np.ndarray:
+                        l2_penalty: float = 0.0):
     """
     Optimize ensemble weights with optional L2 regularization.
 
