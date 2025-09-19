@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.221"
+__version__ = "1.2.222"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -13496,12 +13496,15 @@ def linear_objective(trial, X, y, **kwargs):
     # Cross-validated scoring with RepeatedKFold
     cv = RepeatedKFold(n_splits=kwargs["n_splits"], n_repeats=2, random_state=seed)
 
+    '''
     if kwargs['scorer'] == 'aic':
         scorer = aic_scorer
     elif kwargs['scorer'] == 'bic':
         scorer = bic_scorer
     else:
         scorer ="neg_root_mean_squared_error"
+    '''
+    
     scores = cross_val_score(
         pipeline, X, y,
         cv=cv,
