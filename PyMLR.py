@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.214"
+__version__ = "1.2.216"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -5180,7 +5180,7 @@ def svr_auto(X, y, **kwargs):
         'verbose': 'on',
 
         'pruning': False,                   # prune poor optuna trials
-        'feature_selection': True,          # optuna feature selection
+        'feature_selection': False,          # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
         'show_trial_progress': True,         # print trial numbers during execution
         
@@ -6413,7 +6413,7 @@ def gbr_auto(X, y, **kwargs):
                                 # n_jobs=-1 uses all cores
 
         'pruning': False,                   # prune poor optuna trials
-        'feature_selection': True,          # optuna feature selection
+        'feature_selection': False,          # optuna feature selection
         
         # [min, max] range of params optimized by optuna
         'learning_rate': [1e-4, 1.0],    # Shrinks the contribution of each tree
@@ -7486,7 +7486,7 @@ def xgb_auto(X, y, **kwargs):
         'n_splits': 5,                      # number of splits for KFold CV
 
         'pruning': False,                   # prune poor optuna trials
-        'feature_selection': True,          # optuna feature selection
+        'feature_selection': False,          # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
         'show_trial_progress': True,         # print trial numbers during execution
 
@@ -9552,7 +9552,7 @@ def catboost_auto(X, y, **kwargs):
         'thread_count': -1,     # number of CPUs to use (-1 for all cores)
 
         'pruning': False,             # prune poor optuna trials
-        'feature_selection': True,    # optuna feature selection
+        'feature_selection': False,    # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
         'show_trial_progress': True,         # print trial numbers during execution
         
@@ -10556,7 +10556,7 @@ def forest_auto(X, y, **kwargs):
         'n_splits': 5,                      # number of splits for KFold CV
 
         'pruning': False,                   # prune poor optuna trials
-        'feature_selection': True,          # optuna feature selection
+        'feature_selection': False,          # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
         'show_trial_progress': True,         # print trial numbers during execution
         
@@ -11584,7 +11584,7 @@ def knn_auto(X, y, **kwargs):
                                             # as min allowable MSE
 
         'pruning': False,                   # prune poor optuna trials
-        'feature_selection': True,          # optuna feature selection
+        'feature_selection': False,          # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
         'show_trial_progress': True,         # print trial numbers during execution
         
@@ -12601,7 +12601,7 @@ def logistic_auto(X, y, **kwargs):
         'gpu': True,                # Autodetect to use gpu if present
         'n_splits': 5,              # number of splits for KFold CV
         'pruning': False,           # prune poor optuna trials
-        'feature_selection': True,  # optuna feature selection
+        'feature_selection': False,  # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
         'show_trial_progress': True,         # print trial numbers during execution
         
@@ -13430,9 +13430,13 @@ def linear_objective(trial, X, y, **kwargs):
     from sklearn.linear_model import LinearRegression
     from sklearn.metrics import make_scorer
 
+    if kwargs['show_trial_progress'] and trial.number > 0:
+        print(f'Trial {trial.number}, best cv test score so far: {study.best_value:.6f} ...')
+
     seed = kwargs.get("random_state", 42)
     rng = np.random.default_rng(seed)
 
+    '''
     # make custom aic_scorer using AIC
     def aic_score(estimator, X, y):
         # Fit the model on this fold
@@ -13457,6 +13461,7 @@ def linear_objective(trial, X, y, **kwargs):
         bic = n * np.log(rss / n) + k * np.log(n)
         return -bic  # Negative because scikit-learn assumes greater is better
     bic_scorer = make_scorer(bic_score, greater_is_better=True)
+    '''
 
     # Define extra params
     extra_params = {
@@ -13500,8 +13505,9 @@ def linear_objective(trial, X, y, **kwargs):
     scores = cross_val_score(
         pipeline, X, y,
         cv=cv,
+        scoring=kwargs["scoring"]
         # scoring=scorer                          # scorer still needs debugging as of 7/2/2025
-        scoring="neg_root_mean_squared_error"     # hard-wire until scorer is debugged
+        # scoring="neg_root_mean_squared_error"     # hard-wire until scorer is debugged
     )    
 
     score_mean = np.mean(scores)
@@ -13677,10 +13683,13 @@ def linear_auto(X, y, **kwargs):
         'n_splits': 5,                      # number of splits for KFold CV
 
         'pruning': False,                   # prune poor optuna trials
-        'feature_selection': True,          # optuna feature selection
+        'feature_selection': False,          # optuna feature selection
+        
+        # 'scorer': None,                     # 'aic', 'bic', or None. If None, then
+        #                                     # 'neg_root_mean_squared_error' is used
 
-        'scorer': None,                     # 'aic', 'bic', or None. If None, then
-                                            # 'neg_root_mean_squared_error' is used
+        'scoring': "neg_root_mean_squared_error"
+
         'random_state': 42,                 # Random seed for reproducibility.
         'fit_intercept': True,              # calculate intercept
         'copy_X': True,                     # True: X will be copied
@@ -14659,7 +14668,7 @@ def mlp_auto(X, y, **kwargs):
         'n_splits': 5,                       # number of splits for KFold CV
 
         'pruning': False,                    # prune poor optuna trials
-        'feature_selection': True,           # optuna feature selection
+        'feature_selection': False,           # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
         'show_trial_progress': True,        # print each trial number and best cv score
         
@@ -15626,7 +15635,7 @@ def tree_auto(X, y, **kwargs):
         'n_splits': 5,                      # number of splits for KFold CV
 
         'pruning': False,                   # prune poor optuna trials
-        'feature_selection': True,          # optuna feature selection
+        'feature_selection': False,          # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
         'show_trial_progress': True,         # print trial numbers during execution
         
@@ -16603,7 +16612,7 @@ def ada_auto(X, y, **kwargs):
         'n_splits': 5,                      # number of splits for KFold CV
 
         'pruning': False,                   # prune poor optuna trials
-        'feature_selection': True,          # optuna feature selection
+        'feature_selection': False,          # optuna feature selection
         'scoring': None,                     # cross_val_score scoring name
         'n_jobs': -1,                 # -1 to use all CPU cores with cross_val_score
         'show_trial_progress': True,         # print trial numbers during execution
@@ -18890,4 +18899,176 @@ def adarfe_auto(X, y, **kwargs):
 
     return fitted_model, model_outputs
 
+def optimize_weights_df(preds_train_df: pd.DataFrame, y_train: pd.Series, 
+                        method: str = 'mse', constraints: bool = True,
+                        l2_penalty: float = 0.0) -> np.ndarray:
+    """
+    Optimize ensemble weights with optional L2 regularization.
+
+    Args:
+        preds_train_df: pd.DataFrame of train predictions.
+        y_train: pd.Series of true target values (same length as preds_train_df)
+        method: Loss function ('mse' or 'mae').
+        constraints: Whether to constrain weights to sum to 1 and be non-negative.
+        l2_penalty: Strength of L2 regularization (default 0.0 = no regularization).
+
+    Returns:
+        np.ndarray of optimal weights.
+        
+    Example usage:    
+        weights = optimize_weights_df(preds_train_df, y_train, l2_penalty=0.05)
+        ensemble_test_preds = preds_test_df.dot(weights)
+    """
+
+    import pandas as pd
+    import numpy as np
+    from scipy.optimize import minimize
+    from sklearn.metrics import mean_squared_error
+
+    n_models = preds_train_df.shape[1]
+    X = preds_train_df.values
+    y = y_train.values
+
+    def loss_fn(weights):
+        ensemble_preds = np.dot(X, weights)
+        base_loss = np.mean(np.abs(ensemble_preds - y)) if method == 'mae' else mean_squared_error(y, ensemble_preds)
+        l2_term = l2_penalty * np.sum(weights ** 2)
+        return base_loss + l2_term
+
+    init_weights = np.ones(n_models) / n_models
+
+    if constraints:
+        cons = {'type': 'eq', 'fun': lambda w: np.sum(w) - 1}
+        bounds = [(0, 1)] * n_models
+    else:
+        cons = ()
+        bounds = None
+
+    result = minimize(loss_fn, init_weights, method='SLSQP', bounds=bounds, constraints=cons)
+    # result = minimize(loss_fn, init_weights, method='Nelder-Mead', bounds=bounds, constraints=cons)
+    return result.x
+
+def crossval_l2_penalty_search(preds_df: pd.DataFrame, y: pd.Series, 
+        l2_grid: list = None, n_splits: int = 5, method: str = 'mse') -> float:
+    """
+    Cross-validated search for best L2 penalty in ensemble weight optimization.
+
+    Args:
+        preds_df: DataFrame of model predictions.
+        y: Series of true target values (same length as preds_df)
+        l2_grid: List of candidate L2 penalty values.
+        n_splits: Number of CV folds.
+        method: Loss function ('mse' or 'mae').
+
+    Returns:
+        Best L2 penalty value.
+
+    Example Usage:
+        l2_grid = [0.0, 0.01, 0.05, 0.1, 0.5]
+        best_l2 = crossval_l2_penalty_search(preds_train_df, y_train, l2_grid)
+        weights = optimize_weights_df(preds_train_df, y_train, l2_penalty=best_l2)
+        ensemble_test_preds = preds_test_df.dot(weights)
+    """
+
+    from PyMLR import optimize_weights_df
+    from sklearn.model_selection import KFold
+    from sklearn.metrics import mean_squared_error
+    import pandas as pd
+    import numpy as np
+
+    if l2_grid is None:
+        l2_grid = [0.0, 0.01, 0.05, 0.1, 0.5]
+
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+    scores = {l2: [] for l2 in l2_grid}
+
+    for train_idx, val_idx in kf.split(preds_df):
+        X_train, X_val = preds_df.iloc[train_idx], preds_df.iloc[val_idx]
+        y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
+
+        for l2 in l2_grid:
+            weights = optimize_weights_df(X_train, y_train, method=method, l2_penalty=l2)
+            val_preds = X_val.dot(weights)
+            score = mean_squared_error(y_val, val_preds) if method == 'mse' else np.mean(np.abs(y_val - val_preds))
+            scores[l2].append(score)
+
+    avg_scores = {l2: np.mean(v) for l2, v in scores.items()}
+    best_l2 = min(avg_scores, key=avg_scores.get)
+    return best_l2
+
+def ensemble_test_preds(
+        preds_test_df: pd.DataFrame, 
+        preds_train_df: pd.DataFrame, 
+        y_train: pd.Series, 
+        method: str = 'mse',
+        constraints: bool = True,
+        l2_grid: Optional[list] = None, n_splits: int = 5
+        ):
+
+    """
+    Estimate the weighted optimized ensemble of test predictions from several models based on
+    optimize ensemble weights using a DataFrame of train predictions and a Series of true values.
+
+    Args:
+        preds_test_df: pd.DataFrame with columns as model names and rows as test predictions.
+        preds_train_df: pd.DataFrame with columns as model names and rows as train predictions.
+        y_train: pd.Series of true target values for train data (same length as preds_train_df)
+        method: Loss function to minimize ('mse' or 'mae').
+        constraints: Whether to constrain weights to sum to 1 and be non-negative.
+        l2_grid: List of candidate L2 penalty values 
+            (e.g. [0] for no regularization, or default [0.0, 0.01, 0.05, 0.1, 0.5])
+        n_splits: Number of CV folds.
+
+    Returns:
+        ensemble_test_preds: array of optimized weighted ensemble average test predictions (same length as preds_test_df)
+        dict(zip(preds_train_df.columns, weights)): dictionary of final model weights of model contributions
+
+    Example Usage:
+    
+        # Dataframes of test predictions for each model
+        preds_test_df = pd.DataFrame({
+            'xgb': xgb_test_preds,  # XGBoost predictions using X_test
+            'cat': cat_test_preds,  # CatBoost predictions using X_test
+            'lgb': lgb_test_preds   # LightGBM predictions using X_test
+        })
+
+        # Dataframes of train predictions for each model
+        preds_train_df = pd.DataFrame({
+            'xgb': xgb_train_preds,  # XGBoost predictions using X_train
+            'cat': cat_train_preds,  # CatBoost predictions using X_train
+            'lgb': lgb_train_preds   # LightGBM predictions using X_train
+        })
+
+        # Dataseries of true values used for training y_train
+        y_train = df_train_lgb['y_train']
+
+        # Optimized weighted ensemble of test predictions from LightGBM, CatBoost, and XGBoost
+        y_pred_weighted_ensemble, weights = ensemble_test_preds(preds_test_df, preds_train_df, y_train, l2_grid=[0.5])
+
+    """
+
+    from PyMLR import crossval_l2_penalty_search, optimize_weights_df, check_X_y, check_X
+    # from PyMLR import check_X_y, check_X
+
+    if l2_grid is None:
+        l2_grid = [0.0, 0.01, 0.05, 0.1, 0.5]
+
+    # assertions
+    assert preds_train_df.shape[0] == len(y_train), "Mismatch in train prediction and target lengths"
+    assert preds_test_df.shape[1] == preds_train_df.shape[1], "Mismatch in number of models"
+
+    # copy input dataframes and series to prevent changes to origionals
+    preds_test_df = preds_test_df.copy()
+    preds_train_df = preds_train_df.copy()
+    y_train = y_train.copy()
+
+    # check input dataframes and series for errors
+    preds_test_df = check_X(preds_test_df)
+    preds_train_df, y_train = check_X_y(preds_train_df,y_train)
+
+    best_l2 = crossval_l2_penalty_search(preds_train_df, y_train, l2_grid=l2_grid, n_splits=n_splits, method=method)
+    weights = optimize_weights_df(preds_train_df, y_train, l2_penalty=best_l2)
+    ensemble_test_preds = preds_test_df.dot(weights)
+            
+    return ensemble_test_preds, dict(zip(preds_train_df.columns, weights))
 
