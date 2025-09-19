@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.216"
+__version__ = "1.2.217"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -13688,7 +13688,7 @@ def linear_auto(X, y, **kwargs):
         # 'scorer': None,                     # 'aic', 'bic', or None. If None, then
         #                                     # 'neg_root_mean_squared_error' is used
 
-        'scoring': "neg_root_mean_squared_error"
+        'scoring': "neg_root_mean_squared_error",
 
         'random_state': 42,                 # Random seed for reproducibility.
         'fit_intercept': True,              # calculate intercept
