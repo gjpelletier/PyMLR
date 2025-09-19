@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.219"
+__version__ = "1.2.220"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -19017,7 +19017,7 @@ def ensemble_test_preds(
         y_train, 
         method: str = 'mse',
         constraints: bool = True,
-        l2_grid: Optional[list] = None, n_splits: int = 5
+        l2_grid: list = None, n_splits: int = 5
         ):
 
     """
