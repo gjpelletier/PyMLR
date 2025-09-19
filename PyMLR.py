@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.220"
+__version__ = "1.2.221"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -13660,6 +13660,7 @@ def linear_auto(X, y, **kwargs):
     # Define default values of input data arguments
     defaults = {
         'n_trials': 50,                     # number of optuna trials
+        'show_trial_progress': True,         # print trial numbers during execution
         'preprocess': True,                 # Apply OneHotEncoder and StandardScaler
         'preprocess_result': None,          # dict of  the following result from 
                                             # preprocess_train if available:         
