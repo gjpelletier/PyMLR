@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.222"
+__version__ = "1.2.223"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -13415,7 +13415,7 @@ def linear(X, y, **kwargs):
 
     return fitted_model, model_outputs
 
-def linear_objective(trial, X, y, **kwargs):
+def linear_objective(trial, X, y, study, **kwargs):
     '''
     Optuna objective for optimizing XGBRegressor with optional feature selection.
     Supports selector choice, logs importances, and ensures reproducibility.
@@ -13788,7 +13788,7 @@ def linear_auto(X, y, **kwargs):
     X_opt = X.copy()    # copy X to prevent altering the original
 
     from PyMLR import linear_objective
-    study.optimize(lambda trial: linear_objective(trial, X_opt, y, **data), n_trials=data['n_trials'])
+    study.optimize(lambda trial: linear_objective(trial, X_opt, y, study, **data), n_trials=data['n_trials'])
 
     # save outputs
     model_outputs['preprocess'] = data['preprocess']   
