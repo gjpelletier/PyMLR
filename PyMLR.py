@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.217"
+__version__ = "1.2.218"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -18899,7 +18899,10 @@ def adarfe_auto(X, y, **kwargs):
 
     return fitted_model, model_outputs
 
-def optimize_weights_df(preds_train_df: pd.DataFrame, y_train: pd.Series, 
+# def optimize_weights_df(preds_train_df: pd.DataFrame, y_train: pd.Series, 
+#                         method: str = 'mse', constraints: bool = True,
+#                         l2_penalty: float = 0.0) -> np.ndarray:
+def optimize_weights_df(preds_train_df, y_train, 
                         method: str = 'mse', constraints: bool = True,
                         l2_penalty: float = 0.0) -> np.ndarray:
     """
@@ -18948,7 +18951,9 @@ def optimize_weights_df(preds_train_df: pd.DataFrame, y_train: pd.Series,
     # result = minimize(loss_fn, init_weights, method='Nelder-Mead', bounds=bounds, constraints=cons)
     return result.x
 
-def crossval_l2_penalty_search(preds_df: pd.DataFrame, y: pd.Series, 
+# def crossval_l2_penalty_search(preds_df: pd.DataFrame, y: pd.Series, 
+#         l2_grid: list = None, n_splits: int = 5, method: str = 'mse') -> float:
+def crossval_l2_penalty_search(preds_df, y, 
         l2_grid: list = None, n_splits: int = 5, method: str = 'mse') -> float:
     """
     Cross-validated search for best L2 penalty in ensemble weight optimization.
@@ -18996,10 +19001,20 @@ def crossval_l2_penalty_search(preds_df: pd.DataFrame, y: pd.Series,
     best_l2 = min(avg_scores, key=avg_scores.get)
     return best_l2
 
+'''
 def ensemble_test_preds(
         preds_test_df: pd.DataFrame, 
         preds_train_df: pd.DataFrame, 
         y_train: pd.Series, 
+        method: str = 'mse',
+        constraints: bool = True,
+        l2_grid: Optional[list] = None, n_splits: int = 5
+        ):
+'''
+def ensemble_test_preds(
+        preds_test_df, 
+        preds_train_df, 
+        y_train, 
         method: str = 'mse',
         constraints: bool = True,
         l2_grid: Optional[list] = None, n_splits: int = 5
