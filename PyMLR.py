@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.225"
+__version__ = "1.2.226"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -19117,53 +19117,51 @@ def stack_objective(trial, X, y, study, **kwargs):
     # Base Model Hyperparameters
     # -----------------------------
     cat_params = {
-        "subsample": trial.suggest_float("cat_subsample", *kwargs["cat_subsample"]),
-        "colsample_bylevel": trial.suggest_float("cat_colsample_bylevel", *kwargs["cat_colsample_bylevel"]),
-        "learning_rate": trial.suggest_float("cat_learning_rate", *kwargs["cat_learning_rate"], log=True),
-        "depth": trial.suggest_int("cat_depth", *kwargs["cat_depth"]),
         "iterations": trial.suggest_int("cat_iterations", *kwargs["cat_iterations"]),
+        "depth": trial.suggest_int("cat_depth", *kwargs["cat_depth"]),
+        "learning_rate": trial.suggest_float("cat_learning_rate", *kwargs["cat_learning_rate"], log=True),
         "l2_leaf_reg": trial.suggest_float("cat_l2_leaf_reg", *kwargs["cat_l2_leaf_reg"], log=True),
-        "random_strength": trial.suggest_float("cat_random_strength", *kwargs["cat_random_strength"]),
-        "bagging_temperature": trial.suggest_float("cat_bagging_temperature", *kwargs["cat_bagging_temperature"]),
-        "min_data_in_leaf": trial.suggest_int("cat_min_data_in_leaf", *kwargs["cat_min_data_in_leaf"]),
+        # "subsample": trial.suggest_float("cat_subsample", *kwargs["cat_subsample"]),
+        # "colsample_bylevel": trial.suggest_float("cat_colsample_bylevel", *kwargs["cat_colsample_bylevel"]),
+        # "random_strength": trial.suggest_float("cat_random_strength", *kwargs["cat_random_strength"]),
+        # "bagging_temperature": trial.suggest_float("cat_bagging_temperature", *kwargs["cat_bagging_temperature"]),
+        # "min_data_in_leaf": trial.suggest_int("cat_min_data_in_leaf", *kwargs["cat_min_data_in_leaf"]),
         "random_seed": seed,
-        # "task_type": kwargs["device"],
         "task_type": "CPU",
         "thread_count": kwargs["n_jobs"],
     }
 
     xgb_params = {
-        "learning_rate": trial.suggest_float("xgb_learning_rate", *kwargs["xgb_learning_rate"], log=True),
+        "n_estimators": trial.suggest_int("xgb_n_estimators", *kwargs["xgb_n_estimators"]),
         "max_depth": trial.suggest_int("xgb_max_depth", *kwargs["xgb_max_depth"]),
-        "min_child_weight": trial.suggest_int("xgb_min_child_weight", *kwargs["xgb_min_child_weight"]),
+        "learning_rate": trial.suggest_float("xgb_learning_rate", *kwargs["xgb_learning_rate"], log=True),
         "subsample": trial.suggest_float("xgb_subsample", *kwargs["xgb_subsample"]),
         "colsample_bytree": trial.suggest_float("xgb_colsample_bytree", *kwargs["xgb_colsample_bytree"]),
-        "gamma": trial.suggest_float("xgb_gamma", *kwargs["xgb_gamma"], log=True),
-        "reg_lambda": trial.suggest_float("xgb_reg_lambda", *kwargs["xgb_reg_lambda"], log=True),
-        "alpha": trial.suggest_float("xgb_alpha", *kwargs["xgb_alpha"], log=True),
-        "n_estimators": trial.suggest_int("xgb_n_estimators", *kwargs["xgb_n_estimators"]),
+        # "min_child_weight": trial.suggest_int("xgb_min_child_weight", *kwargs["xgb_min_child_weight"]),
+        # "gamma": trial.suggest_float("xgb_gamma", *kwargs["xgb_gamma"], log=True),
+        # "reg_lambda": trial.suggest_float("xgb_reg_lambda", *kwargs["xgb_reg_lambda"], log=True),
+        # "alpha": trial.suggest_float("xgb_alpha", *kwargs["xgb_alpha"], log=True),
         "objective": kwargs["xgb_objective"],
         "booster": kwargs["xgb_booster"],
         "tree_method": kwargs["xgb_tree_method"],
         "random_state": seed,
-        # "device": kwargs["device"],
         "device": "cpu",
         "nthread": kwargs["n_jobs"],
     }
 
     lgb_params = {
-        "learning_rate": trial.suggest_float("lgb_learning_rate", *kwargs["lgb_learning_rate"], log=True),
-        "max_depth": trial.suggest_int("lgb_max_depth", *kwargs["lgb_max_depth"]),
         "n_estimators": trial.suggest_int("lgb_n_estimators", *kwargs["lgb_n_estimators"]),
-        "min_child_samples": trial.suggest_int("lgb_min_child_samples", *kwargs["lgb_min_child_samples"]),
-        "subsample": trial.suggest_float("lgb_subsample", *kwargs["lgb_subsample"]),
-        "colsample_bytree": trial.suggest_float("lgb_colsample_bytree", *kwargs["lgb_colsample_bytree"]),
-        "reg_lambda": trial.suggest_float("lgb_reg_lambda", *kwargs["lgb_reg_lambda"], log=True),
-        "reg_alpha": trial.suggest_float("lgb_reg_alpha", *kwargs["lgb_reg_alpha"], log=True),
+        "max_depth": trial.suggest_int("lgb_max_depth", *kwargs["lgb_max_depth"]),
+        "learning_rate": trial.suggest_float("lgb_learning_rate", *kwargs["lgb_learning_rate"], log=True),
         "num_leaves": trial.suggest_int("lgb_num_leaves", *kwargs["lgb_num_leaves"]),
-        "min_split_gain": trial.suggest_float("lgb_min_split_gain", *kwargs["lgb_min_split_gain"]),
-        "min_child_weight": trial.suggest_float("lgb_min_child_weight", *kwargs["lgb_min_child_weight"], log=True),
-        "boosting_type": trial.suggest_categorical("lgb_boosting_type", kwargs["lgb_boosting_type"]),
+        # "min_child_samples": trial.suggest_int("lgb_min_child_samples", *kwargs["lgb_min_child_samples"]),
+        # "subsample": trial.suggest_float("lgb_subsample", *kwargs["lgb_subsample"]),
+        # "colsample_bytree": trial.suggest_float("lgb_colsample_bytree", *kwargs["lgb_colsample_bytree"]),
+        # "reg_lambda": trial.suggest_float("lgb_reg_lambda", *kwargs["lgb_reg_lambda"], log=True),
+        # "reg_alpha": trial.suggest_float("lgb_reg_alpha", *kwargs["lgb_reg_alpha"], log=True),
+        # "min_split_gain": trial.suggest_float("lgb_min_split_gain", *kwargs["lgb_min_split_gain"]),
+        # "min_child_weight": trial.suggest_float("lgb_min_child_weight", *kwargs["lgb_min_child_weight"], log=True),
+        # "boosting_type": trial.suggest_categorical("lgb_boosting_type", kwargs["lgb_boosting_type"]),
         "objective": kwargs["lgb_objective"],
         "random_state": seed,
         "num_threads": kwargs["n_jobs"],
