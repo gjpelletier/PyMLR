@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.224"
+__version__ = "1.2.225"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -19516,42 +19516,42 @@ def stack_auto(X, y, **kwargs):
         'threshold_skew_neg': -0.5,        
 
         # cat_params optimized by optuna 
+        'cat_iterations': [100, 3000],          # Number of boosting iterations
+        'cat_depth': [4, 10],                   # Controls tree depth
+        'cat_learning_rate': [0.01, 0.3],       # Balances step size in gradient updates.
+        'cat_l2_leaf_reg': [1, 10],             # Regularization strength       
         'cat_subsample': [0.05, 1.0],           # frac of samples for train each iter
         'cat_colsample_bylevel': [0.05, 1.0],   # frac features to determine best split         
-        'cat_learning_rate': [0.01, 0.3],       # Balances step size in gradient updates.
-        'cat_depth': [4, 10],                   # Controls tree depth
-        'cat_iterations': [100, 3000],          # Number of boosting iterations
-        'cat_l2_leaf_reg': [1, 10],             # Regularization strength       
         'cat_random_strength': [0, 1],          # Adds noise for diversity
         'cat_bagging_temperature': [0.1, 1.0],  # Controls randomness in sampling
         'cat_min_data_in_leaf': [1, 100],       # Minimum samples per leaf         
 
         # xgb_params optimized by optuna
-        'xgb_learning_rate': [1e-4, 1.0],       # Step size shrinkage (also called eta).
+        'xgb_n_estimators': [100, 2000],        # Number of boosting rounds (trees).
         'xgb_max_depth': [3, 15],               # Maximum depth of a tree.
-        'xgb_min_child_weight': [1, 10],        # Minimum sum of instance weight (hessian) needed in a child.
+        'xgb_learning_rate': [1e-4, 1.0],       # Step size shrinkage (also called eta).
         'xgb_subsample': [0.5, 1],              # Fraction of samples used for training each tree.
         'xgb_colsample_bytree': [0.5, 1],       # Fraction of features used for each tree.
+        'xgb_min_child_weight': [1, 10],        # Minimum sum of instance weight (hessian) needed in a child.
         'xgb_gamma': [1e-8, 10.0],              # Minimum loss reduction to make a split.
         'xgb_reg_lambda': [1e-8, 10.0],         # L2 regularization term on weights.
         'xgb_alpha': [1e-8, 10.0],              # L1 regularization term on weights.
-        'xgb_n_estimators': [100, 2000],        # Number of boosting rounds (trees).
-        'xgb_objective': None,                  # auto set
         'xgb_predictor': "auto",                # Type of predictor ('cpu_predictor', 'gpu_predictor').
         'xgb_scale_pos_weight': 1,              # Balancing of positive and negative weights.
         'xgb_booster': "gbtree",                # Type of booster ('gbtree', 'gblinear', or 'dart').
         'xgb_tree_method': "auto",              # Tree construction algorithm.
+        'xgb_objective': None,                  # auto set
 
         # lgb_params optimized by optuna
-        'lgb_learning_rate': [1e-3, 0.3],       # Balances step size in gradient updates.
-        'lgb_max_depth': [3, 15],               # Maximum depth of a tree.
         'lgb_n_estimators': [100, 2000],        # Number of boosting rounds (trees).
+        'lgb_max_depth': [3, 15],               # Maximum depth of a tree.
+        'lgb_learning_rate': [1e-3, 0.3],       # Balances step size in gradient updates.
+        'lgb_num_leaves': [16, 256],            # max number of leaves in one tree
         'lgb_min_child_samples': [5, 100],      # Min data needed in a child (leaf)
         'lgb_subsample': [0.5, 1.0],            # Fraction of samples used for training each tree.
         'lgb_colsample_bytree': [0.5, 1.0],     # Fraction of features used for each tree.
         'lgb_reg_lambda': [1e-8, 10.0],         # L2 regularization term on weights.
         'lgb_reg_alpha': [1e-8, 10.0],          # L1 regularization term on weights.
-        'lgb_num_leaves': [16, 256],            # max number of leaves in one tree
         'lgb_min_split_gain': [0.0, 1.0],       # regularization of min reduced loss for split
         'lgb_min_child_weight': [1e-3, 10.0],   # min instances to form a new leaf 
         'lgb_boosting_type': ["gbdt", "dart"],  # algorithm for boosting
@@ -19774,6 +19774,19 @@ def stack_auto(X, y, **kwargs):
         print('Fitting StackingRegressor model with best parameters, please wait ...')
         fitted_model = stack.fit(
             X[model_outputs['selected_features']],y)
+
+    # -----------------------------
+    # Feature Importances from Base Models
+    # -----------------------------
+
+    xgb_model.fit(X[model_outputs['selected_features']],y)
+    model_outputs['xgb_feature_importances'] = xgb_model.feature_importances_
+
+    lgb_model.fit(X[model_outputs['selected_features']],y)
+    model_outputs['lgb_feature_importances'] = lgb_model.feature_importances_
+
+    cat_model.fit(X[model_outputs['selected_features']],y)
+    model_outputs['cat_feature_importances'] = cat_model.get_feature_importance()
 
     # -----------------------------
     # Post-processing
