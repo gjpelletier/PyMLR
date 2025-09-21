@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.226"
+__version__ = "1.2.227"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -19181,14 +19181,14 @@ def stack_objective(trial, X, y, study, **kwargs):
     # -----------------------------
     if kwargs["classify"]:
         meta_model = LogisticRegression(
-            C=trial.suggest_float("meta_C", 0.01, 10.0, log=True),
+            C=trial.suggest_float("meta_C", *kwargs["meta_C"], log=True),
             solver=trial.suggest_categorical("meta_solver", ["liblinear", "lbfgs"]),
             max_iter=1000,
             random_state=seed
         )
     else:
         meta_model = Ridge(
-            alpha=trial.suggest_float("meta_alpha", 0.01, 10.0, log=True),
+            alpha=trial.suggest_float("meta_alpha", *kwargs["meta_alpha"], log=True),
             random_state=seed
         )
 
@@ -19513,6 +19513,10 @@ def stack_auto(X, y, **kwargs):
         'unskew_neg': False, 
         'threshold_skew_neg': -0.5,        
 
+        # meta-model params optimized by optuna
+        'meta_alpha': [0.01, 10],               # Ridge alpha (regression)        
+        'meta_C': [0.01, 10],                   # LogisticRegression C (classification)
+
         # cat_params optimized by optuna 
         'cat_iterations': [100, 3000],          # Number of boosting iterations
         'cat_depth': [4, 10],                   # Controls tree depth
@@ -19744,6 +19748,7 @@ def stack_auto(X, y, **kwargs):
     # -----------------------------
     # Base Models
     # -----------------------------
+
     xgb_model = xgb.XGBClassifier(**xgb_params, verbosity=0) if kwargs["classify"] else xgb.XGBRegressor(**xgb_params, verbosity=0)
     cat_model = cb.CatBoostClassifier(**cat_params, verbose=0) if kwargs["classify"] else cb.CatBoostRegressor(**cat_params, verbose=0)
     lgb_model = lgb.LGBMClassifier(**lgb_params, verbosity=-1) if kwargs["classify"] else lgb.LGBMRegressor(**lgb_params, verbosity=-1)
@@ -19761,9 +19766,10 @@ def stack_auto(X, y, **kwargs):
     )
 
     # -----------------------------
-    # Final Fitted Model
+    # Final Fitted Model and y_pred
     # -----------------------------
 
+    # fit the final model
     if data['classify']:
         print('Fitting StackingClassifier model with best parameters, please wait ...')
         fitted_model = stack.fit(
@@ -19773,17 +19779,26 @@ def stack_auto(X, y, **kwargs):
         fitted_model = stack.fit(
             X[model_outputs['selected_features']],y)
 
+    # y_pred of the final fitted model
+    model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
+
     # -----------------------------
-    # Feature Importances from Base Models
+    # Feature Importances and y_pred from Base Models
     # -----------------------------
 
+    # fit the base models
     xgb_model.fit(X[model_outputs['selected_features']],y)
-    model_outputs['xgb_feature_importances'] = xgb_model.feature_importances_
-
     lgb_model.fit(X[model_outputs['selected_features']],y)
-    model_outputs['lgb_feature_importances'] = lgb_model.feature_importances_
-
     cat_model.fit(X[model_outputs['selected_features']],y)
+
+    # y_pred of the base models
+    model_outputs['y_pred_xgb'] = xgb_model.predict(X[model_outputs['selected_features']])
+    model_outputs['y_pred_lgb'] = lgb_model.predict(X[model_outputs['selected_features']])
+    model_outputs['y_pred_cat'] = cat_model.predict(X[model_outputs['selected_features']])
+
+    # feature importances of the base models
+    model_outputs['xgb_feature_importances'] = xgb_model.feature_importances_
+    model_outputs['lgb_feature_importances'] = lgb_model.feature_importances_
     model_outputs['cat_feature_importances'] = cat_model.get_feature_importance()
 
     # -----------------------------
@@ -19809,7 +19824,7 @@ def stack_auto(X, y, **kwargs):
         stats.columns = ['StackingClassifier']
         model_outputs['metrics'] = metrics
         model_outputs['stats'] = stats
-        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])    
+        # model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])    
         if data['verbose'] == 'on':
             print('')
             print("StackingClassifier goodness of fit to training data in model_outputs['stats']:")
@@ -19851,7 +19866,7 @@ def stack_auto(X, y, **kwargs):
         stats.columns = ['StackingRegressor']
         model_outputs['metrics'] = metrics
         model_outputs['stats'] = stats
-        model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
+        # model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
 
         if data['verbose'] == 'on':
             print('')
