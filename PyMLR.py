@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.232"
+__version__ = "1.2.233"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -20142,6 +20142,7 @@ def summarize_blend_metrics(
     df_metrics = pd.DataFrame(metrics).sort_values('fold')
 
     # print table of metrics for each fold
+    print("")
     print("CV metrics for each fold:\n")
     print(df_metrics.to_markdown(index=False))
     print("")

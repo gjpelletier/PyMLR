@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyMLR"
-version = "1.2.232"
+version = "1.2.233"
 authors = [
     { name = "Greg Pelletier" }
 ]
