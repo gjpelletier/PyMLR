@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.230"
+__version__ = "1.2.231"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -20242,7 +20242,7 @@ def summarize_blend_metrics(
         f"Blended predictions compared with actual values and residuals (RMSE={RMSE:.3f})")
     plt.tight_layout()
     # plt.show()
-    plt.savefig((log_dir+"IsotonicBlend_predictions.png"), dpi=300)
+    plt.savefig((str(log_dir)+"IsotonicBlend_predictions.png"), dpi=300)
 
     result = {
         'metrics_per_fold': df_metrics,
