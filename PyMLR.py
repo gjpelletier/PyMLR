@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.231"
+__version__ = "1.2.232"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -20306,6 +20306,7 @@ def isotonic_blend(
         result = isotonic_blend(preds_test_df, preds_train_df, y_train)
     """
 
+    import pandas as pd
     from PyMLR import blend_with_isotonic_df, summarize_blend_metrics, check_X_y, check_X
     from sklearn.isotonic import IsotonicRegression
     import os
