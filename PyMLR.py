@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.229"
+__version__ = "1.2.230"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -20257,7 +20257,7 @@ def isotonic_blend(
     y_train, 
     n_splits=5,
     log_dir: str = 'isotonic_blend',
-    scoring: str = 'rmse'):
+    scoring: str = 'rmse',
     plot: bool = True,
     save_plot: bool = True, 
     show_plot: bool = False):
