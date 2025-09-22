@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.227"
+__version__ = "1.2.228"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -924,6 +924,7 @@ def test_model(
     PredictionErrorDisplay.from_predictions(
         y,
         y_pred,
+        subsample=None,
         kind="actual_vs_predicted",
         ax=axs[0]
     )
@@ -931,6 +932,7 @@ def test_model(
     PredictionErrorDisplay.from_predictions(
         y,
         y_pred,
+        subsample=None,
         kind="residual_vs_predicted",
         ax=axs[1]
     )
@@ -1029,6 +1031,7 @@ def plot_predictions_from_test(
     PredictionErrorDisplay.from_predictions(
         y,
         y_pred,
+        subsample=None,
         kind="actual_vs_predicted",
         ax=axs[0]
     )
@@ -1036,6 +1039,7 @@ def plot_predictions_from_test(
     PredictionErrorDisplay.from_predictions(
         y,
         y_pred,
+        subsample=None,
         kind="residual_vs_predicted",
         ax=axs[1]
     )
@@ -1970,6 +1974,7 @@ def stepwise(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=model_outputs['y_pred'],
+            subsample=None,
             kind="actual_vs_predicted",
             ax=axs[0]
         )
@@ -1977,6 +1982,7 @@ def stepwise(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=model_outputs['y_pred'],
+            subsample=None,
             kind="residual_vs_predicted",
             ax=axs[1]
         )
@@ -3943,6 +3949,7 @@ def elastic(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=stats_cv['y_pred'],
+            subsample=None,
             kind="actual_vs_predicted",
             ax=axs[0]
         )
@@ -3950,6 +3957,7 @@ def elastic(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=stats_cv['y_pred'],
+            subsample=None,
             kind="residual_vs_predicted",
             ax=axs[1]
         )
@@ -4449,6 +4457,7 @@ def stacking(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=stats['y_pred'],
+            subsample=None,
             kind="actual_vs_predicted",
             ax=axs[0]
         )
@@ -4456,6 +4465,7 @@ def stacking(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=stats['y_pred'],
+            subsample=None,
             kind="residual_vs_predicted",
             ax=axs[1]
         )
@@ -4857,6 +4867,7 @@ def svr(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -4864,6 +4875,7 @@ def svr(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -5432,6 +5444,7 @@ def svr_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -5439,6 +5452,7 @@ def svr_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -5717,6 +5731,7 @@ def sgd(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=stats['y_pred'],
+            subsample=None,
             kind="actual_vs_predicted",
             ax=axs[0]
         )
@@ -5724,6 +5739,7 @@ def sgd(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=stats['y_pred'],
+            subsample=None,
             kind="residual_vs_predicted",
             ax=axs[1]
         )
@@ -6100,6 +6116,7 @@ def gbr(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=model_outputs['y_pred'],
+            subsample=None,
             kind="actual_vs_predicted",
             ax=axs[0]
         )
@@ -6107,6 +6124,7 @@ def gbr(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=model_outputs['y_pred'],
+            subsample=None,
             kind="residual_vs_predicted",
             ax=axs[1]
         )
@@ -6689,6 +6707,7 @@ def gbr_auto(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=model_outputs['y_pred'],
+            subsample=None,
             kind="actual_vs_predicted",
             ax=axs[0]
         )
@@ -6696,6 +6715,7 @@ def gbr_auto(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=model_outputs['y_pred'],
+            subsample=None,
             kind="residual_vs_predicted",
             ax=axs[1]
         )
@@ -7127,6 +7147,7 @@ def xgb(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -7134,6 +7155,7 @@ def xgb(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -7764,6 +7786,7 @@ def xgb_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -7771,6 +7794,7 @@ def xgb_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -8199,6 +8223,7 @@ def lgbm(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -8206,6 +8231,7 @@ def lgbm(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -8796,6 +8822,7 @@ def lgbm_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -8803,6 +8830,7 @@ def lgbm_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -9207,6 +9235,7 @@ def catboost(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -9214,6 +9243,7 @@ def catboost(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -9803,6 +9833,7 @@ def catboost_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -9810,6 +9841,7 @@ def catboost_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -10226,6 +10258,7 @@ def forest(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -10233,6 +10266,7 @@ def forest(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -10817,6 +10851,7 @@ def forest_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -10824,6 +10859,7 @@ def forest_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -11225,6 +11261,7 @@ def knn(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -11232,6 +11269,7 @@ def knn(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -11818,6 +11856,7 @@ def knn_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -11825,6 +11864,7 @@ def knn_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -12935,6 +12975,7 @@ def model_agnostic(model, X_test, y_test,
         PredictionErrorDisplay.from_predictions(
             y_test,
             y_pred,
+            subsample=None,
             kind="actual_vs_predicted",
             ax=axs[0]
         )
@@ -12942,6 +12983,7 @@ def model_agnostic(model, X_test, y_test,
         PredictionErrorDisplay.from_predictions(
             y_test,
             y_pred,
+            subsample=None,
             kind="residual_vs_predicted",
             ax=axs[1]
         )
@@ -13385,6 +13427,7 @@ def linear(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=model_outputs['y_pred'],
+            subsample=None,
             kind="actual_vs_predicted",
             ax=axs[0]
         )
@@ -13392,6 +13435,7 @@ def linear(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=model_outputs['y_pred'],
+            subsample=None,
             kind="residual_vs_predicted",
             ax=axs[1]
         )
@@ -13899,6 +13943,7 @@ def linear_auto(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=model_outputs['y_pred'],
+            subsample=None,
             kind="actual_vs_predicted",
             ax=axs[0]
         )
@@ -13906,6 +13951,7 @@ def linear_auto(X, y, **kwargs):
         PredictionErrorDisplay.from_predictions(
             y,
             y_pred=model_outputs['y_pred'],
+            subsample=None,
             kind="residual_vs_predicted",
             ax=axs[1]
         )
@@ -14317,6 +14363,7 @@ def mlp(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -14324,6 +14371,7 @@ def mlp(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -14936,6 +14984,7 @@ def mlp_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -14943,6 +14992,7 @@ def mlp_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -15330,6 +15380,7 @@ def tree(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -15337,6 +15388,7 @@ def tree(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -15868,6 +15920,7 @@ def tree_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -15875,6 +15928,7 @@ def tree_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -16271,6 +16325,7 @@ def ada(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -16278,6 +16333,7 @@ def ada(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -16847,6 +16903,7 @@ def ada_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -16854,6 +16911,7 @@ def ada_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -17601,6 +17659,7 @@ def xgbmlp_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -17608,6 +17667,7 @@ def xgbmlp_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -18255,6 +18315,7 @@ def xgbrfe_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -18262,6 +18323,7 @@ def xgbrfe_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -18869,6 +18931,7 @@ def adarfe_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -18876,6 +18939,7 @@ def adarfe_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -19887,6 +19951,7 @@ def stack_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="actual_vs_predicted",
                 ax=axs[0]
             )
@@ -19894,6 +19959,7 @@ def stack_auto(X, y, **kwargs):
             PredictionErrorDisplay.from_predictions(
                 y,
                 y_pred=model_outputs['y_pred'],
+                subsample=None,
                 kind="residual_vs_predicted",
                 ax=axs[1]
             )
@@ -19919,5 +19985,403 @@ def stack_auto(X, y, **kwargs):
     warnings.filterwarnings("default")
 
     return fitted_model, model_outputs
- 
- 
+  
+def blend_with_isotonic_df(
+    X_blend,
+    y_true,
+    cv=5,
+    log_dir: str = None,
+    plot: bool = True,
+    scoring: str = 'rmse'):
+    """
+    Blend model predictions using isotonic regression with cross-validation,
+    logging fold-wise plots and metrics for interpretability.
+
+    Parameters:
+        X_blend (pd.DataFrame): shape (n_samples, n_models), base model predictions
+        y_true (pd.Series): true target values
+        cv (int or CV splitter): number of folds or CV object
+        log_dir (str): directory to save plots and metrics
+        plot (bool): whether to generate and save plots
+        scoring (str): metric to track across folds ('rmse', 'mae', 'r2')
+
+    Returns:
+        pd.Series: blended predictions aligned with y_true index
+    """
+    import pandas as pd
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from sklearn.isotonic import IsotonicRegression
+    from sklearn.model_selection import KFold
+    from sklearn.metrics import root_mean_squared_error, mean_absolute_error, r2_score
+    import os
+
+    X_blend = X_blend.copy()
+    y_true = y_true.copy()
+
+    blended = pd.Series(index=y_true.index, dtype=float)
+    kf = KFold(n_splits=cv, shuffle=True, random_state=42)
+
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+        missing_log = open(os.path.join(log_dir, "missing_metrics_log.txt"), "w")
+
+    for fold, (train_idx, val_idx) in enumerate(kf.split(X_blend), start=1):
+        train_idx = X_blend.index[train_idx]
+        val_idx = X_blend.index[val_idx]
+
+        X_train = X_blend.loc[train_idx]
+        y_train = y_true.loc[train_idx]
+        X_val = X_blend.loc[val_idx]
+        y_val = y_true.loc[val_idx]
+
+        train_mean = X_train.mean(axis=1)
+        val_mean = X_val.mean(axis=1)
+
+        iso = IsotonicRegression(out_of_bounds='clip')
+        iso.fit(train_mean, y_train)
+        val_preds = iso.predict(val_mean)
+        blended.loc[val_idx] = val_preds
+
+        # Metrics
+        try:
+            # rmse = mean_squared_error(y_val, val_preds, squared=False)
+            rmse = root_mean_squared_error(y_val, val_preds)
+            mae = mean_absolute_error(y_val, val_preds)
+            r2 = r2_score(y_val, val_preds)
+        except Exception as e:
+            if log_dir:
+                missing_log.write(f"Fold {fold}: Metric computation failed - {str(e)}\n")
+            continue
+
+        score_map = {'rmse': rmse, 'mae': mae, 'r2': r2}
+        selected_score = score_map.get(scoring.lower(), rmse)
+
+        # Plotting
+        if plot and log_dir:
+            fig, ax = plt.subplots(1, 2, figsize=(10, 4))
+
+            ax[0].scatter(val_preds, y_val, alpha=0.6)
+            ax[0].plot([y_val.min(), y_val.max()], [y_val.min(), y_val.max()], 'r--')
+            ax[0].set_title(f'Fold {fold} Calibration')
+            ax[0].set_xlabel('Blended Prediction')
+            ax[0].set_ylabel('True Value')
+
+            residuals = y_val - val_preds
+            ax[1].scatter(val_preds, residuals, alpha=0.6)
+            ax[1].axhline(0, color='r', linestyle='--')
+            ax[1].set_title(f'Fold {fold} Residuals')
+            ax[1].set_xlabel('Blended Prediction')
+            ax[1].set_ylabel('Residual')
+
+            fig.tight_layout()
+            fig.savefig(os.path.join(log_dir, f'fold_{fold}_diagnostics.png'))
+            plt.show
+            plt.close(fig)
+
+            # Save metrics
+            try:
+                with open(os.path.join(log_dir, f'fold_{fold}_metrics.txt'), 'w') as f:
+                    f.write(f'Fold {fold} RMSE: {rmse:.4f}\n')
+                    f.write(f'Fold {fold} MAE: {mae:.4f}\n')
+                    f.write(f'Fold {fold} R2: {r2:.4f}\n')
+                    f.write(f'Fold {fold} {scoring.upper()} (selected): {selected_score:.4f}\n')
+            except Exception as e:
+                missing_log.write(f"Fold {fold}: Failed to write metrics - {str(e)}\n")
+
+    if log_dir:
+        missing_log.close()
+
+    return blended
+    
+def summarize_blend_metrics(
+    X_blend,
+    y_true,
+    y_pred,    
+    log_dir: str, save_plot: bool = True, show_plot: bool = False):
+    """
+    Aggregate and visualize fold-wise metrics from isotonic blending logs.
+
+    Parameters:
+        log_dir (str): Directory containing fold_{i}_metrics.txt files
+        save_plot (bool): Whether to save the summary plot
+
+    Returns:
+        pd.DataFrame: DataFrame of fold-wise metrics
+    """
+    import os
+    import re
+    import pandas as pd
+    import matplotlib.pyplot as plt
+
+    X_blend = X_blend.copy()
+    y_true = y_true.copy()
+    y_pred = y_pred.copy()
+
+    def safe_extract(pattern, line):
+        match = re.search(pattern, line)
+        return float(match.group(1)) if match else np.nan
+
+    metrics = []
+    missing_folds = []
+
+    for fname in os.listdir(log_dir):
+        if re.match(r'fold_\d+_metrics\.txt', fname):
+            fold = int(re.search(r'\d+', fname).group())
+            try:
+                with open(os.path.join(log_dir, fname), 'r') as f:
+                    lines = f.readlines()
+                    rmse = safe_extract(r'RMSE: ([\d.]+)', lines[0])
+                    mae  = safe_extract(r'MAE: ([\d.]+)', lines[1])
+                    r2   = safe_extract(r'R2: ([\d.]+)', lines[2])
+                    metrics.append({'fold': fold, 'RMSE': rmse, 'MAE': mae, 'R2': r2})
+            except Exception as e:
+                missing_folds.append((fold, str(e)))
+
+    # print('metrics',metrics)
+    df_metrics = pd.DataFrame(metrics).sort_values('fold')
+
+    # print table of metrics for each fold
+    print("CV metrics for each fold:\n")
+    print(df_metrics.to_markdown(index=False))
+    print("")
+
+    # Summary statistics
+    # summary = df_metrics.describe().loc[['mean', 'std']]
+    df_summary = df_metrics.copy().drop('fold', axis=1)
+    summary = df_summary.describe().loc[['mean', 'std']]
+    summary.index = ['Mean', 'Stdev']
+    # print("CV Fold-wise Metric Summary:\n\n", summary)
+    print("CV metric summary across all folds:\n")
+    print(summary.to_markdown(index=True))
+    print("")
+
+    # Visualization
+    fig, ax = plt.subplots(1, 3, figsize=(15, 4))
+
+    ax[0].plot(df_metrics['fold'], df_metrics['RMSE'], marker='o')
+    ax[0].set_title('RMSE Across Folds')
+    ax[0].set_xlabel('Fold')
+    ax[0].set_ylabel('RMSE')
+    ax[0].set_xticks([1, 2, 3, 4, 5])
+
+    ax[1].plot(df_metrics['fold'], df_metrics['MAE'], marker='o', color='orange')
+    ax[1].set_title('MAE Across Folds')
+    ax[1].set_xlabel('Fold')
+    ax[1].set_ylabel('MAE')
+    ax[1].set_xticks([1, 2, 3, 4, 5])
+
+    ax[2].plot(df_metrics['fold'], df_metrics['R2'], marker='o', color='green')
+    ax[2].set_title('R2 Across Folds')
+    ax[2].set_xlabel('Fold')
+    ax[2].set_ylabel('R2')
+    ax[2].set_xticks([1, 2, 3, 4, 5])
+
+    fig.tight_layout()
+
+    if save_plot:
+        fig.savefig(os.path.join(log_dir, 'fold_metrics_summary.png'))
+        if show_plot:
+            plt.show()
+        plt.close(fig)
+    else:
+        if show_plot:
+            plt.show()
+
+    # Log missing folds
+    if missing_folds:
+        with open(os.path.join(log_dir, "missing_metrics_summary.txt"), "w") as f:
+            for fold, err in missing_folds:
+                f.write(f"Fold {fold}: {err}\n")
+
+    # final fit using all data and average across base models
+    from sklearn.isotonic import IsotonicRegression
+    # Aggregate base predictions (mean across models)
+    X_blend_mean = X_blend.mean(axis=1)
+    iso_final = IsotonicRegression(out_of_bounds='clip')
+    iso_final.fit(X_blend_mean, y_true)
+    final_blended_preds = iso_final.predict(X_blend_mean)
+
+    # residual plot for training error
+    from sklearn.metrics import PredictionErrorDisplay
+    from sklearn.metrics import root_mean_squared_error, mean_absolute_error, r2_score
+    n_samples = y_true.copy().shape[0]
+    R2 = r2_score(y_true.copy(),final_blended_preds)
+    RMSE = root_mean_squared_error(y_true.copy(),final_blended_preds)
+    MAE = mean_absolute_error(y_true.copy(),final_blended_preds)
+    list1_name = ['RMSE', 'MAE', 'R2', 'N']        
+    list1_val = [RMSE, MAE, R2, n_samples]
+    stats_df = pd.DataFrame(
+        {
+            "Statistic": list1_name,
+            "IsotonicBlend": list1_val
+        }
+        )
+    stats_df.set_index('Statistic',inplace=True)
+    print("Metrics of final blended model using all data:")
+    print('')
+    print(stats_df.to_markdown(index=True))
+    fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+    PredictionErrorDisplay.from_predictions(
+        y_true.copy(),
+        final_blended_preds.copy(),
+        subsample=None,
+        kind="actual_vs_predicted",
+        ax=axs[0]
+    )
+    axs[0].set_title("Actual vs. Predicted")
+    PredictionErrorDisplay.from_predictions(
+        y_true.copy(),
+        final_blended_preds.copy(),
+        subsample=None,
+        kind="residual_vs_predicted",
+        ax=axs[1]
+    )
+    axs[1].set_title("Residuals vs. Predicted")
+    fig.suptitle(
+        f"Blended predictions compared with actual values and residuals (RMSE={RMSE:.3f})")
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig((log_dir+"IsotonicBlend_predictions.png"), dpi=300)
+
+    result = {
+        'metrics_per_fold': df_metrics,
+        'metrics_across_folds': summary
+    }
+    
+    return result
+    
+def isotonic_blend(
+    preds_test_df, 
+    preds_train_df, 
+    y_train, 
+    n_splits=5,
+    log_dir: str = 'isotonic_blend',
+    scoring: str = 'rmse'):
+    plot: bool = True,
+    save_plot: bool = True, 
+    show_plot: bool = False):
+    ):
+
+    """
+    Blend model predictions from multiple models 
+    using isotonic regression with cross-validation,
+    logging fold-wise plots and metrics for interpretability.
+
+    Args:
+        preds_test_df: (pd.DataFrame): shape (n_test, n_models), test data subset
+        preds_train_df: (pd.DataFrame): shape (n_train, n_models), train data subset
+        y_train: pd.Series of true target values for train data (same length as preds_train_df)
+        n_splits: Number of CV folds.
+        log_dir: folder to save results
+        scoring: cross-validation scoring ('rmse', 'mae', or 'r2')
+        plot (bool): whether to generate and save plots
+        save_plot (bool): whether to save cv plot
+        show_plot (bool): whether to show cv plot
+
+    Returns: dictionary containing the following keys:
+        'final_blend_model': final isotonic regression model using all train data
+        'blended_train_preds': dataseries of blended predictions from train data,
+        'blended_test_preds': dataseries of blended predictions from test data
+        'cv_metrics': dict of cross-validation metrics of the isotonic regression model
+
+    Example Usage:
+    
+        # Dataframes of test predictions for each model
+        preds_test_df = pd.DataFrame({
+            'xgb': xgb_test_preds,  # XGBoost predictions using X_test
+            'cat': cat_test_preds,  # CatBoost predictions using X_test
+            'lgb': lgb_test_preds   # LightGBM predictions using X_test
+        })
+
+        # Dataframes of train predictions for each model
+        preds_train_df = pd.DataFrame({
+            'xgb': xgb_train_preds,  # XGBoost predictions using X_train
+            'cat': cat_train_preds,  # CatBoost predictions using X_train
+            'lgb': lgb_train_preds   # LightGBM predictions using X_train
+        })
+
+        # Dataseries of true values used for training y_train
+        y_train = df_train_lgb['y_train']
+
+        # Optimized weighted ensemble of test predictions from LightGBM, CatBoost, and XGBoost
+        result = isotonic_blend(preds_test_df, preds_train_df, y_train)
+    """
+
+    from PyMLR import blend_with_isotonic_df, summarize_blend_metrics, check_X_y, check_X
+    from sklearn.isotonic import IsotonicRegression
+    import os
+    from pathlib import Path
+
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
+        os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
+        print(f"Working directory changed to: {os.getcwd()}")    
+
+    # Directory to log fold-wise plots and metrics
+    # log_dir = Path("isotonic_logs")
+    log_dir = Path(log_dir)
+    log_dir.mkdir(exist_ok=True)
+
+    # copy input dataframes and series to prevent changes to origionals
+    preds_test_df = preds_test_df.copy()
+    preds_train_df = preds_train_df.copy()
+    y_train = y_train.copy()
+
+    # assertions
+    assert preds_train_df.shape[0] == len(y_train), "Mismatch in train prediction and target lengths"
+    assert preds_test_df.shape[1] == preds_train_df.shape[1], "Mismatch in number of models"
+
+    # check input dataframes and series for errors
+    preds_test_df = check_X(preds_test_df)
+    preds_train_df, y_train = check_X_y(preds_train_df,y_train)
+
+    # Run isotonic blending with CV and log diagnostics
+    # from your_module import blend_with_isotonic_df  # Replace with actual import
+    blended_train_preds = blend_with_isotonic_df(
+        preds_train_df,
+        y_train,
+        cv=n_splits,
+        log_dir=log_dir,
+        plot=plot,
+        scoring=scoring)
+
+    # Summarize Fold-Wise Metrics
+    cv_metrics = summarize_blend_metrics(
+        preds_train_df,
+        y_train,
+        blended_train_preds,    
+        log_dir=log_dir, 
+        save_plot=save_plot, 
+        show_plot=show_plot)
+
+    # Fit Final Isotonic Model on Full Training Set
+    # Aggregate base predictions (mean across models)
+    preds_train_mean = preds_train_df.mean(axis=1)
+    preds_test_mean = preds_test_df.mean(axis=1)
+
+    # Fit final isotonic model
+    iso_final = IsotonicRegression(out_of_bounds='clip')
+    iso_final.fit(preds_train_mean, y_train)
+
+    # Predict on independent test set
+    blended_test_preds = iso_final.predict(preds_test_mean)
+    blended_test_preds = pd.Series(blended_test_preds, index=preds_test_df.index, name='blended_prediction')
+
+    result = {
+        'final_blend_model': iso_final,
+        'blended_train_preds': blended_train_preds,
+        'blended_test_preds': blended_test_preds,
+        'cv_metrics': cv_metrics,
+        }
+
+    return blended_test_preds
+
+
+
+
+
+
