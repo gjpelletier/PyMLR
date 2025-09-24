@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.236"
+__version__ = "1.2.237"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -20181,7 +20181,7 @@ def blend_objective(trial, X, y, study, **kwargs):
         trial.set_user_attr("meta_solver", meta_solver)
     trial.set_user_attr("scoring", kwargs["scoring"])
     trial.set_user_attr("score_mean", score_mean)
-    trial.set_user_attr("cv_scores", scores.tolist())
+    trial.set_user_attr("cv_scores", fold_scores.tolist())
     trial.set_user_attr("selected_features", selected_features)
     trial.set_user_attr("selector_type", selector_type)
     trial.set_user_attr("num_features", num_features)
