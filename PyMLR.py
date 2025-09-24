@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.234"
+__version__ = "1.2.235"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -5168,7 +5168,7 @@ def svr_auto(X, y, **kwargs):
         'random_state': 42,                 # Random seed for reproducibility.
         'n_trials': 5,                     # number of optuna trials
         'n_splits': 5,          # number of splits for KFold CV
-        'gpu': True,                        # Autodetect to use gpu if present
+        'gpu': False,                        # Autodetect to use gpu if present
         'classify': False,            # Use SVC if True
         'preprocess': True,           # True for OneHotEncoder and StandardScaler
         'preprocess_result': None,    # dict of  the following result from 
@@ -6425,7 +6425,7 @@ def gbr_auto(X, y, **kwargs):
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',        # 'on' to display summary stats and residual plots
         'n_splits': 5,          # number of splits for KFold CV
-        'gpu': True,            # Autodetect to use gpu if present
+        'gpu': False,            # Autodetect to use gpu if present
         'n_jobs': 1,            # number of CPU cores to use for optuna
                                 # n_jobs=1 is reproducible
                                 # n_jobs=-1 uses all cores
@@ -6900,7 +6900,7 @@ def xgb(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                  # Autodetect if the computer has a gpu, if no gpu is detected then cpu will be used
+        'gpu': False,                  # Autodetect if the computer has a gpu, if no gpu is detected then cpu will be used
         'device': None,               # placeholder for device argument 
         'objective': None,            # placeholder for objective argument 
         'num_class': None,            # placeholder for num_class argument 
@@ -7503,7 +7503,7 @@ def xgb_auto(X, y, **kwargs):
         'threshold_skew_neg': -0.5,        
         # ------------------------
         'verbose': 'on',
-        'gpu': True,                        # Autodetect to use gpu if present
+        'gpu': False,                        # Autodetect to use gpu if present
         'n_splits': 5,                      # number of splits for KFold CV
 
         'pruning': False,                   # prune poor optuna trials
@@ -7992,7 +7992,7 @@ def lgbm(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                  # Autodetect if the computer has a gpu, if no gpu is detected then cpu will be used
+        'gpu': False,                  # Autodetect if the computer has a gpu, if no gpu is detected then cpu will be used
         'device': None,               # placeholder for device argument 
         'objective': None,            # placeholder for objective argument 
         'num_class': None,            # placeholder for num_class argument 
@@ -8558,7 +8558,7 @@ def lgbm_auto(X, y, **kwargs):
         'threshold_skew_neg': -0.5,        
         # ------------------------
         'verbose': 'on',
-        'gpu': True,                     # Autodetect gpu if present (not used by LGBM)
+        'gpu': False,                     # Autodetect gpu if present (not used by LGBM)
         'n_splits': 5,                   # number of splits for KFold CV
 
         'pruning': False,                # prune poor optuna trials
@@ -10030,7 +10030,7 @@ def forest(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                        # Autodetect to use gpu if present
+        'gpu': False,                        # Autodetect to use gpu if present
         'n_splits': 5,                      # number of splits for KFold CV
 
         # params 
@@ -10585,7 +10585,7 @@ def forest_auto(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                        # Autodetect to use gpu if present
+        'gpu': False,                        # Autodetect to use gpu if present
         'n_splits': 5,                      # number of splits for KFold CV
 
         'pruning': False,                   # prune poor optuna trials
@@ -11033,7 +11033,7 @@ def knn(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                        # Autodetect to use gpu if present
+        'gpu': False,                        # Autodetect to use gpu if present
 
         # # PCA may be added in a future version
         # 'pca_transform': True,            # force PCA transform
@@ -11613,7 +11613,7 @@ def knn_auto(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                        # Autodetect to use gpu if present
+        'gpu': False,                        # Autodetect to use gpu if present
         'n_splits': 5,                      # number of splits for KFold CV
         'allow_overfit': True,              # allow optuna to overfit train data
         'tol': 1e-6,                        # tolerance for overfit
@@ -12246,7 +12246,7 @@ def logistic(X, y, **kwargs):
                                     # - continuous_cols  (continuous columns)
         'selected_features': None,         # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                       # autodetect gpu if present
+        'gpu': False,                       # autodetect gpu if present
         # --- preprocess_train ---
         'use_encoder': True, 
         'use_scaler': True, 
@@ -12637,7 +12637,7 @@ def logistic_auto(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                # Autodetect to use gpu if present
+        'gpu': False,                # Autodetect to use gpu if present
         'n_splits': 5,              # number of splits for KFold CV
         'pruning': False,           # prune poor optuna trials
         'feature_selection': False,  # optuna feature selection
@@ -13726,7 +13726,7 @@ def linear_auto(X, y, **kwargs):
         'threshold_skew_neg': -0.5,        
         # ------------------------
         'verbose': 'on',
-        'gpu': True,                        # Autodetect to use gpu if present
+        'gpu': False,                        # Autodetect to use gpu if present
         'n_splits': 5,                      # number of splits for KFold CV
 
         'pruning': False,                   # prune poor optuna trials
@@ -14135,7 +14135,7 @@ def mlp(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                        # Autodetect to use gpu if present
+        'gpu': False,                        # Autodetect to use gpu if present
 
         # numerical core hyperparameters
         'hidden_layer_sizes': (100,), # list of numbers of neurons in ith hidden layers
@@ -14715,7 +14715,7 @@ def mlp_auto(X, y, **kwargs):
         # ------------------------
         'selected_features': None,           # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                         # Autodetect to use gpu if present
+        'gpu': False,                         # Autodetect to use gpu if present
         'n_splits': 5,                       # number of splits for KFold CV
 
         'pruning': False,                    # prune poor optuna trials
@@ -15166,7 +15166,7 @@ def tree(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                  # Autodetect to use gpu if present
+        'gpu': False,                  # Autodetect to use gpu if present
         'n_splits': 5,                # number of splits for KFold CV
 
         # params 
@@ -15686,7 +15686,7 @@ def tree_auto(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                        # Autodetect to use gpu if present
+        'gpu': False,                        # Autodetect to use gpu if present
         'n_splits': 5,                      # number of splits for KFold CV
 
         'pruning': False,                   # prune poor optuna trials
@@ -16103,7 +16103,7 @@ def ada(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                  # Autodetect to use gpu if present
+        'gpu': False,                  # Autodetect to use gpu if present
         'n_splits': 5,                # number of splits for KFold CV
 
         # params for AdaBoost optimized by optuna
@@ -16667,7 +16667,7 @@ def ada_auto(X, y, **kwargs):
         # ------------------------
         'selected_features': None,    # pre-optimized selected features
         'verbose': 'on',
-        'gpu': True,                        # Autodetect to use gpu if present
+        'gpu': False,                        # Autodetect to use gpu if present
         'n_splits': 5,                      # number of splits for KFold CV
 
         'pruning': False,                   # prune poor optuna trials
@@ -17355,7 +17355,7 @@ def xgbmlp_auto(X, y, **kwargs):
         'threshold_skew_neg': -0.5,        
         # ------------------------
         'verbose': 'on',
-        'gpu': True,                         # Autodetect to use gpu if present
+        'gpu': False,                         # Autodetect to use gpu if present
         'n_splits': 5,                       # number of splits for KFold CV
 
         'pruning': False,                    # prune poor optuna trials
@@ -18037,7 +18037,7 @@ def xgbrfe_auto(X, y, **kwargs):
         'threshold_skew_neg': -0.5,        
         # ------------------------
         'verbose': 'on',
-        'gpu': True,                         # Autodetect to use gpu if present
+        'gpu': False,                         # Autodetect to use gpu if present
         'n_splits': 5,                       # number of splits for KFold CV
 
         'pruning': False,                    # prune poor optuna trials
@@ -18693,7 +18693,7 @@ def adarfe_auto(X, y, **kwargs):
         'threshold_skew_neg': -0.5,        
         # ------------------------
         'verbose': 'on',
-        'gpu': True,                         # Autodetect to use gpu if present
+        'gpu': False,                         # Autodetect to use gpu if present
         'n_splits': 5,                       # number of splits for KFold CV
 
         'pruning': False,                    # prune poor optuna trials
@@ -20068,6 +20068,13 @@ def blend_objective(trial, X, y, study, **kwargs):
     cat_model = cb.CatBoostClassifier(**cat_params, verbose=0) if kwargs["classify"] else cb.CatBoostRegressor(**cat_params, verbose=0)
     lgb_model = lgb.LGBMClassifier(**lgb_params, verbosity=-1) if kwargs["classify"] else lgb.LGBMRegressor(**lgb_params, verbosity=-1)
 
+    # Base models
+    base_models = [
+        ("xgb", xgb_model),
+        ("cat", cat_model),
+        ("lgb", lgb_model)
+    ]
+
     # -----------------------------
     # Feature Selection
     # -----------------------------
@@ -20603,6 +20610,13 @@ def blend_auto(X, y, **kwargs):
     xgb_model = xgb.XGBClassifier(**xgb_params, verbosity=0) if kwargs["classify"] else xgb.XGBRegressor(**xgb_params, verbosity=0)
     cat_model = cb.CatBoostClassifier(**cat_params, verbose=0) if kwargs["classify"] else cb.CatBoostRegressor(**cat_params, verbose=0)
     lgb_model = lgb.LGBMClassifier(**lgb_params, verbosity=-1) if kwargs["classify"] else lgb.LGBMRegressor(**lgb_params, verbosity=-1)
+
+    # Base models
+    base_models = [
+        ("xgb", xgb_model),
+        ("cat", cat_model),
+        ("lgb", lgb_model)
+    ]
 
     # -----------------------------
     # Final Fitted Model and y_pred
