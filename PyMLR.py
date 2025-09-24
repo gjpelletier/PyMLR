@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.238"
+__version__ = "1.2.239"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -20627,6 +20627,7 @@ def blend_auto(X, y, **kwargs):
     # -----------------------------
 
     # fit the final model
+    oof_preds = np.zeros((X[model_outputs['selected_features']].shape[0], len(base_models)))
     if data['classify']:
         print('Fitting LogisticRegression meta-model with best parameters, please wait ...')
         for i, (name, model) in enumerate(base_models):
