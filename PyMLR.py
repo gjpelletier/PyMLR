@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.239"
+__version__ = "1.2.240"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -20163,12 +20163,18 @@ def blend_objective(trial, X, y, study, **kwargs):
             model.fit(X_selected, y)
             oof_preds[:, i] = model.predict_proba(X_selected)[:, 1]
         meta_model.fit(oof_preds, y)
+        # final predictions and probabilities
+        y_pred = meta_model.predict(oof_preds)  # hard labels
+        y_pred_proba = meta_model.predict_proba(oof_preds)[:, 1]  # class 1 prob
+
     else:
         for i, (name, model) in enumerate(base_models):
             model.fit(X_selected, y)
             oof_preds[:, i] = model.predict(X_selected)
         meta_model = IsotonicRegression(out_of_bounds="clip")
         meta_model.fit(oof_preds.mean(axis=1), y)
+        # final predictions
+        y_pred = meta_model.predict(oof_preds.mean(axis=1))
 
     # -----------------------------
     # Log Metadata
@@ -20190,6 +20196,10 @@ def blend_objective(trial, X, y, study, **kwargs):
     trial.set_user_attr("xgb_params", xgb_params)
     trial.set_user_attr("cat_params", cat_params)
     trial.set_user_attr("trial_number", trial.number)
+    # trial.set_user_attr("y_pred", y_pred.tolist()) 
+    trial.set_user_attr("y_pred", y_pred) 
+    if kwargs["classify"]:
+        trial.set_user_attr("y_pred_proba", y_pred_proba) 
 
     return score_mean
     
@@ -20634,6 +20644,9 @@ def blend_auto(X, y, **kwargs):
             model.fit(X[model_outputs['selected_features']], y)
             oof_preds[:, i] = model.predict_proba(X[model_outputs['selected_features']])[:, 1]
         meta_model.fit(oof_preds, y)
+        # final predictions and probabilities
+        y_pred = meta_model.predict(oof_preds)  # hard labels
+        y_pred_proba = meta_model.predict_proba(oof_preds)[:, 1]  # class 1 prob
     else:
         print('Fitting IsotonicRegression meta-model with best parameters, please wait ...')
         for i, (name, model) in enumerate(base_models):
@@ -20641,10 +20654,14 @@ def blend_auto(X, y, **kwargs):
             oof_preds[:, i] = model.predict(X[model_outputs['selected_features']])
         meta_model = IsotonicRegression(out_of_bounds="clip")
         meta_model.fit(oof_preds.mean(axis=1), y)
+        # final predictions
+        y_pred = meta_model.predict(oof_preds.mean(axis=1))
 
     # y_pred of the final fitted model
     fitted_model = meta_model
-    model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
+    model_outputs['y_pred'] = y_pred
+    if data['classify']:
+        model_outputs['y_pred_proba'] = y_pred_proba
 
     # -----------------------------
     # Feature Importances and y_pred from Base Models
