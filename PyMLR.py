@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.235"
+__version__ = "1.2.236"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -20100,7 +20100,7 @@ def blend_objective(trial, X, y, study, **kwargs):
         selector_type = None
 
         # Use all features
-        X_selected = X
+        X_selected = X.copy()
         selected_features = kwargs["feature_names"]
 
     # -----------------------------
@@ -20128,9 +20128,12 @@ def blend_objective(trial, X, y, study, **kwargs):
         )
 
     for fold, (train_idx, valid_idx) in enumerate(cv.split(X_selected, y)):
-        X_train, y_train = X_selected[train_idx], y[train_idx]
-        X_valid, y_valid = X_selected[valid_idx], y[valid_idx]
-
+        # X_train, y_train = X_selected[train_idx], y[train_idx]
+        # X_valid, y_valid = X_selected[valid_idx], y[valid_idx]
+        X_train = X_selected.iloc[train_idx]
+        X_valid = X_selected.iloc[valid_idx]
+        y_train = y.iloc[train_idx]
+        y_valid = y.iloc[valid_idx]
         fold_preds = []
         for i, (name, model) in enumerate(base_models):
             m = clone(model)
