@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.240"
+__version__ = "1.2.241"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -1106,6 +1106,60 @@ def fitness_metrics(model, X, y):
     
     return metrics
 
+def fitness_metrics_given_y_pred(X, y, y_pred):
+    '''
+    Extracts multiple evaluation metrics 
+    given X, y, and y_pred
+
+    Parameters:
+        X: Features used to fit the model
+        y: Response variable used to fit the model
+        y_pred: predicted response variable from the fitted model
+    
+    Returns:
+        dict of relevant sklearn metrics
+    '''
+    
+    from sklearn.metrics import (
+        r2_score,
+        mean_absolute_error,
+        mean_squared_error,
+        explained_variance_score,
+        max_error,
+        mean_absolute_percentage_error,
+        mean_squared_log_error
+    )
+    import numpy as np
+    
+    # y_pred = model.predict(X)
+    metrics = {}
+
+    # Safe defaults
+    metrics['R-squared'] = r2_score(y, y_pred)
+    metrics['MSE'] = mean_squared_error(y, y_pred)
+    metrics['RMSE'] = np.sqrt(metrics['MSE'])
+    metrics['Explained Variance'] = explained_variance_score(y, y_pred)
+    metrics['MAE'] = mean_absolute_error(y, y_pred)
+    metrics['Max Error'] = max_error(y, y_pred)
+
+    # Handle MAPE with care
+    try:
+        metrics['MAPE'] = mean_absolute_percentage_error(y, y_pred)
+    except ValueError as e:
+        # metrics['MAPE'] = f'Error: {e}'
+        metrics['MAPE'] = None
+
+    # Handle MSLE with care (requires non-negative values)
+    try:
+        metrics['MSLE'] = mean_squared_log_error(y, y_pred)
+    except ValueError as e:
+        # metrics['MSLE'] = f'Error: {e}'
+        metrics['MSLE'] = None
+
+    metrics['n_samples'] = X.shape[0]
+    
+    return metrics
+
 def pseudo_r2(model, X, y):
     """
     Calculate McFadden's pseudo-R² 
@@ -1161,6 +1215,49 @@ def fitness_metrics_logistic(model, X, y, brier=True):
 
     metrics = {
         "mcfadden_pseudo_r2": pseudo_r2(model, X, y),
+        "accuracy": accuracy_score(y, y_pred),
+        "f1_score": f1_score(y, y_pred, average=average_method),
+        "precision": precision_score(y, y_pred, average=average_method),
+        "recall": recall_score(y, y_pred, average=average_method),
+        "log_loss": log_loss(y, y_proba)
+    }
+
+    # Brier score only valid for binary: take prob class 1
+    if brier and len(np.unique(y)) == 2  and np.max(y_proba)<=1:
+        metrics["brier_score"] = brier_score_loss(y, y_proba[:, 1])
+
+    metrics['n_classes'] = len(np.unique(y))
+    metrics['n_samples'] = X.shape[0]
+    
+    return metrics
+
+def fitness_metrics_logistic_given_y_pred(X, y, y_pred, y_proba, brier=True):
+    """
+    Extracts multiple evaluation metrics 
+    from a trained LogisticRegression model
+    given fitted X, y, y_pred, and y_proba
+    Works with binary and multinomial classification.
+
+    Parameters:
+        X: Features used to fit the model
+        y: True binary labels
+        y_pred: predictions from fitted model
+        y_proba: prediction probablities from fitted model 
+    
+    Returns:
+        dict of relevant sklearn metrics
+    """
+    import numpy as np
+    from sklearn.metrics import (
+        accuracy_score, log_loss, brier_score_loss,
+        f1_score, precision_score, recall_score)
+
+    # y_pred = model.predict(X)
+    # y_proba = model.predict_proba(X)
+    average_method = 'binary' if len(np.unique(y)) == 2 else 'macro'
+
+    metrics = {
+        # "mcfadden_pseudo_r2": pseudo_r2(model, X, y),
         "accuracy": accuracy_score(y, y_pred),
         "f1_score": f1_score(y, y_pred, average=average_method),
         "precision": precision_score(y, y_pred, average=average_method),
@@ -20332,8 +20429,8 @@ def blend_auto(X, y, **kwargs):
     """
 
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
-    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics
-    from PyMLR import fitness_metrics_logistic, pseudo_r2
+    from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics_given_y_pred
+    from PyMLR import fitness_metrics_logistic_given_y_pred, pseudo_r2
     from PyMLR import plot_confusion_matrix, plot_roc_auc
     import time
     import pandas as pd
@@ -20697,15 +20794,16 @@ def blend_auto(X, y, **kwargs):
             hfig = plot_roc_auc(fitted_model, X[selected_features], y)
             hfig.savefig("EnsembleBlend_ROC_curve.png", dpi=300)            
         # Goodness of fit statistics
-        metrics = fitness_metrics_logistic(
-            fitted_model, 
-            X[model_outputs['selected_features']], y, brier=False)
+        # metrics = fitness_metrics_logistic(
+        #     fitted_model, 
+        #     X[model_outputs['selected_features']], y, brier=False)
+        metrics = fitness_metrics_logistic_given_y_pred(
+            X[model_outputs['selected_features']], y, y_pred, y_pred_proba, brier=False)
         stats = pd.DataFrame([metrics]).T
         stats.index.name = 'Statistic'
         stats.columns = ['EnsembleBlend']
         model_outputs['metrics'] = metrics
         model_outputs['stats'] = stats
-        # model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])    
         if data['verbose'] == 'on':
             print('')
             print("EnsembleBlend goodness of fit to training data in model_outputs['stats']:")
@@ -20739,15 +20837,16 @@ def blend_auto(X, y, **kwargs):
             model_outputs['popt_table'] = popt_table
 
         # Goodness of fit statistics
-        metrics = fitness_metrics(
-            fitted_model, 
-            X[model_outputs['selected_features']], y)
+        # metrics = fitness_metrics(
+        #     fitted_model, 
+        #     X[model_outputs['selected_features']], y)
+        metrics = fitness_metrics_given_y_pred(
+            X[model_outputs['selected_features']], y, y_pred)
         stats = pd.DataFrame([metrics]).T
         stats.index.name = 'Statistic'
         stats.columns = ['EnsembleBlend']
         model_outputs['metrics'] = metrics
         model_outputs['stats'] = stats
-        # model_outputs['y_pred'] = fitted_model.predict(X[model_outputs['selected_features']])
 
         if data['verbose'] == 'on':
             print('')
