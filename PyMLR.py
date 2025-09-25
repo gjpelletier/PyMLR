@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.241"
+__version__ = "1.2.242"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -12008,6 +12008,27 @@ def plot_confusion_matrix(model, X, y):
     plt.title("Confusion Matrix")
 
     return hfig
+
+def plot_confusion_matrix_given_y_pred(model, X, y, y_pred):
+    '''
+    plot the confusion matrix
+    for binary or multinomial LogisticRegression.
+    '''
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from sklearn.metrics import confusion_matrix
+    import seaborn as sns
+
+    # y_pred = model.predict(X)
+    cm = confusion_matrix(y, y_pred)        
+    hfig = plt.figure(figsize=(6,4))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.title("Confusion Matrix")
+
+    return hfig
     
 def plot_roc_auc(model, X, y):
     """
@@ -12031,6 +12052,78 @@ def plot_roc_auc(model, X, y):
     
     y_score = model.predict_proba(X)
     classes = model.classes_
+    n_classes = len(classes)
+
+    # Binarize the output
+    y_bin = label_binarize(y, classes=classes)
+
+    # plt.figure(figsize=(8, 6))
+    hfig = plt.figure(figsize=(6, 4))
+
+    if n_classes == 2:
+        # Binary classification case
+        fpr, tpr, _ = roc_curve(y_bin.ravel(), y_score[:, 1])
+        roc_auc = auc(fpr, tpr)
+        plt.plot(fpr, tpr, color='darkorange', lw=2, 
+                 label=f"ROC curve (AUC = {roc_auc:.3f})")
+    else:
+        # Multiclass case - one ROC curve per class
+        colors = cycle(['blue', 'red', 'green', 'purple', 'orange', 'cyan'])
+        for i, color in zip(range(n_classes), colors):
+            fpr, tpr, _ = roc_curve(y_bin[:, i], y_score[:, i])
+            roc_auc = auc(fpr, tpr)
+            plt.plot(fpr, tpr, color=color, lw=2, 
+                     label=f"Class {classes[i]} (AUC = {roc_auc:.3f})")
+        
+        # Macro-average AUC (optional summary line)
+        all_fpr = np.unique(np.concatenate(
+            [roc_curve(y_bin[:, i], y_score[:, i])[0] for i in range(n_classes)]))
+        mean_tpr = np.zeros_like(all_fpr)
+        for i in range(n_classes):
+            fpr, tpr, _ = roc_curve(y_bin[:, i], y_score[:, i])
+            mean_tpr += np.interp(all_fpr, fpr, tpr)
+        mean_tpr /= n_classes
+        macro_auc = auc(all_fpr, mean_tpr)
+        plt.plot(all_fpr, mean_tpr, color='black', linestyle='--', 
+                 lw=2, label=f"Average (AUC = {macro_auc:.3f})")
+
+    # plt.plot([0, 1], [0, 1], color='gray', linestyle='--', lw=1)
+    plt.plot([0, 1], [0, 1], linestyle='--', lw=1)
+
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC Curve")
+    plt.legend(loc="lower right")
+    # plt.grid(True)
+    plt.tight_layout()
+    # plt.show()
+
+    return hfig
+
+def plot_roc_auc_given_y_proba(X, y, y_proba):
+    """
+    Plots ROC curve(s) and computes AUC score(s) 
+    for binary or multinomial LogisticRegression.
+    
+    Parameters:
+        X: Feature matrix
+        y: True labels
+        y_proba: Predicted response variable probablity (proba)
+    
+    Returns:
+        None (displays the plot)
+    """
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from sklearn.metrics import roc_curve, auc
+    from sklearn.preprocessing import label_binarize
+    from itertools import cycle
+    
+    # y_score = model.predict_proba(X)
+    # classes = model.classes_
+    y_score = y_proba
+    classes = y.unique().tolist()
     n_classes = len(classes)
 
     # Binarize the output
@@ -20431,7 +20524,7 @@ def blend_auto(X, y, **kwargs):
     from PyMLR import stats_given_y_pred, detect_dummy_variables, detect_gpu
     from PyMLR import preprocess_train, preprocess_test, check_X_y, fitness_metrics_given_y_pred
     from PyMLR import fitness_metrics_logistic_given_y_pred, pseudo_r2
-    from PyMLR import plot_confusion_matrix, plot_roc_auc
+    from PyMLR import plot_confusion_matrix_given_y_pred, plot_roc_auc_given_y_proba
     import time
     import pandas as pd
     import numpy as np
@@ -20732,7 +20825,6 @@ def blend_auto(X, y, **kwargs):
     # -----------------------------
     # Final Fitted Model and y_pred
     # -----------------------------
-
     # fit the final model
     oof_preds = np.zeros((X[model_outputs['selected_features']].shape[0], len(base_models)))
     if data['classify']:
@@ -20754,21 +20846,29 @@ def blend_auto(X, y, **kwargs):
         # final predictions
         y_pred = meta_model.predict(oof_preds.mean(axis=1))
 
-    # y_pred of the final fitted model
-    fitted_model = meta_model
+    # y_pred and y_pred_proba of the final fitted model
     model_outputs['y_pred'] = y_pred
     if data['classify']:
         model_outputs['y_pred_proba'] = y_pred_proba
 
     # -----------------------------
-    # Feature Importances and y_pred from Base Models
+    # Save fitted base models and meta-model
     # -----------------------------
 
-    # fit the base models
+    # fit the base models one last time for saving
     xgb_model.fit(X[model_outputs['selected_features']],y)
     lgb_model.fit(X[model_outputs['selected_features']],y)
     cat_model.fit(X[model_outputs['selected_features']],y)
 
+    # save final fitted meta and base models
+    model_objects['meta_model'] = meta_model
+    model_objects['xgb_model'] = xgb_model
+    model_objects['lgb_model'] = lgb_model
+    model_objects['cat_model'] = cat_model
+
+    # -----------------------------
+    # Feature Importances and y_pred from Base Models
+    # -----------------------------
     # y_pred of the base models
     model_outputs['y_pred_xgb'] = xgb_model.predict(X[model_outputs['selected_features']])
     model_outputs['y_pred_lgb'] = lgb_model.predict(X[model_outputs['selected_features']])
@@ -20787,16 +20887,13 @@ def blend_auto(X, y, **kwargs):
         if data['verbose'] == 'on':    
             # confusion matrix
             selected_features = model_outputs['selected_features']
-            hfig = plot_confusion_matrix(fitted_model, X[selected_features], y)
+            hfig = plot_confusion_matrix_given_y_pred(X[selected_features], y, y_pred)
             hfig.savefig("StackingClassifier_confusion_matrix.png", dpi=300)            
             # ROC curve with AUC
             selected_features = model_outputs['selected_features']
-            hfig = plot_roc_auc(fitted_model, X[selected_features], y)
+            hfig = plot_roc_auc_given_y_proba(X[selected_features], y_proba)
             hfig.savefig("EnsembleBlend_ROC_curve.png", dpi=300)            
         # Goodness of fit statistics
-        # metrics = fitness_metrics_logistic(
-        #     fitted_model, 
-        #     X[model_outputs['selected_features']], y, brier=False)
         metrics = fitness_metrics_logistic_given_y_pred(
             X[model_outputs['selected_features']], y, y_pred, y_pred_proba, brier=False)
         stats = pd.DataFrame([metrics]).T
@@ -20812,34 +20909,7 @@ def blend_auto(X, y, **kwargs):
             print('')    
     else:
         # check to see of the model has intercept and coefficients
-        if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
-                and fitted_model.coef_.size==len(X[model_outputs['selected_features']].columns)):
-            intercept = fitted_model.intercept_
-            coefficients = fitted_model.coef_
-            # dataframe of model parameters, intercept and coefficients, including zero coefs
-            n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
-            popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
-            for i in range(n_param):
-                if i == 0:
-                    popt[0][i] = 'Intercept'
-                    popt[1][i] = fitted_model.intercept_
-                else:
-                    popt[0][i] = X[model_outputs['selected_features']].columns[i-1]
-                    popt[1][i] = fitted_model.coef_[i-1]
-            popt = pd.DataFrame(popt).T
-            popt.columns = ['Feature', 'Parameter']
-            # Table of intercept and coef
-            popt_table = pd.DataFrame({
-                    "Feature": popt['Feature'],
-                    "Parameter": popt['Parameter']
-                })
-            popt_table.set_index('Feature',inplace=True)
-            model_outputs['popt_table'] = popt_table
-
         # Goodness of fit statistics
-        # metrics = fitness_metrics(
-        #     fitted_model, 
-        #     X[model_outputs['selected_features']], y)
         metrics = fitness_metrics_given_y_pred(
             X[model_outputs['selected_features']], y, y_pred)
         stats = pd.DataFrame([metrics]).T
@@ -20853,12 +20923,6 @@ def blend_auto(X, y, **kwargs):
             print("EnsembleBlend goodness of fit to training data in model_outputs['stats']:")
             print('')
             print(model_outputs['stats'].to_markdown(index=True))
-            print('')
-
-        if hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_'):
-            print("Parameters of fitted model in model_outputs['popt']:")
-            print('')
-            print(model_outputs['popt_table'].to_markdown(index=True))
             print('')
 
         # residual plot for training error
@@ -20900,7 +20964,7 @@ def blend_auto(X, y, **kwargs):
     # Restore warnings to normal
     warnings.filterwarnings("default")
 
-    return fitted_model, model_outputs
+    return model_objects, model_outputs
    
 def blend_with_isotonic_df(
     X_blend,
