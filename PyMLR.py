@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.244"
+__version__ = "1.2.245"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -855,28 +855,31 @@ def show_vif(X):
     return vif
 
 def test_model(
-        model, X, y, preprocess_result=None, selected_features=None):
+        model, X, y=None, preprocess_result=None, selected_features=None):
 
     """
-    Plots Actual vs Predicted and Residuals vs Predicted 
-    for fitted sklearn linear regression models 
+    Predicted values of the response variable for independent test data
+    for fitted PyMLR regression models
+    If true values of y are provided, then this function also provides
+    plots actual vs predicted and residuals vs predicted 
+    for fitted regression models 
     and provide goodness of fit statistics
-    (replaces plot_linear_results_test)
 
     Args:
-    model= fitted sklearn linear regression model object
+    model= fitted PyMLR regression model object
     X = dataframe of the candidate independent variables 
-    y = series of the dependent variable (one column of data)
-    preprocess_result = results of preprocess_train
-    selected_features = optimized selected features
+    y = (optional) series of the response variable (one column of data)
+    preprocess_result = (optional) results of preprocess_train
+    selected_features = (optional) optimized selected features
     Returns: dict of the following:
+        y_pred: predicted y given X
         metrics: goodness of fit metrics
         stats: dataframe of fit metrics
-        y_pred: predicted y given X
         fig= figure for the residuals plot
     """
  
-    from PyMLR import check_X_y, preprocess_test, fitness_metrics
+    from PyMLR import check_X_y, check_X, preprocess_test
+    from PyMLR import fitness_metrics, fitness_metrics_given_y_pred
     import pandas as pd
     import numpy as np
     from sklearn.metrics import PredictionErrorDisplay
@@ -886,12 +889,15 @@ def test_model(
     import warnings
     import sys
 
-    # copy X and y to avoid altering originals
-    X = X.copy()
-    y = y.copy()
-
+    if y != None:
+        X = X.copy()
+        y = y.copy()
+        X, y = check_X_y(X, y)
+    else:
+        X = X.copy()
+        X = check_X(X)
+        
     # check X and y and put into dataframe if needed
-    X, y = check_X_y(X, y)
     
     if preprocess_result!=None:
         X = preprocess_test(X, preprocess_result)
@@ -901,51 +907,172 @@ def test_model(
 
     y_pred = model.predict(X[selected_features])    
 
-    # Goodness of fit statistics
-    metrics = fitness_metrics(
-        model, 
-        X[selected_features], y)
-    stats = pd.DataFrame([metrics]).T
-    stats.index.name = 'Statistic'
-    stats.columns = ['Regressor']
-
+    # save result dict
     result = {}
-    result['metrics'] = metrics
-    result['stats'] = stats
-    result['y_pred'] = model.predict(X[selected_features])
+    result['y_pred'] = y_pred
 
-    print('')
-    print("Goodness of fit to testing data in result['metrics']:")
-    print('')
-    print(result['stats'].to_markdown(index=True))
-    print('')
-    
-    fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-    PredictionErrorDisplay.from_predictions(
-        y,
-        y_pred,
-        subsample=None,
-        kind="actual_vs_predicted",
-        ax=axs[0]
-    )
-    axs[0].set_title("Actual vs. Predicted")
-    PredictionErrorDisplay.from_predictions(
-        y,
-        y_pred,
-        subsample=None,
-        kind="residual_vs_predicted",
-        ax=axs[1]
-    )
-    axs[1].set_title("Residuals vs. Predicted")
-    rmse = np.sqrt(np.mean((y-y_pred)**2))
-    fig.suptitle(
-        f"Predictions compared with actual values and residuals (RMSE={rmse:.3f})")
-    plt.tight_layout()
+    if y != None:
+        # Goodness of fit statistics
+        metrics = fitness_metrics(
+            model, 
+            X[selected_features], y)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['Regressor']
 
-    result['fig'] = fig
+        result['metrics'] = metrics
+        result['stats'] = stats
+
+        print('')
+        print("Goodness of fit to testing data in result['metrics']:")
+        print('')
+        print(result['stats'].to_markdown(index=True))
+        print('')
+        
+        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred,
+            subsample=None,
+            kind="actual_vs_predicted",
+            ax=axs[0]
+        )
+        axs[0].set_title("Actual vs. Predicted")
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred,
+            subsample=None,
+            kind="residual_vs_predicted",
+            ax=axs[1]
+        )
+        axs[1].set_title("Residuals vs. Predicted")
+        rmse = np.sqrt(np.mean((y-y_pred)**2))
+        fig.suptitle(
+            f"Predictions compared with actual values and residuals (RMSE={rmse:.3f})")
+        plt.tight_layout()
+
+        result['fig'] = fig
     
     return result
+ 
+def test_model_blend(
+        model, X, y=None, preprocess_result=None, selected_features=None):
+
+    """
+    Predicted values of the response variable for independent test data
+    for fitted PyMLR blend_auto regression models
+    If true values of y are provided, then this function also provides
+    plots actual vs predicted and residuals vs predicted 
+    for fitted blend_auto models 
+    and provide goodness of fit statistics
+
+    Args:
+    model= dictionary of fitted PyMLR meta and base models from blend_auto
+    X = dataframe of the candidate independent variables 
+    y = (optional) series of the response variable (one column of data)
+    preprocess_result = (optional) results of preprocess_train
+    selected_features = (optional) optimized selected features
+    Returns: dict of the following:
+        y_pred: predicted y given X
+        metrics: goodness of fit metrics
+        stats: dataframe of fit metrics
+        fig= figure for the residuals plot
+    """
+ 
+    from PyMLR import check_X_y, check_X, preprocess_test
+    from PyMLR import fitness_metrics, fitness_metrics_given_y_pred
+    import pandas as pd
+    import numpy as np
+    from sklearn.metrics import PredictionErrorDisplay
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.decomposition import PCA
+    import matplotlib.pyplot as plt
+    import warnings
+    import sys
+
+    if y != None:
+        X = X.copy()
+        y = y.copy()
+        X, y = check_X_y(X, y)
+    else:
+        X = X.copy()
+        X = check_X(X)
+        
+    # check X and y and put into dataframe if needed
     
+    if preprocess_result!=None:
+        X = preprocess_test(X, preprocess_result)
+        
+    if selected_features==None:
+        selected_features = X.columns.to_list()
+
+    # get fitted model objects for meta-model and base regressors
+    meta_model = model['meta_model']
+    xgb_model = model['xgb_model']
+    lgb_model = model['lgb_model']
+    cat_model = model['cat_model']
+
+    # make test predictions from fitted base regressors
+    y_pred_xgb = xgb_model.predict(X[selected_features])
+    y_pred_lgb = lgb_model.predict(X[selected_features])
+    y_pred_cat = cat_model.predict(X[selected_features])
+
+    # list of arrays of test predictions from all base regressors
+    oof_preds = [y_pred_xgb, y_pred_lgb, y_pred_cat]
+
+    # mean test prediction across all base regressors
+    oof_preds_mean = np.mean(np.stack(oof_preds), axis=0)
+
+    # final test predictions from the isotonic regression meta-model
+    y_pred = meta_model.predict(oof_preds_mean)
+
+    # save result dict
+    result = {}
+    result['y_pred'] = y_pred
+
+    if y != None:
+        # Goodness of fit statistics
+        metrics = fitness_metrics_given_y_pred(
+            X[selected_features], y, y_pred)
+        stats = pd.DataFrame([metrics]).T
+        stats.index.name = 'Statistic'
+        stats.columns = ['Regressor']
+
+        result['metrics'] = metrics
+        result['stats'] = stats
+
+        print('')
+        print("Goodness of fit to testing data in result['metrics']:")
+        print('')
+        print(result['stats'].to_markdown(index=True))
+        print('')
+        
+        fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred,
+            subsample=None,
+            kind="actual_vs_predicted",
+            ax=axs[0]
+        )
+        axs[0].set_title("Actual vs. Predicted")
+        PredictionErrorDisplay.from_predictions(
+            y,
+            y_pred,
+            subsample=None,
+            kind="residual_vs_predicted",
+            ax=axs[1]
+        )
+        axs[1].set_title("Residuals vs. Predicted")
+        rmse = np.sqrt(np.mean((y-y_pred)**2))
+        fig.suptitle(
+            f"Predictions compared with actual values and residuals (RMSE={rmse:.3f})")
+        plt.tight_layout()
+
+        result['fig'] = fig
+    
+    return result
+  
 def plot_predictions_from_test(
     model, X, y, 
     standardize=True, scaler=None, 
