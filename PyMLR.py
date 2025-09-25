@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.243"
+__version__ = "1.2.244"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -20213,6 +20213,14 @@ def blend_objective(trial, X, y, study, **kwargs):
         "depth": trial.suggest_int("cat_depth", *kwargs["cat_depth"]),
         "learning_rate": trial.suggest_float("cat_learning_rate", *kwargs["cat_learning_rate"], log=True),
         "l2_leaf_reg": trial.suggest_float("cat_l2_leaf_reg", *kwargs["cat_l2_leaf_reg"], log=True),
+        "bagging_temperature": trial.suggest_float("cat_bagging_temperature",
+            *kwargs['cat_bagging_temperature']),
+        "subsample": trial.suggest_float("cat_subsample",
+            *kwargs['cat_subsample']),
+        "random_strength": trial.suggest_float("cat_random_strength",
+            *kwargs['cat_random_strength']),
+        "min_data_in_leaf": trial.suggest_int("cat_min_data_in_leaf",
+            *kwargs['cat_min_data_in_leaf']),
         "random_seed": seed,
         "task_type": "CPU",
         "thread_count": kwargs["n_jobs"],
@@ -20224,6 +20232,9 @@ def blend_objective(trial, X, y, study, **kwargs):
         "learning_rate": trial.suggest_float("xgb_learning_rate", *kwargs["xgb_learning_rate"], log=True),
         "subsample": trial.suggest_float("xgb_subsample", *kwargs["xgb_subsample"]),
         "colsample_bytree": trial.suggest_float("xgb_colsample_bytree", *kwargs["xgb_colsample_bytree"]),
+        "reg_lambda": trial.suggest_float("xgb_reg_lambda", *kwargs["xgb_reg_lambda"], log=True),
+        "alpha": trial.suggest_float("xgb_alpha", *kwargs["xgb_alpha"], log=True),
+        "min_child_weight": trial.suggest_int("xgb_min_child_weight", *kwargs["xgb_min_child_weight"]),
         "objective": kwargs["xgb_objective"],
         "booster": kwargs["xgb_booster"],
         "tree_method": kwargs["xgb_tree_method"],
@@ -20237,6 +20248,10 @@ def blend_objective(trial, X, y, study, **kwargs):
         "max_depth": trial.suggest_int("lgb_max_depth", *kwargs["lgb_max_depth"]),
         "learning_rate": trial.suggest_float("lgb_learning_rate", *kwargs["lgb_learning_rate"], log=True),
         "num_leaves": trial.suggest_int("lgb_num_leaves", *kwargs["lgb_num_leaves"]),
+        "reg_alpha": trial.suggest_float("lgb_reg_alpha", *kwargs["lgb_reg_alpha"], log=True),
+        "min_child_samples": trial.suggest_int("lgb_min_child_samples", *kwargs["lgb_min_child_samples"]),
+        "min_split_gain": trial.suggest_float("lgb_min_split_gain", *kwargs["lgb_min_split_gain"]),
+        "subsample": trial.suggest_float("lgb_subsample", *kwargs["lgb_subsample"]),
         "objective": kwargs["lgb_objective"],
         "random_state": seed,
         "num_threads": kwargs["n_jobs"],
@@ -20460,13 +20475,20 @@ def blend_auto(X, y, **kwargs):
         'cat_depth': [4, 10],                   # Controls tree depth
         'cat_learning_rate': [0.01, 0.3],       # Balances step size in gradient updates.
         'cat_l2_leaf_reg': [1, 10],             # Regularization strength       
+        'cat_bagging_temperature': [0.1, 1.0],  # Controls randomness in sampling
+        'cat_subsample': [0.05, 1.0],           # frac of samples for train each iter
+        'cat_random_strength': [0, 1],          # Adds noise for diversity
+        'cat_min_data_in_leaf': [1, 100],       # Minimum samples per leaf         
 
         # xgb_params optimized by optuna
-        'xgb_n_estimators': [100, 2000],        # Number of boosting rounds (trees).
+        'xgb_n_estimators': [100, 3000],        # Number of boosting rounds (trees).
         'xgb_max_depth': [3, 15],               # Maximum depth of a tree.
         'xgb_learning_rate': [1e-4, 1.0],       # Step size shrinkage (also called eta).
         'xgb_subsample': [0.5, 1],              # Fraction of samples used for training each tree.
         'xgb_colsample_bytree': [0.5, 1],       # Fraction of features used for each tree.
+        'xgb_reg_lambda': [1e-8, 10.0],         # L2 regularization term on weights.
+        'xgb_alpha': [1e-8, 10.0],              # L1 regularization term on weights.
+        'xgb_min_child_weight': [1, 10],        # Minimum sum of instance weight (hessian) needed in a child.
         'xgb_predictor': "auto",                # Type of predictor ('cpu_predictor', 'gpu_predictor').
         'xgb_scale_pos_weight': 1,              # Balancing of positive and negative weights.
         'xgb_booster': "gbtree",                # Type of booster ('gbtree', 'gblinear', or 'dart').
@@ -20478,6 +20500,10 @@ def blend_auto(X, y, **kwargs):
         'lgb_max_depth': [3, 15],               # Maximum depth of a tree.
         'lgb_learning_rate': [1e-3, 0.3],       # Balances step size in gradient updates.
         'lgb_num_leaves': [16, 256],            # max number of leaves in one tree
+        'lgb_reg_alpha': [1e-8, 10.0],          # L1 regularization term on weights.
+        'lgb_min_child_samples': [5, 100],      # min data points in a leaf
+        'lgb_min_split_gain': [0.0, 1.0],       # regularization of split in tree
+        'lgb_subsample': [0.5, 1.0],            # fraction of the dataset to train tree
         'lgb_objective': None,                  # auto set
 
         preprocessing options:
@@ -20610,13 +20636,20 @@ def blend_auto(X, y, **kwargs):
         'cat_depth': [4, 10],                   # Controls tree depth
         'cat_learning_rate': [0.01, 0.3],       # Balances step size in gradient updates.
         'cat_l2_leaf_reg': [1, 10],             # Regularization strength       
+        'cat_bagging_temperature': [0.1, 1.0],  # Controls randomness in sampling
+        'cat_subsample': [0.05, 1.0],           # frac of samples for train each iter
+        'cat_random_strength': [0, 1],          # Adds noise for diversity
+        'cat_min_data_in_leaf': [1, 100],       # Minimum samples per leaf         
 
         # xgb_params optimized by optuna
-        'xgb_n_estimators': [100, 2000],        # Number of boosting rounds (trees).
+        'xgb_n_estimators': [100, 3000],        # Number of boosting rounds (trees).
         'xgb_max_depth': [3, 15],               # Maximum depth of a tree.
         'xgb_learning_rate': [1e-4, 1.0],       # Step size shrinkage (also called eta).
         'xgb_subsample': [0.5, 1],              # Fraction of samples used for training each tree.
         'xgb_colsample_bytree': [0.5, 1],       # Fraction of features used for each tree.
+        'xgb_reg_lambda': [1e-8, 10.0],         # L2 regularization term on weights.
+        'xgb_alpha': [1e-8, 10.0],              # L1 regularization term on weights.
+        'xgb_min_child_weight': [1, 10],        # Minimum sum of instance weight (hessian) needed in a child.
         'xgb_predictor': "auto",                # Type of predictor ('cpu_predictor', 'gpu_predictor').
         'xgb_scale_pos_weight': 1,              # Balancing of positive and negative weights.
         'xgb_booster': "gbtree",                # Type of booster ('gbtree', 'gblinear', or 'dart').
@@ -20628,6 +20661,10 @@ def blend_auto(X, y, **kwargs):
         'lgb_max_depth': [3, 15],               # Maximum depth of a tree.
         'lgb_learning_rate': [1e-3, 0.3],       # Balances step size in gradient updates.
         'lgb_num_leaves': [16, 256],            # max number of leaves in one tree
+        'lgb_reg_alpha': [1e-8, 10.0],          # L1 regularization term on weights.
+        'lgb_min_child_samples': [5, 100],      # min data points in a leaf
+        'lgb_min_split_gain': [0.0, 1.0],       # regularization of split in tree
+        'lgb_subsample': [0.5, 1.0],            # fraction of the dataset to train tree
         'lgb_objective': None,                  # auto set
 
     }
