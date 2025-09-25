@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.242"
+__version__ = "1.2.243"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -20344,6 +20344,9 @@ def blend_objective(trial, X, y, study, **kwargs):
         fold_scores.append(score)
 
     score_mean = np.mean(fold_scores)
+    # make sure we maximize negative values of scores during optimization
+    if score_mean > 0:
+        score_mean = -score_mean
 
     # -----------------------------
     # Final Fit on full data
