@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.245"
+__version__ = "1.2.246"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -889,7 +889,7 @@ def test_model(
     import warnings
     import sys
 
-    if y != None:
+    if y is not None:
         X = X.copy()
         y = y.copy()
         X, y = check_X_y(X, y)
@@ -911,7 +911,7 @@ def test_model(
     result = {}
     result['y_pred'] = y_pred
 
-    if y != None:
+    if y is not None:
         # Goodness of fit statistics
         metrics = fitness_metrics(
             model, 
@@ -990,7 +990,7 @@ def test_model_blend(
     import warnings
     import sys
 
-    if y != None:
+    if y is not None:
         X = X.copy()
         y = y.copy()
         X, y = check_X_y(X, y)
@@ -1030,7 +1030,7 @@ def test_model_blend(
     result = {}
     result['y_pred'] = y_pred
 
-    if y != None:
+    if y is not None:
         # Goodness of fit statistics
         metrics = fitness_metrics_given_y_pred(
             X[selected_features], y, y_pred)
