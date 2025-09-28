@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.248"
+__version__ = "1.2.249"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -21760,7 +21760,7 @@ def summarize_blend_metrics_ridge(
     axs[1].set_title("Residuals vs. Predicted")
     fig.suptitle(f"Blended predictions compared with actual values and residuals (RMSE={RMSE:.3f})")
     plt.tight_layout()
-    plt.savefig(os.path.join(log_dir,f"{label}_predictions.png"), dpi=300)
+    plt.savefig(os.path.join(log_dir,f"{label}_predictions.png"), dpi=300);
 
     with open(os.path.join(log_dir, f"{label}_coefficients.txt"), "w") as f:
         f.write(f"Intercept: {ridge_final.intercept_:.4f}\n")
@@ -21960,7 +21960,7 @@ def ridge_blend(
     plt.title('CV score vs alpha for Ridge meta-model')
     plt.tight_layout()
     plt.show()
-    plt.savefig(os.path.join(log_dir,"RidgeBlend_score_vs_alpha.png"), dpi=300)
+    plt.savefig(os.path.join(log_dir,"RidgeBlend_score_vs_alpha.png"), dpi=300);
 
     result = {
         'final_blend_model': ridge_final,
