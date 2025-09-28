@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.246"
+__version__ = "1.2.247"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -21529,8 +21529,446 @@ def isotonic_blend(
 
     return blended_test_preds
 
+def blend_with_ridge_df(
+    X_blend,
+    y_true,
+    cv=5,
+    alpha=1.0,
+    log_dir: str = None,
+    plot: bool = True,
+    scoring: str = 'rmse',
+    fit_intercept=True, 
+    positive=True):
+
+    import pandas as pd, numpy as np, os, matplotlib.pyplot as plt
+    from sklearn.linear_model import Ridge
+    from sklearn.model_selection import KFold
+    from sklearn.metrics import root_mean_squared_error, mean_absolute_error, r2_score
+
+    X_blend = X_blend.copy()
+    y_true = y_true.copy()
+    blended = pd.Series(index=y_true.index, dtype=float)
+    kf = KFold(n_splits=cv, shuffle=True, random_state=42)
+
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+        missing_log = open(os.path.join(log_dir, "missing_metrics_log.txt"), "w")
+
+    for fold, (train_idx, val_idx) in enumerate(kf.split(X_blend), start=1):
+        train_idx = X_blend.index[train_idx]
+        val_idx = X_blend.index[val_idx]
+        X_train, y_train = X_blend.loc[train_idx], y_true.loc[train_idx]
+        X_val, y_val = X_blend.loc[val_idx], y_true.loc[val_idx]
+
+        ridge = Ridge(alpha=alpha, fit_intercept=fit_intercept, positive=positive)
+        ridge.fit(X_train, y_train)
+        val_preds = ridge.predict(X_val)
+        blended.loc[val_idx] = val_preds
+
+        try:
+            rmse = root_mean_squared_error(y_val, val_preds)
+            mae = mean_absolute_error(y_val, val_preds)
+            r2 = r2_score(y_val, val_preds)
+        except Exception as e:
+            if log_dir:
+                missing_log.write(f"Fold {fold}: Metric computation failed - {str(e)}\n")
+            continue
+
+        score_map = {'rmse': rmse, 'mae': mae, 'r2': r2}
+        selected_score = score_map.get(scoring.lower(), rmse)
+
+        if plot and log_dir:
+            fig, ax = plt.subplots(1, 2, figsize=(10, 4))
+            ax[0].scatter(val_preds, y_val, alpha=0.6)
+            ax[0].plot([y_val.min(), y_val.max()], [y_val.min(), y_val.max()], 'r--')
+            ax[0].set_title(f'Fold {fold} Calibration')
+            ax[0].set_xlabel('Blended Prediction')
+            ax[0].set_ylabel('True Value')
+
+            residuals = y_val - val_preds
+            ax[1].scatter(val_preds, residuals, alpha=0.6)
+            ax[1].axhline(0, color='r', linestyle='--')
+            ax[1].set_title(f'Fold {fold} Residuals')
+            ax[1].set_xlabel('Blended Prediction')
+            ax[1].set_ylabel('Residual')
+
+            fig.tight_layout()
+            fig.savefig(os.path.join(log_dir, f'fold_{fold}_diagnostics.png'))
+            plt.close(fig)
+
+            with open(os.path.join(log_dir, f'fold_{fold}_metrics.txt'), 'w') as f:
+                f.write(f'Fold {fold} RMSE: {rmse:.4f}\n')
+                f.write(f'Fold {fold} MAE: {mae:.4f}\n')
+                f.write(f'Fold {fold} R2: {r2:.4f}\n')
+                f.write(f'Fold {fold} {scoring.upper()} (selected): {selected_score:.4f}\n')
+
+            with open(os.path.join(log_dir, f'fold_{fold}_coefficients.txt'), 'w') as f:
+                f.write(f'Intercept: {ridge.intercept_:.4f}\n')
+                for name, coef in zip(X_train.columns, ridge.coef_):
+                    f.write(f'{name}: {coef:.4f}\n')
+
+    if log_dir:
+        missing_log.close()
+
+    return blended
+
+def optimize_ridge_alpha(X_blend, y_true, random_state=42, 
+        alpha_range=[1e-4, 100.0], cv=5, scoring='rmse', 
+        n_trials=20, fit_intercept=True, positive=True):
+    import optuna
+    from sklearn.linear_model import Ridge
+    from sklearn.model_selection import cross_val_predict, KFold
+    from sklearn.metrics import root_mean_squared_error, mean_absolute_error, r2_score
+
+    def objective(trial):
+        # alpha = trial.suggest_float("alpha", 1e-4, 100.0, log=True)
+        alpha = trial.suggest_float("alpha", *alpha_range, log=True)
+        ridge = Ridge(alpha=alpha, fit_intercept=fit_intercept, positive=positive)
+        kf = KFold(n_splits=cv, shuffle=True, random_state=42)
+        preds = cross_val_predict(ridge, X_blend, y_true, cv=kf)
+
+        if scoring == 'rmse':
+            trial_score = root_mean_squared_error(y_true, preds)
+        elif scoring == 'mae':
+            trial_score = mean_absolute_error(y_true, preds)
+        elif scoring == 'r2':
+            trial_score = -r2_score(y_true, preds)
+        else:
+            trial_score = root_mean_squared_error(y_true, preds)
+
+        trial.set_user_attr("trial_alpha", alpha)
+        trial.set_user_attr("trial_score", trial_score)
+        
+        return trial_score
+
+    # Set verbosity to WARNING to suppress most log messages
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    study = optuna.create_study(direction="minimize", 
+        sampler=optuna.samplers.TPESampler(seed=random_state))
+    study.optimize(objective, n_trials=n_trials)
+
+    print(f"Best Ridge alpha: {study.best_params['alpha']:.5f}")
+    print(f"Best {scoring.upper()}: {study.best_value:.5f}")
+    return study.best_params['alpha'], study
+
+def summarize_blend_metrics_ridge(
+    X_blend,
+    y_true,
+    y_pred,
+    log_dir: str,
+    save_plot: bool = True,
+    show_plot: bool = False,
+    alpha: float = None,
+    label: str = "RidgeBlend"):
+    """
+    Aggregate and visualize fold-wise metrics from Ridge blending logs.
+
+    Parameters:
+        X_blend (pd.DataFrame): base model predictions
+        y_true (pd.Series): true target values
+        y_pred (pd.Series): blended predictions from CV
+        log_dir (str): directory containing fold_{i}_metrics.txt files
+        save_plot (bool): whether to save the summary plot
+        show_plot (bool): whether to show the plot
+        alpha (float): regularization strength used in Ridge
+        label (str): label for final model metrics
+
+    Returns:
+        dict: {'metrics_per_fold': DataFrame, 'metrics_across_folds': summary}
+    """
+    import os, re
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    from sklearn.linear_model import Ridge
+    from sklearn.metrics import root_mean_squared_error, mean_absolute_error, r2_score
+    from sklearn.metrics import PredictionErrorDisplay
+
+    def safe_extract(pattern, line):
+        match = re.search(pattern, line)
+        return float(match.group(1)) if match else None
+
+    metrics = []
+    missing_folds = []
+
+    for fname in os.listdir(log_dir):
+        if re.match(r'fold_\d+_metrics\.txt', fname):
+            fold = int(re.search(r'\d+', fname).group())
+            try:
+                with open(os.path.join(log_dir, fname), 'r') as f:
+                    lines = f.readlines()
+                    rmse = safe_extract(r'RMSE: ([\d.]+)', lines[0])
+                    mae  = safe_extract(r'MAE: ([\d.]+)', lines[1])
+                    r2   = safe_extract(r'R2: ([\d.]+)', lines[2])
+                    metrics.append({'fold': fold, 'RMSE': rmse, 'MAE': mae, 'R2': r2})
+            except Exception as e:
+                missing_folds.append((fold, str(e)))
+
+    df_metrics = pd.DataFrame(metrics).sort_values('fold')
+    print("\nCV metrics for each fold:\n")
+    print(df_metrics.to_markdown(index=False))
+
+    df_summary = df_metrics.drop(columns='fold')
+    summary = df_summary.describe().loc[['mean', 'std']]
+    summary.index = ['Mean', 'Stdev']
+    print("\nCV metric summary across all folds:\n")
+    print(summary.to_markdown(index=True))
+
+    fig, ax = plt.subplots(1, 3, figsize=(15, 4))
+    ax[0].plot(df_metrics['fold'], df_metrics['RMSE'], marker='o')
+    ax[0].set_title('RMSE Across Folds')
+    ax[1].plot(df_metrics['fold'], df_metrics['MAE'], marker='o', color='orange')
+    ax[1].set_title('MAE Across Folds')
+    ax[2].plot(df_metrics['fold'], df_metrics['R2'], marker='o', color='green')
+    ax[2].set_title('R2 Across Folds')
+    for a in ax:
+        a.set_xlabel('Fold')
+        a.set_xticks(df_metrics['fold'])
+
+    fig.tight_layout()
+    if save_plot:
+        fig.savefig(os.path.join(log_dir, 'fold_metrics_summary.png'))
+    if show_plot:
+        plt.show()
+    plt.close(fig)
+
+    if missing_folds:
+        with open(os.path.join(log_dir, "missing_metrics_summary.txt"), "w") as f:
+            for fold, err in missing_folds:
+                f.write(f"Fold {fold}: {err}\n")
+
+    # Final Ridge fit on full data
+    ridge_final = Ridge(alpha=alpha if alpha else 1.0)
+    ridge_final.fit(X_blend, y_true)
+    final_blended_preds = ridge_final.predict(X_blend)
+
+    RMSE = root_mean_squared_error(y_true, final_blended_preds)
+    MAE = mean_absolute_error(y_true, final_blended_preds)
+    R2 = r2_score(y_true, final_blended_preds)
+    stats_df = pd.DataFrame({
+        "Statistic": ['RMSE', 'MAE', 'R2', 'N'],
+        label: [RMSE, MAE, R2, len(y_true)]
+    }).set_index("Statistic")
+
+    print(f"\nMetrics of final blended model using all data ({label}):\n")
+    print(stats_df.to_markdown())
+
+    fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+    PredictionErrorDisplay.from_predictions(y_true, final_blended_preds, kind="actual_vs_predicted", ax=axs[0])
+    axs[0].set_title("Actual vs. Predicted")
+    PredictionErrorDisplay.from_predictions(y_true, final_blended_preds, kind="residual_vs_predicted", ax=axs[1])
+    axs[1].set_title("Residuals vs. Predicted")
+    fig.suptitle(f"{label} diagnostics (RMSE={RMSE:.3f})")
+    plt.tight_layout()
+    plt.savefig(os.path.join(log_dir, f"{label}_predictions.png"), dpi=300)
+
+    with open(os.path.join(log_dir, f"{label}_coefficients.txt"), "w") as f:
+        f.write(f"Intercept: {ridge_final.intercept_:.4f}\n")
+        for name, coef in zip(X_blend.columns, ridge_final.coef_):
+            f.write(f"{name}: {coef:.4f}\n")
+
+    return {
+        'metrics_per_fold': df_metrics,
+        'metrics_across_folds': summary
+    }
+    
+def ridge_blend(
+    preds_test_df,
+    preds_train_df,
+    y_train,
+    random_state=42,
+    n_splits=5,
+    alpha=None,
+    tune_alpha: bool = True,
+    alpha_range=[1e-4, 100.0],
+    n_trials: int = 20,
+    log_dir: str = 'ridge_blend',
+    scoring: str = 'rmse',
+    plot: bool = True,
+    save_plot: bool = True,
+    show_plot: bool = False,
+    fit_intercept=True,
+    positive=True):
+
+    """
+    Blend model predictions from multiple models 
+    using isotonic regression with cross-validation,
+    logging fold-wise plots and metrics for interpretability.
+
+    Args:
+        preds_test_df: (pd.DataFrame): shape (n_test, n_models), test data subset
+        preds_train_df: (pd.DataFrame): shape (n_train, n_models), train data subset
+        y_train: pd.Series of true target values for train data (same length as preds_train_df)
+        random_state: random seed for reproducibility (default 42)
+        alpha_range: range of possible Ridge alpha for optuna optimization (default [1e-4, 100.0])
+        n_splits: Number of CV folds.
+        log_dir: folder to save results
+        scoring: cross-validation scoring ('rmse', 'mae', or 'r2') (default 'rmse')
+        plot (bool): whether to generate and save plots
+        save_plot (bool): whether to save cv plot
+        show_plot (bool): whether to show cv plot
+        positive (bool): True= force Ridge coefs to be positive
+        
+    Returns: dictionary containing the following keys:
+        'final_blend_model': final isotonic regression model using all train data
+        'blended_train_preds': dataseries of blended predictions from train data,
+        'blended_test_preds': dataseries of blended predictions from test data
+        'cv_metrics': dict of cross-validation metrics of the isotonic regression model
+        'alpha': best Ridge alpha,
+        'popt_table': Ridge intercept and coefficients,
+
+    Example Usage:
+    
+        # Dataframes of test predictions for each model
+        preds_test_df = pd.DataFrame({
+            'xgb': xgb_test_preds,  # XGBoost predictions using X_test
+            'cat': cat_test_preds,  # CatBoost predictions using X_test
+            'lgb': lgb_test_preds   # LightGBM predictions using X_test
+        })
+
+        # Dataframes of train predictions for each model
+        preds_train_df = pd.DataFrame({
+            'xgb': xgb_train_preds,  # XGBoost predictions using X_train
+            'cat': cat_train_preds,  # CatBoost predictions using X_train
+            'lgb': lgb_train_preds   # LightGBM predictions using X_train
+        })
+
+        # Dataseries of true values used for training y_train
+        y_train = df_train_lgb['y_train']
+
+        # Optimized weighted ensemble of test predictions from LightGBM, CatBoost, and XGBoost
+        result = isotonic_blend(preds_test_df, preds_train_df, y_train)
+    """
+
+    import matplotlib.pyplot as plt
+    import pandas as pd, os
+    import numpy as np
+    from pathlib import Path
+    from sklearn.linear_model import Ridge
+    from PyMLR import check_X_y, check_X
+    from PyMLR import blend_with_ridge_df, summarize_blend_metrics_ridge, optimize_ridge_alpha
+
+    import os
+    if not os.access(os.getcwd(), os.W_OK):
+        # Change the working directory to home if no write permissions
+        print(f"Current working directory has no write permission: {os.getcwd()}")    
+        os.chdir(Path.home())
+        os.makedirs('pymlr', exist_ok=True)
+        os.chdir('pymlr')
+        print(f"Working directory changed to: {os.getcwd()}")    
+
+    # assertions
+    assert preds_train_df.shape[0] == len(y_train), "Mismatch in train prediction and target lengths"
+    assert preds_test_df.shape[1] == preds_train_df.shape[1], "Mismatch in number of models"
+
+    log_dir = Path(log_dir)
+    log_dir.mkdir(exist_ok=True)
+
+    preds_test_df = check_X(preds_test_df.copy())
+    preds_train_df, y_train = check_X_y(preds_train_df.copy(), y_train.copy())
+
+    if tune_alpha or alpha is None:
+        alpha, study = optimize_ridge_alpha(
+            preds_train_df, y_train, random_state=random_state, 
+            alpha_range=alpha_range, cv=n_splits, 
+            scoring=scoring, n_trials=n_trials, 
+            fit_intercept=fit_intercept, positive=positive)
+
+    blended_train_preds = blend_with_ridge_df(
+        preds_train_df,
+        y_train,
+        cv=n_splits,
+        alpha=alpha,
+        log_dir=log_dir,
+        plot=plot,
+        scoring=scoring,
+        positive=positive)
+
+    cv_metrics = summarize_blend_metrics_ridge(
+        preds_train_df,
+        y_train,
+        blended_train_preds,
+        log_dir=log_dir,
+        save_plot=save_plot,
+        show_plot=show_plot)
+
+    ridge_final = Ridge(alpha=alpha, fit_intercept=fit_intercept, positive=positive)
+    ridge_final.fit(preds_train_df, y_train)
+    blended_test_preds = ridge_final.predict(preds_test_df)
+    blended_test_preds = pd.Series(blended_test_preds, index=preds_test_df.index, name='blended_prediction')
+
+    # extract intercept and coefs of final meta-model Ridge regression
+    fitted_model = ridge_final
+    X = preds_train_df.copy()
+    if (hasattr(fitted_model, 'intercept_') and hasattr(fitted_model, 'coef_') 
+            and fitted_model.coef_.size==len(X.columns)):
+        intercept = fitted_model.intercept_
+        coefficients = fitted_model.coef_
+        # dataframe of model parameters, intercept and coefficients, including zero coefs
+        n_param = 1 + fitted_model.coef_.size               # number of parameters including intercept
+        popt = [['' for i in range(n_param)], np.full(n_param,np.nan)]
+        for i in range(n_param):
+            if i == 0:
+                popt[0][i] = 'Intercept'
+                popt[1][i] = fitted_model.intercept_
+            else:
+                popt[0][i] = X.columns[i-1]
+                popt[1][i] = fitted_model.coef_[i-1]
+        popt = pd.DataFrame(popt).T
+        popt.columns = ['Feature', 'Parameter']
+        # Table of intercept and coef
+        popt_table = pd.DataFrame({
+                "Feature": popt['Feature'],
+                "Parameter": popt['Parameter']
+            })
+        popt_table.set_index('Feature',inplace=True)
+        # model_outputs['popt_table'] = popt_table
+
+    print("\nParameters of final Ridge meta-model:\n")
+    print(popt_table.to_markdown(index=True))
+    print("")
+
+    '''
+    # Pie chart of ensemble coefficients expresed as weights
+    coef_table = popt_table.iloc[1:, :]     # extract only the coefficients, not the intercept
+    weights = coef_table['Parameter']
+    weights = weights[weights >= 0.005] # hide small weights in pie chart
+    fig, axs = plt.subplots(ncols=1, figsize=(6, 4))
+    plt.pie(weights, labels=weights.index, autopct="%.0f%%")
+    plt.title('Ensemble weights',fontsize=14)
+    plt.tight_layout()
+    plt.show()
+    '''
+
+    # Plot cv score vs alpha for Ridge meta-model
+    trials = study.trials    
+    score_vs_alpha = pd.DataFrame()
+    score_vs_alpha['trial'] = trial_number = [trial.number for trial in trials]
+    score_vs_alpha['alpha'] = [trial.user_attrs['trial_alpha'] for trial in trials]
+    score_vs_alpha['score'] = [trial.value for trial in trials]
+    score_vs_alpha.set_index('trial', inplace=True)
+    plt.figure(figsize=(6, 4))
+    plt.scatter(score_vs_alpha['alpha'], score_vs_alpha['score'])
+    plt.axvline(alpha, linestyle="--", color="black", 
+                label="CV selected alpha={:.3e}".format(alpha))       
+    plt.xlabel('alpha')
+    plt.ylabel('CV score')
+    plt.xscale("log")
+    plt.legend()
+    plt.title('CV score vs alpha for Ridge meta-model')
+    plt.show()
+
+    result = {
+        'final_blend_model': ridge_final,
+        'blended_train_preds': blended_train_preds,
+        'blended_test_preds': blended_test_preds,
+        'cv_metrics': cv_metrics,
+        'alpha': alpha,
+        'popt_table': popt_table,
+        'score_vs_alpha': score_vs_alpha,
+    }
+
+    return result    
 
 
-
-
-
+    
