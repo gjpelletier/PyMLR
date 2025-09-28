@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.247"
+__version__ = "1.2.248"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -21758,9 +21758,9 @@ def summarize_blend_metrics_ridge(
     axs[0].set_title("Actual vs. Predicted")
     PredictionErrorDisplay.from_predictions(y_true, final_blended_preds, kind="residual_vs_predicted", ax=axs[1])
     axs[1].set_title("Residuals vs. Predicted")
-    fig.suptitle(f"{label} diagnostics (RMSE={RMSE:.3f})")
+    fig.suptitle(f"Blended predictions compared with actual values and residuals (RMSE={RMSE:.3f})")
     plt.tight_layout()
-    plt.savefig(os.path.join(log_dir, f"{label}_predictions.png"), dpi=300)
+    plt.savefig(os.path.join(log_dir,f"{label}_predictions.png"), dpi=300)
 
     with open(os.path.join(log_dir, f"{label}_coefficients.txt"), "w") as f:
         f.write(f"Intercept: {ridge_final.intercept_:.4f}\n")
@@ -21816,6 +21816,7 @@ def ridge_blend(
         'cv_metrics': dict of cross-validation metrics of the isotonic regression model
         'alpha': best Ridge alpha,
         'popt_table': Ridge intercept and coefficients,
+        'score_vs_alpha': dataframe of CV score and Ridge alpha for each optuna study trial 
 
     Example Usage:
     
@@ -21837,7 +21838,7 @@ def ridge_blend(
         y_train = df_train_lgb['y_train']
 
         # Optimized weighted ensemble of test predictions from LightGBM, CatBoost, and XGBoost
-        result = isotonic_blend(preds_test_df, preds_train_df, y_train)
+        result = ridge_blend(preds_test_df, preds_train_df, y_train)
     """
 
     import matplotlib.pyplot as plt
@@ -21938,6 +21939,7 @@ def ridge_blend(
     plt.title('Ensemble weights',fontsize=14)
     plt.tight_layout()
     plt.show()
+    plt.savefig(os.path.join(log_dir,"RidgeBlend_weights.png"), dpi=300)
     '''
 
     # Plot cv score vs alpha for Ridge meta-model
@@ -21956,7 +21958,9 @@ def ridge_blend(
     plt.xscale("log")
     plt.legend()
     plt.title('CV score vs alpha for Ridge meta-model')
+    plt.tight_layout()
     plt.show()
+    plt.savefig(os.path.join(log_dir,"RidgeBlend_score_vs_alpha.png"), dpi=300)
 
     result = {
         'final_blend_model': ridge_final,
