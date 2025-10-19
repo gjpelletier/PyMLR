@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.2.249"
+__version__ = "1.2.250"
 
 def check_X_y(X,y, enable_categorical=False):
 
@@ -21974,5 +21974,31 @@ def ridge_blend(
 
     return result    
 
+def mapview(data, cmap='turbo'):
+    """
+    Displays a 2D array as a filled contour plot
+
+    Parameters:
+        data (2D array-like): The input data to visualize.
+        cmap (str): The colormap to use for the plot (default is 'viridis').
+
+    Example usage:
+        import numpy as np
+        x = np.linspace(-5, 5, 100)
+        y = np.linspace(-5, 5, 100)
+        X, Y = np.meshgrid(x, y)
+        Z = np.sin(np.sqrt(X**2 + Y**2))  # Example 2D array
+        display_contourf(Z)
+    """
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(8, 6))
+    # Create a filled contour plot
+    plt.contourf(data, levels=100, cmap=cmap)
+    # Add a colorbar for reference
+    plt.colorbar(label='Value')
+    plt.title('Filled Contour Plot')
+    plt.xlabel('X-axis')
+    plt.ylabel('Y-axis')
+    plt.show()
 
     
